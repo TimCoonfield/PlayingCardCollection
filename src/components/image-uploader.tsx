@@ -7,6 +7,7 @@ import { upload } from "@vercel/blob/client";
 interface UploadedImage {
   url: string;
   uploading?: boolean;
+  progress?: number;
   error?: string;
 }
 
@@ -42,6 +43,14 @@ export function ImageUploader({
           const blob = await upload(`decks/${Date.now()}-${file.name}`, file, {
             access: "public",
             handleUploadUrl: "/api/upload",
+            multipart: true,
+            onUploadProgress: ({ percentage }) => {
+              setImages((prev) => {
+                const next = [...prev];
+                next[startIndex + i] = { ...next[startIndex + i], uploading: true, progress: percentage };
+                return next;
+              });
+            },
           });
           setImages((prev) => {
             const next = [...prev];
@@ -76,7 +85,9 @@ export function ImageUploader({
             className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-md border border-felt-line bg-felt-surface"
           >
             {img.uploading && (
-              <span className="text-xs text-felt-sub">Uploading...</span>
+              <span className="text-xs text-felt-sub">
+                Uploading{typeof img.progress === "number" ? ` ${Math.round(img.progress)}%` : "..."}
+              </span>
             )}
             {img.error && (
               <span className="px-1 text-center text-xs text-red-300">{img.error}</span>
