@@ -1,0 +1,45 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Deck {
+  id              String      @id @default(cuid())
+  name            String
+  series          String?
+  designer        String?
+  producer        String?
+  tags            String[]    @default([])
+  ownershipStatus String      @default("Owned")
+  qty             Int         @default(1)
+  deckNumber      Int?
+  productionRun   Int?
+  notes           String?
+  catalogNumber   String?
+  images          DeckImage[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([tags], type: Gin)
+  @@index([designer])
+  @@index([producer])
+  @@index([series])
+}
+
+model DeckImage {
+  id        String   @id @default(cuid())
+  deckId    String
+  deck      Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  url       String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([deckId])
+}

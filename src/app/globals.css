@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+:root {
+  --felt-bg: #1c4632;
+  --felt-surface: #234f3a;
+  --felt-surface-2: #2b5b43;
+  --felt-line: #3a6650;
+  --felt-ink: #f3ead1;
+  --felt-sub: #b9c9ba;
+
+  --brass: #c9a34e;
+  --brass-deep: #b58a35;
+  --brick: #b1473f;
+  --plum: #8266b3;
+  --sage: #7a9b7e;
+}
+
+@theme inline {
+  --color-felt-bg: var(--felt-bg);
+  --color-felt-surface: var(--felt-surface);
+  --color-felt-surface-2: var(--felt-surface-2);
+  --color-felt-line: var(--felt-line);
+  --color-felt-ink: var(--felt-ink);
+  --color-felt-sub: var(--felt-sub);
+
+  --color-brass: var(--brass);
+  --color-brass-deep: var(--brass-deep);
+  --color-brick: var(--brick);
+  --color-plum: var(--plum);
+  --color-sage: var(--sage);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-spectral);
+}
+
+body {
+  background: var(--felt-bg);
+  color: var(--felt-ink);
+}

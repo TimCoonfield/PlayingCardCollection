@@ -1,0 +1,64 @@
+import Image from "next/image";
+import Link from "next/link";
+import { DeckPlaceholder } from "./deck-placeholder";
+
+export interface SeriesSpotlightDatum {
+  series: string;
+  count: number;
+  deck: { id: string; name: string; imageUrl: string | null; tags: string[] } | null;
+}
+
+const RANK_BADGE_STYLES = [
+  "bg-brass/20 text-brass ring-brass/40",
+  "bg-felt-ink/15 text-felt-ink ring-felt-ink/30",
+  "bg-brick/20 text-brick ring-brick/40",
+];
+
+export function SeriesShowcase({ items }: { items: SeriesSpotlightDatum[] }) {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {items.map((item, i) => {
+        const badgeStyle = RANK_BADGE_STYLES[i] ?? RANK_BADGE_STYLES[2];
+        const content = (
+          <div className="group flex flex-col overflow-hidden rounded-lg border border-felt-line bg-felt-surface transition-colors hover:border-brass">
+            <div className="relative aspect-[4/3] w-full">
+              {item.deck?.imageUrl ? (
+                <Image
+                  src={item.deck.imageUrl}
+                  alt={item.deck.name}
+                  fill
+                  sizes="(max-width: 640px) 100vw, 33vw"
+                  className="object-cover transition-transform group-hover:scale-105"
+                />
+              ) : (
+                <DeckPlaceholder tags={item.deck?.tags ?? []} size="md" />
+              )}
+              <span
+                className={`absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ring-1 ${badgeStyle}`}
+              >
+                #{i + 1}
+              </span>
+            </div>
+            <div className="flex flex-col gap-0.5 p-3">
+              <p className="truncate text-sm font-semibold text-felt-ink">{item.series}</p>
+              <p className="text-xs text-felt-sub">
+                {item.count} {item.count === 1 ? "deck" : "decks"} in this series
+              </p>
+              {item.deck && (
+                <p className="mt-1 truncate text-xs text-felt-sub/70">Shown: {item.deck.name}</p>
+              )}
+            </div>
+          </div>
+        );
+
+        return item.deck ? (
+          <Link key={item.series} href={`/decks/${item.deck.id}`}>
+            {content}
+          </Link>
+        ) : (
+          <div key={item.series}>{content}</div>
+        );
+      })}
+    </div>
+  );
+}
