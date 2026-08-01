@@ -4,14 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "./logout-action";
 
-const links = [
+const baseLinks = [
   { href: "/collection", label: "Collection" },
-  { href: "/decks/new", label: "Add Deck" },
   { href: "/stats", label: "Stats" },
 ];
 
-export function NavBar() {
+export function NavBar({ isAuthenticated }: { isAuthenticated: boolean }) {
   const pathname = usePathname();
+  const links = isAuthenticated
+    ? [baseLinks[0], { href: "/decks/new", label: "Add Deck" }, baseLinks[1]]
+    : baseLinks;
 
   return (
     <header className="sticky top-0 z-10 border-b border-felt-line bg-felt-bg/90 backdrop-blur">
@@ -39,14 +41,23 @@ export function NavBar() {
               </Link>
             );
           })}
-          <form action={logout}>
-            <button
-              type="submit"
-              className="whitespace-nowrap rounded-md px-2 py-1.5 text-felt-sub transition-colors hover:bg-felt-surface hover:text-felt-ink sm:px-3"
+          {isAuthenticated ? (
+            <form action={logout}>
+              <button
+                type="submit"
+                className="whitespace-nowrap rounded-md px-2 py-1.5 text-felt-sub transition-colors hover:bg-felt-surface hover:text-felt-ink sm:px-3"
+              >
+                Log out
+              </button>
+            </form>
+          ) : (
+            <Link
+              href="/login"
+              className="whitespace-nowrap rounded-md border border-brass px-2 py-1.5 text-brass transition-colors hover:bg-brass/10 sm:px-3"
             >
-              Log out
-            </button>
-          </form>
+              Log in
+            </Link>
+          )}
         </nav>
       </div>
     </header>

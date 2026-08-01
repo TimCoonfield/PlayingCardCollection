@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 import { DeckCard } from "@/components/deck-card";
 import { CollectionFilters } from "@/components/collection-filters";
 import { Pagination } from "@/components/pagination";
@@ -51,7 +52,7 @@ export default async function CollectionPage({
   if (tags.length > 0) and.push({ tags: { hasSome: tags } });
   if (and.length > 0) where.AND = and;
 
-  const [decks, total, designers, producers, seriesList] = await Promise.all([
+  const [decks, total, designers, producers, seriesList, session] = await Promise.all([
     prisma.deck.findMany({
       where,
       include: { images: { orderBy: { sortOrder: "asc" }, take: 1 } },
@@ -78,8 +79,10 @@ export default async function CollectionPage({
       select: { series: true },
       orderBy: { series: "asc" },
     }),
+    getSession(),
   ]);
 
+  const isAuthenticated = Boolean(session.authenticated);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const currentSearchParams = new URLSearchParams();
@@ -95,12 +98,14 @@ export default async function CollectionPage({
         <h1 className="font-display text-xl font-semibold text-felt-ink">
           Collection <span className="font-sans text-base font-normal text-felt-sub">({total})</span>
         </h1>
-        <Link
-          href="/decks/new"
-          className="rounded-md bg-brass px-3 py-1.5 text-sm font-semibold text-felt-bg hover:bg-brass-deep"
-        >
-          + Add Deck
-        </Link>
+        {isAuthenticated && (
+          <Link
+            href="/decks/new"
+            className="rounded-md bg-brass px-3 py-1.5 text-sm font-semibold text-felt-bg hover:bg-brass-deep"
+          >
+            + Add Deck
+          </Link>
+        )}
       </div>
 
       <Suspense fallback={null}>

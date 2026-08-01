@@ -7,6 +7,7 @@ import { BackLink } from "@/components/back-link";
 import { StatTile } from "@/components/stat-tile";
 import { TagChip } from "@/components/tag-chip";
 import { PencilIcon, TrashIcon } from "@/components/icons";
+import { getSession } from "@/lib/auth";
 import { deleteDeck } from "../actions";
 
 export default async function DeckDetailPage({
@@ -15,44 +16,50 @@ export default async function DeckDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const deck = await prisma.deck.findUnique({
-    where: { id },
-    include: { images: { orderBy: { sortOrder: "asc" } } },
-  });
+  const [deck, session] = await Promise.all([
+    prisma.deck.findUnique({
+      where: { id },
+      include: { images: { orderBy: { sortOrder: "asc" } } },
+    }),
+    getSession(),
+  ]);
 
   if (!deck) notFound();
 
+  const isAuthenticated = Boolean(session.authenticated);
   const deleteDeckWithId = deleteDeck.bind(null, deck.id);
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <BackLink fallbackHref="/collection">← Back to collection</BackLink>
-        <div className="flex gap-2">
-          <Link
-            href={`/decks/${deck.id}/edit`}
-            aria-label="Edit deck"
-            title="Edit"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-brass/50 text-brass transition-colors hover:bg-brass/10"
-          >
-            <PencilIcon className="h-4 w-4" />
-          </Link>
-          <form
-            action={async () => {
-              "use server";
-              await deleteDeckWithId();
-            }}
-          >
-            <button
-              type="submit"
-              aria-label="Delete deck"
-              title="Delete"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-brick/50 text-brick transition-colors hover:bg-brick/10"
+        {isAuthenticated && (
+          <div className="flex gap-2">
+            <Link
+              href={`/decks/${deck.id}/edit`}
+              aria-label="Edit deck"
+              title="Edit"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-brass/50 text-brass transition-colors hover:bg-brass/10"
             >
-              <TrashIcon className="h-4 w-4" />
-            </button>
-          </form>
-        </div>
+              <PencilIcon className="h-4 w-4" />
+            </Link>
+            <form
+              action={async () => {
+                "use server";
+                await deleteDeckWithId();
+              }}
+            >
+              <button
+                type="submit"
+                aria-label="Delete deck"
+                title="Delete"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-brick/50 text-brick transition-colors hover:bg-brick/10"
+              >
+                <TrashIcon className="h-4 w-4" />
+              </button>
+            </form>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">

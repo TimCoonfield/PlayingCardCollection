@@ -4,11 +4,20 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 import { parseDeckFormData, type DeckFormValues } from "@/lib/schemas";
 
 export interface DeckFormState {
   error?: string;
   fieldErrors?: Record<string, string>;
+}
+
+// Server Actions are reachable via direct POST requests regardless of what the UI
+// shows, so every mutation checks the session itself rather than relying on the
+// proxy or a hidden button to keep read-only visitors from writing data.
+async function isAuthenticated() {
+  const session = await getSession();
+  return Boolean(session.authenticated);
 }
 
 function toDeckData(values: DeckFormValues) {
@@ -31,6 +40,10 @@ export async function createDeck(
   _prevState: DeckFormState,
   formData: FormData
 ): Promise<DeckFormState> {
+  if (!(await isAuthenticated())) {
+    return { error: "You must be logged in to add a deck." };
+  }
+
   const parsed = parseDeckFormData(formData);
   if (!parsed.success) {
     return { error: "Please fix the errors below.", fieldErrors: flatten(parsed.error) };
@@ -54,6 +67,10 @@ export async function updateDeck(
   _prevState: DeckFormState,
   formData: FormData
 ): Promise<DeckFormState> {
+  if (!(await isAuthenticated())) {
+    return { error: "You must be logged in to edit a deck." };
+  }
+
   const parsed = parseDeckFormData(formData);
   if (!parsed.success) {
     return { error: "Please fix the errors below.", fieldErrors: flatten(parsed.error) };
@@ -78,6 +95,10 @@ export async function updateDeck(
 }
 
 export async function deleteDeck(deckId: string) {
+  if (!(await isAuthenticated())) {
+    redirect("/login");
+  }
+
   await prisma.deck.delete({ where: { id: deckId } });
   revalidatePath("/collection");
   redirect("/collection");
