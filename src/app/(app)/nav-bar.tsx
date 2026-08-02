@@ -42,7 +42,7 @@ export function NavBar({ isAuthenticated }: { isAuthenticated: boolean }) {
               </Link>
             );
           })}
-          {isAuthenticated ? (
+          {isAuthenticated && (
             <form action={logout}>
               <button
                 type="submit"
@@ -51,13 +51,6 @@ export function NavBar({ isAuthenticated }: { isAuthenticated: boolean }) {
                 Log out
               </button>
             </form>
-          ) : (
-            <Link
-              href="/login"
-              className="whitespace-nowrap rounded-md border border-brass px-2 py-1.5 text-brass transition-colors hover:bg-brass/10 sm:px-3"
-            >
-              Log in
-            </Link>
           )}
         </nav>
       </div>

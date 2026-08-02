@@ -59,51 +59,58 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col gap-10">
-      <div className="flex flex-col gap-4 rounded-lg border border-felt-line bg-felt-surface p-6">
-        <h1 className="font-display text-2xl font-semibold text-felt-ink">
-          A card collection, catalogued
-        </h1>
-        <p className="max-w-2xl text-sm text-felt-sub">
-          Browse, search, and track a growing collection of playing cards — from limited
-          editions and tarot decks to the designers and studios behind them.
-        </p>
-        <Link
-          href="/collection"
-          className="self-start rounded-md bg-brass px-4 py-2 text-sm font-semibold text-felt-bg hover:bg-brass-deep"
-        >
-          View the whole collection
-        </Link>
-      </div>
+      <div className="flex flex-col gap-6 lg:flex-row">
+        <div className="flex flex-1 flex-col gap-4 rounded-lg border border-felt-line bg-felt-surface p-6">
+          <h1 className="font-display text-2xl font-semibold text-felt-ink">
+            Tim&rsquo;s Card Collection
+          </h1>
+          <p className="max-w-2xl text-sm text-felt-sub">
+            I&rsquo;ve been collecting playing cards since 2018, and spent several years running
+            a YouTube channel doing deck reviews (
+            <a
+              href="https://www.youtube.com/watch?v=c9Siin5SSig&t=535s"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brass hover:text-brass-deep"
+            >
+              here&rsquo;s one
+            </a>
+            ). Along the way I even brought my own deck to life on Kickstarter, Rattler Gorge.
+            This is where I catalog and share the collection as it keeps growing.
+          </p>
+          <Link
+            href="/collection"
+            className="self-start rounded-md bg-brass px-4 py-2 text-sm font-semibold text-felt-bg hover:bg-brass-deep"
+          >
+            View the whole collection
+          </Link>
+        </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:w-96">
-        <StatTile label="Total unique decks" value={totalDecks} />
-        <StatTile label="Total decks" value={qtySum._sum.qty ?? 0} />
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-felt-sub">Featured creators</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {creatorsData.map((creator) => (
-            <CreatorCard
-              key={creator.designer}
-              designer={creator.designer}
-              producer={creator.producer}
-              bio={creator.bio}
-              accent={creator.accent}
-              initials={creator.initials}
-              logoUrl={creator.logoUrl}
-              deckCount={creator.deckCount}
-              randomDecks={creator.randomDecks}
-            />
-          ))}
+        <div className="grid grid-cols-2 gap-4 lg:w-56 lg:grid-cols-1">
+          <StatTile label="Total unique decks" value={totalDecks} />
+          <StatTile label="Total decks" value={qtySum._sum.qty ?? 0} />
         </div>
       </div>
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-felt-sub">Recently added</h2>
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10">
-          {recentDecks.map((deck) => (
-            <DeckCard key={deck.id} deck={deck} />
+        <h2 className="text-sm font-medium text-felt-sub">Featured creators</h2>
+        <div className="flex flex-wrap justify-center gap-4">
+          {creatorsData.map((creator) => (
+            <div
+              key={creator.designer}
+              className="w-full sm:w-[calc(50%-0.5rem)] xl:w-[calc(33.333%-0.667rem)]"
+            >
+              <CreatorCard
+                designer={creator.designer}
+                producer={creator.producer}
+                bio={creator.bio}
+                accent={creator.accent}
+                initials={creator.initials}
+                logoUrl={creator.logoUrl}
+                deckCount={creator.deckCount}
+                randomDecks={creator.randomDecks}
+              />
+            </div>
           ))}
         </div>
       </div>
@@ -132,6 +139,15 @@ export default async function HomePage() {
               </Link>
             );
           })}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium text-felt-sub">Recently added</h2>
+        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10">
+          {recentDecks.map((deck) => (
+            <DeckCard key={deck.id} deck={deck} />
+          ))}
         </div>
       </div>
     </div>
