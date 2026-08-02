@@ -19,7 +19,10 @@ export default async function DeckDetailPage({
   const [deck, session] = await Promise.all([
     prisma.deck.findUnique({
       where: { id },
-      include: { images: { orderBy: { sortOrder: "asc" } } },
+      include: {
+        images: { orderBy: { sortOrder: "asc" } },
+        editions: { orderBy: { deckNumber: "asc" } },
+      },
     }),
     getSession(),
   ]);
@@ -141,9 +144,19 @@ export default async function DeckDetailPage({
             </div>
           )}
 
-          {deck.deckNumber && deck.productionRun && (
+          {deck.editions.length > 0 && (
             <div className="flex flex-wrap gap-3">
-              <StatTile label="Edition" value={`${deck.deckNumber}/${deck.productionRun}`} />
+              {deck.editions.map((edition) => (
+                <StatTile
+                  key={edition.id}
+                  label="Edition"
+                  value={
+                    deck.productionRun
+                      ? `${edition.deckNumber}/${deck.productionRun}`
+                      : `#${edition.deckNumber}`
+                  }
+                />
+              ))}
             </div>
           )}
 

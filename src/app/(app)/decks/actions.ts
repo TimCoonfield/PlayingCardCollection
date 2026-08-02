@@ -28,7 +28,6 @@ function toDeckData(values: DeckFormValues) {
     producer: values.producer ?? null,
     ownershipStatus: values.ownershipStatus,
     qty: values.qty,
-    deckNumber: values.deckNumber ?? null,
     productionRun: values.productionRun ?? null,
     notes: values.notes ?? null,
     catalogNumber: values.catalogNumber ?? null,
@@ -55,6 +54,9 @@ export async function createDeck(
       images: {
         create: parsed.data.imageUrls.map((url, i) => ({ url, sortOrder: i })),
       },
+      editions: {
+        create: parsed.data.editionNumbers.map((deckNumber) => ({ deckNumber })),
+      },
     },
   });
 
@@ -78,12 +80,16 @@ export async function updateDeck(
 
   await prisma.$transaction([
     prisma.deckImage.deleteMany({ where: { deckId } }),
+    prisma.deckEdition.deleteMany({ where: { deckId } }),
     prisma.deck.update({
       where: { id: deckId },
       data: {
         ...toDeckData(parsed.data),
         images: {
           create: parsed.data.imageUrls.map((url, i) => ({ url, sortOrder: i })),
+        },
+        editions: {
+          create: parsed.data.editionNumbers.map((deckNumber) => ({ deckNumber })),
         },
       },
     }),

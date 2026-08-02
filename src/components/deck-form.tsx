@@ -12,7 +12,7 @@ export interface DeckFormDefaultValues {
   designer?: string;
   producer?: string;
   qty?: number;
-  deckNumber?: number | null;
+  editionNumbers?: number[];
   productionRun?: number | null;
   notes?: string;
   catalogNumber?: string;
@@ -39,6 +39,10 @@ export function DeckForm({
   const [state, formAction, pending] = useActionState<DeckFormState, FormData>(action, {});
   const [tags, setTags] = useState<string[]>(defaultValues.tags ?? []);
   const [imageUrls, setImageUrls] = useState<string[]>(initialImages.map((i) => i.url));
+  const [editionNumbers, setEditionNumbers] = useState<string[]>(
+    (defaultValues.editionNumbers ?? []).map(String)
+  );
+  const [qty, setQty] = useState<number>(defaultValues.qty ?? 1);
   const [identifying, setIdentifying] = useState(false);
   const [identifyError, setIdentifyError] = useState<string | null>(null);
   const [identified, setIdentified] = useState(false);
@@ -47,7 +51,6 @@ export function DeckForm({
   const seriesRef = useRef<HTMLInputElement>(null);
   const designerRef = useRef<HTMLInputElement>(null);
   const producerRef = useRef<HTMLInputElement>(null);
-  const deckNumberRef = useRef<HTMLInputElement>(null);
   const productionRunRef = useRef<HTMLInputElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
 
@@ -70,8 +73,10 @@ export function DeckForm({
       if (seriesRef.current && result.series) seriesRef.current.value = result.series;
       if (designerRef.current && result.designer) designerRef.current.value = result.designer;
       if (producerRef.current && result.producer) producerRef.current.value = result.producer;
-      if (deckNumberRef.current && result.deckNumber)
-        deckNumberRef.current.value = String(result.deckNumber);
+      if (result.deckNumber) {
+        const detected = String(result.deckNumber);
+        setEditionNumbers((prev) => (prev.includes(detected) ? prev : [...prev, detected]));
+      }
       if (productionRunRef.current && result.productionRun)
         productionRunRef.current.value = String(result.productionRun);
       if (notesRef.current && result.notes) notesRef.current.value = result.notes;
@@ -140,6 +145,7 @@ export function DeckForm({
             type="number"
             min={1}
             defaultValue={defaultValues.qty ?? 1}
+            onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))}
             className={inputClass}
           />
         </Field>
@@ -171,16 +177,6 @@ export function DeckForm({
             ))}
           </datalist>
         </Field>
-        <Field label="Edition # (e.g. 391)">
-          <input
-            ref={deckNumberRef}
-            name="deckNumber"
-            type="number"
-            min={1}
-            defaultValue={defaultValues.deckNumber ?? ""}
-            className={inputClass}
-          />
-        </Field>
         <Field label="Production run (e.g. 700)">
           <input
             ref={productionRunRef}
@@ -195,6 +191,54 @@ export function DeckForm({
           <input name="catalogNumber" defaultValue={defaultValues.catalogNumber} className={inputClass} />
         </Field>
       </div>
+
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-1 text-sm font-medium text-felt-sub">Edition numbers</legend>
+        {editionNumbers.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {editionNumbers.map((num, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  required
+                  name="editionNumbers"
+                  placeholder="e.g. 391"
+                  value={num}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setEditionNumbers((prev) => prev.map((n, idx) => (idx === i ? value : n)));
+                  }}
+                  className={inputClass}
+                />
+                <button
+                  type="button"
+                  onClick={() => setEditionNumbers((prev) => prev.filter((_, idx) => idx !== i))}
+                  className="text-xs text-felt-sub hover:text-brick"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => setEditionNumbers((prev) => [...prev, ""])}
+          disabled={editionNumbers.length >= qty}
+          className="self-start rounded-md border border-felt-line px-3 py-1.5 text-xs text-felt-sub hover:border-brass hover:text-brass disabled:opacity-50"
+        >
+          + Add edition
+        </button>
+        {editionNumbers.length >= qty && (
+          <span className="text-xs text-felt-sub/70">
+            Can&rsquo;t have more editions than quantity ({qty})
+          </span>
+        )}
+        {state?.fieldErrors?.editionNumbers && (
+          <span className="text-xs text-red-300">{state.fieldErrors.editionNumbers}</span>
+        )}
+      </fieldset>
 
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 text-sm font-medium text-felt-sub">Tags</legend>

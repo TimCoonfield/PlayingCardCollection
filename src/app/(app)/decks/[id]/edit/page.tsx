@@ -13,7 +13,10 @@ export default async function EditDeckPage({
   const [deck, designers, producers] = await Promise.all([
     prisma.deck.findUnique({
       where: { id },
-      include: { images: { orderBy: { sortOrder: "asc" } } },
+      include: {
+        images: { orderBy: { sortOrder: "asc" } },
+        editions: { orderBy: { deckNumber: "asc" } },
+      },
     }),
     prisma.deck.findMany({
       distinct: ["designer"],
@@ -44,7 +47,7 @@ export default async function EditDeckPage({
           designer: deck.designer ?? undefined,
           producer: deck.producer ?? undefined,
           qty: deck.qty,
-          deckNumber: deck.deckNumber,
+          editionNumbers: deck.editions.map((e) => e.deckNumber),
           productionRun: deck.productionRun,
           notes: deck.notes ?? undefined,
           catalogNumber: deck.catalogNumber ?? undefined,

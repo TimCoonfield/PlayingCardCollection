@@ -11,21 +11,21 @@ datasource db {
 }
 
 model Deck {
-  id              String      @id @default(cuid())
+  id              String        @id @default(cuid())
   name            String
   series          String?
   designer        String?
   producer        String?
-  tags            String[]    @default([])
-  ownershipStatus String      @default("Owned")
-  qty             Int         @default(1)
-  deckNumber      Int?
+  tags            String[]      @default([])
+  ownershipStatus String        @default("Owned")
+  qty             Int           @default(1)
   productionRun   Int?
   notes           String?
   catalogNumber   String?
   images          DeckImage[]
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  editions        DeckEdition[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   @@index([tags], type: Gin)
   @@index([designer])
@@ -40,6 +40,16 @@ model DeckImage {
   url       String
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
+
+  @@index([deckId])
+}
+
+model DeckEdition {
+  id         String   @id @default(cuid())
+  deckId     String
+  deck       Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  deckNumber Int
+  createdAt  DateTime @default(now())
 
   @@index([deckId])
 }

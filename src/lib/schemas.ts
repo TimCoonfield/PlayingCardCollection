@@ -12,23 +12,28 @@ const optionalInt = z
   .transform((v) => (v.length > 0 ? Number(v) : undefined))
   .pipe(z.number().int().positive().optional());
 
-export const deckFormSchema = z.object({
-  name: z.string().trim().min(1, "Name is required"),
-  series: optionalString,
-  designer: optionalString,
-  producer: optionalString,
-  ownershipStatus: z.string().trim().min(1).default("Owned"),
-  qty: z
-    .string()
-    .transform((v) => (v.trim().length > 0 ? Number(v) : 1))
-    .pipe(z.number().int().positive()),
-  deckNumber: optionalInt,
-  productionRun: optionalInt,
-  notes: optionalString,
-  catalogNumber: optionalString,
-  tags: z.array(z.string()).default([]),
-  imageUrls: z.array(z.string().url()).default([]),
-});
+export const deckFormSchema = z
+  .object({
+    name: z.string().trim().min(1, "Name is required"),
+    series: optionalString,
+    designer: optionalString,
+    producer: optionalString,
+    ownershipStatus: z.string().trim().min(1).default("Owned"),
+    qty: z
+      .string()
+      .transform((v) => (v.trim().length > 0 ? Number(v) : 1))
+      .pipe(z.number().int().positive()),
+    editionNumbers: z.array(z.coerce.number().int().positive()).default([]),
+    productionRun: optionalInt,
+    notes: optionalString,
+    catalogNumber: optionalString,
+    tags: z.array(z.string()).default([]),
+    imageUrls: z.array(z.string().url()).default([]),
+  })
+  .refine((data) => data.editionNumbers.length <= data.qty, {
+    message: "Can't have more editions than quantity",
+    path: ["editionNumbers"],
+  });
 
 export type DeckFormValues = z.infer<typeof deckFormSchema>;
 
@@ -52,7 +57,7 @@ export function parseDeckFormData(formData: FormData) {
     producer: formData.get("producer") ?? "",
     ownershipStatus: formData.get("ownershipStatus") || "Owned",
     qty: formData.get("qty") ?? "",
-    deckNumber: formData.get("deckNumber") ?? "",
+    editionNumbers: formData.getAll("editionNumbers").map(String),
     productionRun: formData.get("productionRun") ?? "",
     notes: formData.get("notes") ?? "",
     catalogNumber: formData.get("catalogNumber") ?? "",
