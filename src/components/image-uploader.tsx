@@ -105,7 +105,7 @@ async function probeUploadPermission(pathname: string): Promise<void> {
     });
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      throw new Error(`Server responded ${res.status} requesting upload permission: ${body.slice(0, 200)}`);
+      throw new Error(`Server responded ${res.status} requesting upload permission: ${body.slice(0, 400)}`);
     }
   } catch (err) {
     if (controller.signal.aborted) {

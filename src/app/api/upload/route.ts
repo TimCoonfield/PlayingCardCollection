@@ -27,8 +27,18 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     return NextResponse.json(jsonResponse);
   } catch (error) {
+    // Temporary diagnostic: report what this running function actually sees for the token env
+    // var, without exposing the secret itself, to settle whether it's really missing at runtime
+    // vs. a dashboard/deployment mismatch.
+    const raw = process.env.BLOB_READ_WRITE_TOKEN;
+    const tokenDiag = raw
+      ? `present, length ${raw.length}, ${raw.slice(0, 15)}...${raw.slice(-6)}`
+      : "not set";
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Upload failed" },
+      {
+        error: error instanceof Error ? error.message : "Upload failed",
+        diag: { BLOB_READ_WRITE_TOKEN: tokenDiag, VERCEL_ENV: process.env.VERCEL_ENV ?? "unset" },
+      },
       { status: 400 }
     );
   }
