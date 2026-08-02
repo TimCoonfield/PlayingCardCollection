@@ -7,6 +7,7 @@ import { upload } from "@vercel/blob/client";
 interface UploadedImage {
   url: string;
   uploading?: boolean;
+  stage?: "permission" | "transfer";
   progress?: number;
   retries?: number;
   error?: string;
@@ -18,6 +19,7 @@ const COMPRESS_MAX_DIMENSION = 2000;
 const COMPRESS_QUALITY = 0.85;
 const COMPRESS_SKIP_UNDER_BYTES = 1.5 * 1024 * 1024;
 const COMPRESS_TIMEOUT_MS = 8_000;
+const TOKEN_PROBE_TIMEOUT_MS = 15_000;
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -85,6 +87,33 @@ async function compressImage(file: File): Promise<File> {
   }
 }
 
+// Diagnostic-only probe: replicates the SDK's own token request (the very first network call
+// upload() makes) so a hang can be pinned to "our server never responded" vs. "the actual file
+// transfer stalled" — the SDK's real token fetch happens again right after via upload() itself.
+async function probeUploadPermission(pathname: string): Promise<void> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), TOKEN_PROBE_TIMEOUT_MS);
+  try {
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        type: "blob.generate-client-token",
+        payload: { pathname, clientPayload: null, multipart: true },
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`Server responded ${res.status} requesting upload permission`);
+  } catch (err) {
+    if (controller.signal.aborted) {
+      throw new Error("Server did not respond requesting upload permission (not a data-transfer issue)");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export function ImageUploader({
   initialImages = [],
   onImagesChange,
@@ -107,6 +136,7 @@ export function ImageUploader({
     const newEntries: UploadedImage[] = Array.from(files).map(() => ({
       url: "",
       uploading: true,
+      stage: "permission",
     }));
     setImages((prev) => [...prev, ...newEntries]);
     const startIndex = images.length;
@@ -129,8 +159,15 @@ export function ImageUploader({
         let uploadFileSize = file.size;
 
         try {
+          await probeUploadPermission(`decks/${Date.now()}-${file.name}`);
+
           const uploadFile = await compressImage(file);
           uploadFileSize = uploadFile.size;
+          setImages((prev) => {
+            const next = [...prev];
+            next[startIndex + i] = { ...next[startIndex + i], uploading: true, stage: "transfer" };
+            return next;
+          });
           const blob = await upload(`decks/${Date.now()}-${uploadFile.name}`, uploadFile, {
             access: "public",
             handleUploadUrl: "/api/upload",
@@ -194,7 +231,9 @@ export function ImageUploader({
           >
             {img.uploading && (
               <span className="px-1 text-center text-xs text-felt-sub">
-                Uploading{typeof img.progress === "number" ? ` ${Math.round(img.progress)}%` : "..."}
+                {img.stage === "permission"
+                  ? "Requesting permission..."
+                  : `Uploading${typeof img.progress === "number" ? ` ${Math.round(img.progress)}%` : "..."}`}
                 {img.retries ? (
                   <>
                     <br />
