@@ -125,9 +125,12 @@ export function ImageUploader({
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
         let lastPercentage = 0;
+        let retryCount = 0;
+        let uploadFileSize = file.size;
 
         try {
           const uploadFile = await compressImage(file);
+          uploadFileSize = uploadFile.size;
           const blob = await upload(`decks/${Date.now()}-${uploadFile.name}`, uploadFile, {
             access: "public",
             handleUploadUrl: "/api/upload",
@@ -138,6 +141,7 @@ export function ImageUploader({
               // mobile connections) — progress dropping back down means a retry just kicked in.
               const isRetry = percentage < lastPercentage;
               lastPercentage = percentage;
+              if (isRetry) retryCount += 1;
               setImages((prev) => {
                 const next = [...prev];
                 next[startIndex + i] = {
@@ -157,15 +161,14 @@ export function ImageUploader({
           });
         } catch (err) {
           const timedOut = controller.signal.aborted;
+          const diag = `${Math.round(uploadFileSize / 1024)}KB, ${Math.round(lastPercentage)}% sent, ${retryCount} retries`;
           setImages((prev) => {
             const next = [...prev];
             next[startIndex + i] = {
               url: "",
               error: timedOut
-                ? "Upload timed out — check your connection and try again"
-                : err instanceof Error
-                  ? err.message
-                  : "Upload failed",
+                ? `Upload timed out (${diag})`
+                : `${err instanceof Error ? err.message : "Upload failed"} (${diag})`,
             };
             return next;
           });
