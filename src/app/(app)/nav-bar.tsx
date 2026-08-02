@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { logout } from "./logout-action";
 
 const baseLinks = [
+  { href: "/", label: "Home" },
   { href: "/collection", label: "Collection" },
   { href: "/stats", label: "Stats" },
 ];
@@ -12,13 +13,13 @@ const baseLinks = [
 export function NavBar({ isAuthenticated }: { isAuthenticated: boolean }) {
   const pathname = usePathname();
   const links = isAuthenticated
-    ? [baseLinks[0], { href: "/decks/new", label: "Add Deck" }, baseLinks[1]]
+    ? [baseLinks[0], baseLinks[1], { href: "/decks/new", label: "Add Deck" }, baseLinks[2]]
     : baseLinks;
 
   return (
     <header className="sticky top-0 z-10 border-b border-felt-line bg-felt-bg/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-3 sm:gap-4 sm:px-6">
-        <Link href="/collection" className="flex shrink-0 items-center gap-2">
+        <Link href="/" className="flex shrink-0 items-center gap-2">
           <span className="flex h-7 w-7 items-center justify-center rounded-md border border-brass text-brass">
             ♠
           </span>
