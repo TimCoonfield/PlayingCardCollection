@@ -99,11 +99,14 @@ async function probeUploadPermission(pathname: string): Promise<void> {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         type: "blob.generate-client-token",
-        payload: { pathname, clientPayload: null, multipart: true },
+        payload: { pathname, clientPayload: null, multipart: false },
       }),
       signal: controller.signal,
     });
-    if (!res.ok) throw new Error(`Server responded ${res.status} requesting upload permission`);
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`Server responded ${res.status} requesting upload permission: ${body.slice(0, 200)}`);
+    }
   } catch (err) {
     if (controller.signal.aborted) {
       throw new Error("Server did not respond requesting upload permission (not a data-transfer issue)");
