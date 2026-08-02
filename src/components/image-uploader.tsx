@@ -174,7 +174,6 @@ export function ImageUploader({
           const blob = await upload(`decks/${Date.now()}-${uploadFile.name}`, uploadFile, {
             access: "public",
             handleUploadUrl: "/api/upload",
-            multipart: true,
             abortSignal: controller.signal,
             onUploadProgress: ({ percentage }) => {
               // The SDK retries the whole PUT on transient network errors (common on flaky
