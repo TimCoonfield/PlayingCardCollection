@@ -38,7 +38,7 @@ export function CreatorCard({
   randomDecks: CreatorRandomDeck[];
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-felt-line bg-felt-surface p-4">
+    <div className="flex h-full flex-col gap-3 rounded-lg border border-felt-line bg-felt-surface p-4">
       <div className="flex items-start gap-3">
         {logoUrl ? (
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-felt-ink p-2">
@@ -85,7 +85,7 @@ export function CreatorCard({
 
       <Link
         href={`/collection?designer=${encodeURIComponent(designer)}`}
-        className="text-xs font-medium text-brass hover:text-brass-deep"
+        className="mt-auto text-xs font-medium text-brass hover:text-brass-deep"
       >
         View all {deckCount} decks by {designer} →
       </Link>

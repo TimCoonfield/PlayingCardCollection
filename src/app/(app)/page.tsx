@@ -66,17 +66,18 @@ export default async function HomePage() {
           </h1>
           <p className="max-w-2xl text-sm text-felt-sub">
             I&rsquo;ve been collecting playing cards since 2018, and spent several years running
-            a YouTube channel doing deck reviews (
+            a YouTube channel (
             <a
-              href="https://www.youtube.com/watch?v=c9Siin5SSig&t=535s"
+              href="https://www.youtube.com/@TheCardGuyReviews"
               target="_blank"
               rel="noopener noreferrer"
               className="text-brass hover:text-brass-deep"
             >
-              here&rsquo;s one
+              The Card Guy Reviews
             </a>
-            ). Along the way I even brought my own deck to life on Kickstarter, Rattler Gorge.
-            This is where I catalog and share the collection as it keeps growing.
+            ) doing deck reviews. Along the way I even brought my own deck to life on
+            Kickstarter, Rattler Gorge. This is where I catalog and share the collection as it
+            keeps growing.
           </p>
           <Link
             href="/collection"
