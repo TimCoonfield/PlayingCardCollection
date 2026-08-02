@@ -17,7 +17,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         return {
           allowedContentTypes: ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"],
           addRandomSuffix: true,
-          maximumSizeInBytes: 25 * 1024 * 1024,
+          maximumSizeInBytes: 50 * 1024 * 1024,
           // Default token validity is only 30s — too short for a large phone photo on a
           // slow connection. Give uploads up to 10 minutes to finish.
           validUntil: Date.now() + 10 * 60 * 1000,

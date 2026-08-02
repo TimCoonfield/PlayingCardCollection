@@ -11,6 +11,9 @@ interface UploadedImage {
   error?: string;
 }
 
+const MAX_FILE_BYTES = 50 * 1024 * 1024;
+const UPLOAD_TIMEOUT_MS = 60_000;
+
 export function ImageUploader({
   initialImages = [],
   onImagesChange,
@@ -39,11 +42,23 @@ export function ImageUploader({
 
     await Promise.all(
       Array.from(files).map(async (file, i) => {
+        if (file.size > MAX_FILE_BYTES) {
+          setImages((prev) => {
+            const next = [...prev];
+            next[startIndex + i] = { url: "", error: "Photo too large (50MB max)" };
+            return next;
+          });
+          return;
+        }
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
+
         try {
           const blob = await upload(`decks/${Date.now()}-${file.name}`, file, {
             access: "public",
             handleUploadUrl: "/api/upload",
-            multipart: true,
+            abortSignal: controller.signal,
             onUploadProgress: ({ percentage }) => {
               setImages((prev) => {
                 const next = [...prev];
@@ -58,14 +73,21 @@ export function ImageUploader({
             return next;
           });
         } catch (err) {
+          const timedOut = err instanceof Error && err.name === "AbortError";
           setImages((prev) => {
             const next = [...prev];
             next[startIndex + i] = {
               url: "",
-              error: err instanceof Error ? err.message : "Upload failed",
+              error: timedOut
+                ? "Upload timed out — check your connection and try again"
+                : err instanceof Error
+                  ? err.message
+                  : "Upload failed",
             };
             return next;
           });
+        } finally {
+          clearTimeout(timeout);
         }
       })
     );

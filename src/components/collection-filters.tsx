@@ -110,6 +110,7 @@ export function CollectionFilters({
 
   function clearAll() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    setExpanded(false);
     startTransition(() => router.push("/collection"));
   }
 
