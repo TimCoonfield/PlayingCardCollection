@@ -75,7 +75,7 @@ export default async function DeckDetailPage({
                   className="relative aspect-[3/4] overflow-hidden rounded-lg border border-felt-line bg-felt-surface"
                 >
                   <Image src={img.url} alt={deck.name} fill sizes="400px" className="object-cover" />
-                  <AccentBar tags={deck.tags} />
+                  <AccentBar tags={deck.tags} thick />
                 </div>
               ))}
             </div>
@@ -92,7 +92,7 @@ export default async function DeckDetailPage({
             </div>
           ) : (
             <div className="aspect-[3/4] overflow-hidden rounded-lg border border-felt-line">
-              <DeckPlaceholder tags={deck.tags} size="lg" />
+              <DeckPlaceholder tags={deck.tags} size="lg" thickAccent />
             </div>
           )}
         </div>

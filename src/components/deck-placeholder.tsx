@@ -23,9 +23,11 @@ const ACCENT_CLASSES: Record<string, { text: string; bar: string }> = {
 export function DeckPlaceholder({
   tags,
   size = "md",
+  thickAccent = false,
 }: {
   tags: string[];
   size?: "sm" | "md" | "lg";
+  thickAccent?: boolean;
 }) {
   const style = getDeckPlaceholder(tags);
   const accent = ACCENT_CLASSES[style.accent] ?? ACCENT_CLASSES.brass;
@@ -43,14 +45,17 @@ export function DeckPlaceholder({
           ♠
         </span>
       )}
-      <AccentBar tags={tags} />
+      <AccentBar tags={tags} thick={thickAccent} />
     </div>
   );
 }
 
-/** The same bottom accent bar the placeholder uses, for reuse over a real photo. */
-export function AccentBar({ tags }: { tags: string[] }) {
+/** The same bottom accent bar the placeholder uses, for reuse over a real photo. `thick` is
+ * used on the deck detail page, where the bar needs to read clearly at a much larger size. */
+export function AccentBar({ tags, thick = false }: { tags: string[]; thick?: boolean }) {
   const style = getDeckPlaceholder(tags);
   const accent = ACCENT_CLASSES[style.accent] ?? ACCENT_CLASSES.brass;
-  return <span className={`absolute inset-x-0 bottom-0 h-[3px] ${accent.bar} opacity-70`} />;
+  return (
+    <span className={`absolute inset-x-0 bottom-0 ${thick ? "h-[9px]" : "h-[3px]"} ${accent.bar} opacity-70`} />
+  );
 }

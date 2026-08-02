@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { StatTile } from "@/components/stat-tile";
 import { HorizontalRankedChart, PieBreakdownChart } from "@/components/stats-charts";
 import { SeriesShowcase, type SeriesSpotlightDatum } from "@/components/series-showcase";
+import { DeckCard } from "@/components/deck-card";
 
 const CHART_COLORS = {
   designer: "#b58a35",
@@ -22,6 +23,7 @@ export default async function StatsPage() {
     vintageCount,
     antiqueCount,
     topSeriesGroups,
+    recentDecks,
   ] = await Promise.all([
     prisma.deck.count(),
     prisma.deck.aggregate({ _sum: { qty: true } }),
@@ -47,6 +49,20 @@ export default async function StatsPage() {
       _count: { _all: true },
       orderBy: { _count: { series: "desc" } },
       take: 3,
+    }),
+    prisma.deck.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      select: {
+        id: true,
+        name: true,
+        series: true,
+        designer: true,
+        producer: true,
+        qty: true,
+        tags: true,
+        images: { take: 1, orderBy: { sortOrder: "asc" }, select: { url: true } },
+      },
     }),
   ]);
 
@@ -97,6 +113,15 @@ export default async function StatsPage() {
       <ChartCard title="Biggest series in the collection">
         <SeriesShowcase items={seriesShowcase} />
       </ChartCard>
+
+      <div className="flex flex-col gap-3">
+        <h2 className="text-sm font-medium text-felt-sub">Recently added</h2>
+        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10">
+          {recentDecks.map((deck) => (
+            <DeckCard key={deck.id} deck={deck} />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
