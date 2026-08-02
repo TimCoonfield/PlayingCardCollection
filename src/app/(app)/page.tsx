@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { StatTile } from "@/components/stat-tile";
 import { DeckCard } from "@/components/deck-card";
 import { CreatorCard, type CreatorRandomDeck } from "@/components/creator-card";
@@ -22,15 +23,22 @@ export default async function HomePage() {
     prisma.deck.aggregate({ _sum: { qty: true } }),
     Promise.all(
       FEATURED_CREATORS.map(async (creator) => {
+        const whereSql = creator.matchProducerToo
+          ? Prisma.sql`(d.designer = ${creator.designer} OR d.producer = ${creator.designer})`
+          : Prisma.sql`d.designer = ${creator.designer}`;
         const [deckCount, randomDecks] = await Promise.all([
-          prisma.deck.count({ where: { designer: creator.designer } }),
+          prisma.deck.count({
+            where: creator.matchProducerToo
+              ? { OR: [{ designer: creator.designer }, { producer: creator.designer }] }
+              : { designer: creator.designer },
+          }),
           prisma.$queryRaw<CreatorRandomDeck[]>`
             SELECT d.id, d.name, d.tags, img.url as "imageUrl"
             FROM "Deck" d
             LEFT JOIN LATERAL (
               SELECT url FROM "DeckImage" WHERE "deckId" = d.id ORDER BY "sortOrder" ASC LIMIT 1
             ) img ON true
-            WHERE d.designer = ${creator.designer}
+            WHERE ${whereSql}
             ORDER BY RANDOM()
             LIMIT 3
           `,
@@ -108,8 +116,14 @@ export default async function HomePage() {
                 accent={creator.accent}
                 initials={creator.initials}
                 logoUrl={creator.logoUrl}
+                logoAlt={creator.logoAlt}
                 deckCount={creator.deckCount}
                 randomDecks={creator.randomDecks}
+                viewAllHref={
+                  creator.matchProducerToo
+                    ? `/collection?creator=${encodeURIComponent(creator.designer)}`
+                    : `/collection?designer=${encodeURIComponent(creator.designer)}`
+                }
               />
             </div>
           ))}

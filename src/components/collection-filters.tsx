@@ -37,7 +37,12 @@ export function CollectionFilters({
   const producer = searchParams.get("producer") ?? "";
   const series = searchParams.get("series") ?? "";
   const tags = searchParams.getAll("tag");
-  const nonSearchFilterCount = [designer, producer, series].filter(Boolean).length + tags.length;
+  // "creator" isn't a filter surfaced in this UI (see collection/page.tsx) — it's a link-only
+  // param from the homepage's featured-creator cards — but it still needs to count here so
+  // "Clear all" appears and the extra filters start expanded when arriving via that link.
+  const creator = searchParams.get("creator") ?? "";
+  const nonSearchFilterCount =
+    [designer, producer, series, creator].filter(Boolean).length + tags.length;
   const hasFilters = Boolean(q) || nonSearchFilterCount > 0;
 
   // On mobile the extra filters start collapsed to save space, unless some are already

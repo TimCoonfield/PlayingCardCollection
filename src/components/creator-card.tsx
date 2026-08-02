@@ -25,8 +25,10 @@ export function CreatorCard({
   accent,
   initials,
   logoUrl,
+  logoAlt,
   deckCount,
   randomDecks,
+  viewAllHref,
 }: {
   designer: string;
   producer: string;
@@ -34,15 +36,23 @@ export function CreatorCard({
   accent: CreatorAccent;
   initials: string;
   logoUrl?: string;
+  logoAlt?: string;
   deckCount: number;
   randomDecks: CreatorRandomDeck[];
+  viewAllHref: string;
 }) {
   return (
     <div className="flex h-full flex-col gap-3 rounded-lg border border-felt-line bg-felt-surface p-4">
       <div className="flex items-start gap-3">
         {logoUrl ? (
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-felt-ink p-2">
-            <Image src={logoUrl} alt={`${producer} logo`} width={56} height={56} className="h-full w-full object-contain" />
+            <Image
+              src={logoUrl}
+              alt={logoAlt ?? `${producer} logo`}
+              width={56}
+              height={56}
+              className="h-full w-full object-contain"
+            />
           </div>
         ) : (
           <div
@@ -84,7 +94,7 @@ export function CreatorCard({
       )}
 
       <Link
-        href={`/collection?designer=${encodeURIComponent(designer)}`}
+        href={viewAllHref}
         className="mt-auto text-xs font-medium text-brass hover:text-brass-deep"
       >
         View all {deckCount} decks by {designer} →

@@ -6,8 +6,15 @@ export interface FeaturedCreator {
   bio: string;
   accent: CreatorAccent;
   initials: string;
-  /** Real brand logo, hosted in Blob. Falls back to a monogram when absent. */
+  /** Real brand logo (or other representative image), hosted in Blob. Falls back to a
+   * monogram when absent. */
   logoUrl?: string;
+  /** Alt text for logoUrl. Defaults to "{producer} logo" when omitted. */
+  logoAlt?: string;
+  /** When true, "their decks" also includes decks where they're only credited as producer
+   * (not designer) — e.g. decks they produced but someone else drew. Changes the "View all"
+   * link from ?designer= to the OR-matching ?creator= filter. */
+  matchProducerToo?: boolean;
 }
 
 // Hand-picked, not derived from collection stats. Bios are a starting point sourced from
@@ -53,5 +60,15 @@ export const FEATURED_CREATORS: FeaturedCreator[] = [
     accent: "plum",
     initials: "ED",
     logoUrl: "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/elettra-deganello.webp",
+  },
+  {
+    designer: "Karl Gerich",
+    producer: "Karl Gerich",
+    bio: "Karl Alexander Gerich (1956–2016) hand-etched and hand-coloured playing cards from his studio in Bath, England, producing 37 numbered designs between 1980 and 1998 on his own printing press — he even made the boxes himself. His partner Georgina Harvey drew several of the decks he produced, working together as the Victoria Playing Card Co.",
+    accent: "brick",
+    initials: "KG",
+    logoUrl: "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/karl-gerich-joker.jpg",
+    logoAlt: "Joker card self-portrait by Karl Gerich",
+    matchProducerToo: true,
   },
 ];

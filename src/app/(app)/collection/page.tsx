@@ -28,6 +28,10 @@ export default async function CollectionPage({
   const q = toParam(params.q).trim();
   const designer = toParam(params.designer);
   const producer = toParam(params.producer);
+  // Matches decks where this name is credited as EITHER designer or producer — used by the
+  // homepage's featured-creator links for creators who sometimes only produced a deck someone
+  // else drew (or vice versa). Not exposed in the filter UI itself, just a link target.
+  const creator = toParam(params.creator);
   const series = toParam(params.series);
   const tags = toArrayParam(params.tag);
   const page = Math.max(1, Number(toParam(params.page)) || 1);
@@ -48,6 +52,7 @@ export default async function CollectionPage({
   }
   if (designer) and.push({ designer });
   if (producer) and.push({ producer });
+  if (creator) and.push({ OR: [{ designer: creator }, { producer: creator }] });
   if (series) and.push({ series });
   if (tags.length > 0) and.push({ tags: { hasSome: tags } });
   if (and.length > 0) where.AND = and;
@@ -89,6 +94,7 @@ export default async function CollectionPage({
   if (q) currentSearchParams.set("q", q);
   if (designer) currentSearchParams.set("designer", designer);
   if (producer) currentSearchParams.set("producer", producer);
+  if (creator) currentSearchParams.set("creator", creator);
   if (series) currentSearchParams.set("series", series);
   for (const tag of tags) currentSearchParams.append("tag", tag);
 
