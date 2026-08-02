@@ -8,8 +8,6 @@ interface UploadedImage {
   url: string;
   uploading?: boolean;
   stage?: "permission" | "transfer";
-  progress?: number;
-  retries?: number;
   error?: string;
 }
 
@@ -157,8 +155,6 @@ export function ImageUploader({
 
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
-        let lastPercentage = 0;
-        let retryCount = 0;
         let uploadFileSize = file.size;
 
         try {
@@ -171,27 +167,15 @@ export function ImageUploader({
             next[startIndex + i] = { ...next[startIndex + i], uploading: true, stage: "transfer" };
             return next;
           });
+          // Deliberately no onUploadProgress here: passing one forces the SDK onto a
+          // streamed-fetch path (ReadableStream body, re-chunked to 64KB, duplex: "half")
+          // instead of sending the file as a plain body — and that streaming path is where
+          // uploads have been consistently stalling. Without it, the SDK just sends the file
+          // directly, which is much more broadly supported.
           const blob = await upload(`decks/${Date.now()}-${uploadFile.name}`, uploadFile, {
             access: "public",
             handleUploadUrl: "/api/upload",
             abortSignal: controller.signal,
-            onUploadProgress: ({ percentage }) => {
-              // The SDK retries the whole PUT on transient network errors (common on flaky
-              // mobile connections) — progress dropping back down means a retry just kicked in.
-              const isRetry = percentage < lastPercentage;
-              lastPercentage = percentage;
-              if (isRetry) retryCount += 1;
-              setImages((prev) => {
-                const next = [...prev];
-                next[startIndex + i] = {
-                  ...next[startIndex + i],
-                  uploading: true,
-                  progress: percentage,
-                  retries: isRetry ? (next[startIndex + i]?.retries ?? 0) + 1 : next[startIndex + i]?.retries,
-                };
-                return next;
-              });
-            },
           });
           setImages((prev) => {
             const next = [...prev];
@@ -200,7 +184,7 @@ export function ImageUploader({
           });
         } catch (err) {
           const timedOut = controller.signal.aborted;
-          const diag = `${Math.round(uploadFileSize / 1024)}KB, ${Math.round(lastPercentage)}% sent, ${retryCount} retries`;
+          const diag = `${Math.round(uploadFileSize / 1024)}KB`;
           setImages((prev) => {
             const next = [...prev];
             next[startIndex + i] = {
@@ -233,15 +217,7 @@ export function ImageUploader({
           >
             {img.uploading && (
               <span className="px-1 text-center text-xs text-felt-sub">
-                {img.stage === "permission"
-                  ? "Requesting permission..."
-                  : `Uploading${typeof img.progress === "number" ? ` ${Math.round(img.progress)}%` : "..."}`}
-                {img.retries ? (
-                  <>
-                    <br />
-                    Retrying upload (attempt {img.retries + 1})
-                  </>
-                ) : null}
+                {img.stage === "permission" ? "Requesting permission..." : "Uploading..."}
               </span>
             )}
             {img.error && (
