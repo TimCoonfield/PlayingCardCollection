@@ -17,30 +17,62 @@ const UPLOAD_TIMEOUT_MS = 120_000;
 const COMPRESS_MAX_DIMENSION = 2000;
 const COMPRESS_QUALITY = 0.85;
 const COMPRESS_SKIP_UNDER_BYTES = 1.5 * 1024 * 1024;
+const COMPRESS_TIMEOUT_MS = 8_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("compression timed out")), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
+}
 
 // Phone camera photos (5-15MB HEIC/JPEG) take long enough to upload that something along
 // the way reliably kills the transfer before it finishes. Shrinking the file client-side
 // cuts transfer time dramatically and sidesteps whatever that is. Falls back to the
-// original file untouched if decoding/encoding isn't supported for the given format.
+// original file untouched if decoding/encoding isn't supported, or doesn't finish quickly
+// (e.g. createImageBitmap can hang indefinitely on HEIC in some Safari versions instead of
+// erroring, so we decode via <img> — the same path Safari uses for HEIC previews — and cap
+// every step with a timeout so a stuck decode can never block the upload).
 async function compressImage(file: File): Promise<File> {
   if (!file.type.startsWith("image/") || file.size < COMPRESS_SKIP_UNDER_BYTES) return file;
 
+  let objectUrl: string | null = null;
   try {
-    const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, COMPRESS_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
-    const width = Math.round(bitmap.width * scale);
-    const height = Math.round(bitmap.height * scale);
+    objectUrl = URL.createObjectURL(file);
+    const url = objectUrl;
+    const img = await withTimeout(
+      new Promise<HTMLImageElement>((resolve, reject) => {
+        const el = new window.Image();
+        el.onload = () => resolve(el);
+        el.onerror = () => reject(new Error("decode failed"));
+        el.src = url;
+      }),
+      COMPRESS_TIMEOUT_MS
+    );
+
+    const scale = Math.min(1, COMPRESS_MAX_DIMENSION / Math.max(img.naturalWidth, img.naturalHeight));
+    const width = Math.round(img.naturalWidth * scale);
+    const height = Math.round(img.naturalHeight * scale);
 
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d");
     if (!ctx) return file;
-    ctx.drawImage(bitmap, 0, 0, width, height);
-    bitmap.close();
+    ctx.drawImage(img, 0, 0, width, height);
 
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", COMPRESS_QUALITY)
+    const blob = await withTimeout(
+      new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", COMPRESS_QUALITY)),
+      COMPRESS_TIMEOUT_MS
     );
     if (!blob || blob.size >= file.size) return file;
 
@@ -48,6 +80,8 @@ async function compressImage(file: File): Promise<File> {
     return new File([blob], name, { type: "image/jpeg" });
   } catch {
     return file;
+  } finally {
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
   }
 }
 
