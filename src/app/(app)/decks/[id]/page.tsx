@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { DeckPlaceholder } from "@/components/deck-placeholder";
+import { DeckPlaceholder, AccentBar } from "@/components/deck-placeholder";
 import { BackLink } from "@/components/back-link";
 import { StatTile } from "@/components/stat-tile";
 import { TagChip } from "@/components/tag-chip";
@@ -64,7 +64,7 @@ export default async function DeckDetailPage({
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         <div className="flex flex-col gap-3">
-          {deck.images.length > 0 ? (
+          {deck.images.length > 1 ? (
             <div className="grid grid-cols-2 gap-3">
               {deck.images.map((img) => (
                 <div
@@ -72,8 +72,20 @@ export default async function DeckDetailPage({
                   className="relative aspect-[3/4] overflow-hidden rounded-lg border border-felt-line bg-felt-surface"
                 >
                   <Image src={img.url} alt={deck.name} fill sizes="400px" className="object-cover" />
+                  <AccentBar tags={deck.tags} />
                 </div>
               ))}
+            </div>
+          ) : deck.images.length === 1 ? (
+            <div className="relative aspect-[3/4] overflow-hidden rounded-lg border border-felt-line bg-felt-surface">
+              <Image
+                src={deck.images[0].url}
+                alt={deck.name}
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
+              />
+              <AccentBar tags={deck.tags} />
             </div>
           ) : (
             <div className="aspect-[3/4] overflow-hidden rounded-lg border border-felt-line">

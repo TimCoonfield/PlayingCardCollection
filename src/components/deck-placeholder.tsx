@@ -43,7 +43,14 @@ export function DeckPlaceholder({
           ♠
         </span>
       )}
-      <span className={`absolute inset-x-0 bottom-0 h-[3px] ${accent.bar} opacity-70`} />
+      <AccentBar tags={tags} />
     </div>
   );
+}
+
+/** The same bottom accent bar the placeholder uses, for reuse over a real photo. */
+export function AccentBar({ tags }: { tags: string[] }) {
+  const style = getDeckPlaceholder(tags);
+  const accent = ACCENT_CLASSES[style.accent] ?? ACCENT_CLASSES.brass;
+  return <span className={`absolute inset-x-0 bottom-0 h-[3px] ${accent.bar} opacity-70`} />;
 }
