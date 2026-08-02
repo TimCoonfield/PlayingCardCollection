@@ -1,8 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { DeckPlaceholder, AccentBar } from "@/components/deck-placeholder";
+import { DeckGallery } from "@/components/deck-gallery";
 import { BackLink } from "@/components/back-link";
 import { StatTile } from "@/components/stat-tile";
 import { TagChip } from "@/components/tag-chip";
@@ -66,36 +65,7 @@ export default async function DeckDetailPage({
       </div>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-        <div className="flex flex-col gap-3">
-          {deck.images.length > 1 ? (
-            <div className="grid grid-cols-2 gap-3">
-              {deck.images.map((img) => (
-                <div
-                  key={img.id}
-                  className="relative aspect-[3/4] overflow-hidden rounded-lg border border-felt-line bg-felt-surface"
-                >
-                  <Image src={img.url} alt={deck.name} fill sizes="400px" className="object-cover" />
-                  <AccentBar tags={deck.tags} thick />
-                </div>
-              ))}
-            </div>
-          ) : deck.images.length === 1 ? (
-            <div className="relative aspect-[3/4] overflow-hidden rounded-lg border border-felt-line bg-felt-surface">
-              <Image
-                src={deck.images[0].url}
-                alt={deck.name}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover"
-              />
-              <AccentBar tags={deck.tags} />
-            </div>
-          ) : (
-            <div className="aspect-[3/4] overflow-hidden rounded-lg border border-felt-line">
-              <DeckPlaceholder tags={deck.tags} size="lg" thickAccent />
-            </div>
-          )}
-        </div>
+        <DeckGallery images={deck.images} tags={deck.tags} deckName={deck.name} />
 
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-1">
