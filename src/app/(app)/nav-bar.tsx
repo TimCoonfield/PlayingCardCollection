@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { HeaderSearch } from "@/components/header-search";
 import { logout } from "./logout-action";
 
 const baseLinks = [
@@ -42,6 +43,7 @@ export function NavBar({ isAuthenticated }: { isAuthenticated: boolean }) {
               </Link>
             );
           })}
+          <HeaderSearch />
           {isAuthenticated && (
             <form action={logout}>
               <button
