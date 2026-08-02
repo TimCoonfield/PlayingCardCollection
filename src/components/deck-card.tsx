@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { DeckPlaceholder } from "./deck-placeholder";
+import { DeckPlaceholder, AccentBar } from "./deck-placeholder";
 
 export interface DeckCardData {
   id: string;
@@ -23,13 +23,16 @@ export function DeckCard({ deck }: { deck: DeckCardData }) {
     >
       <div className="relative aspect-[3/4] w-full bg-felt-surface-2">
         {image ? (
-          <Image
-            src={image.url}
-            alt={deck.name}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
-            className="object-cover transition-transform group-hover:scale-105"
-          />
+          <>
+            <Image
+              src={image.url}
+              alt={deck.name}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
+              className="object-cover transition-transform group-hover:scale-105"
+            />
+            <AccentBar tags={deck.tags} />
+          </>
         ) : (
           <DeckPlaceholder tags={deck.tags} size="md" />
         )}
