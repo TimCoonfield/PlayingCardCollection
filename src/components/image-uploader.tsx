@@ -8,6 +8,7 @@ interface UploadedImage {
   url: string;
   uploading?: boolean;
   progress?: number;
+  retries?: number;
   error?: string;
 }
 
@@ -53,6 +54,7 @@ export function ImageUploader({
 
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
+        let lastPercentage = 0;
 
         try {
           const blob = await upload(`decks/${Date.now()}-${file.name}`, file, {
@@ -60,9 +62,18 @@ export function ImageUploader({
             handleUploadUrl: "/api/upload",
             abortSignal: controller.signal,
             onUploadProgress: ({ percentage }) => {
+              // The SDK retries the whole PUT on transient network errors (common on flaky
+              // mobile connections) — progress dropping back down means a retry just kicked in.
+              const isRetry = percentage < lastPercentage;
+              lastPercentage = percentage;
               setImages((prev) => {
                 const next = [...prev];
-                next[startIndex + i] = { ...next[startIndex + i], uploading: true, progress: percentage };
+                next[startIndex + i] = {
+                  ...next[startIndex + i],
+                  uploading: true,
+                  progress: percentage,
+                  retries: isRetry ? (next[startIndex + i]?.retries ?? 0) + 1 : next[startIndex + i]?.retries,
+                };
                 return next;
               });
             },
@@ -73,7 +84,7 @@ export function ImageUploader({
             return next;
           });
         } catch (err) {
-          const timedOut = err instanceof Error && err.name === "AbortError";
+          const timedOut = controller.signal.aborted;
           setImages((prev) => {
             const next = [...prev];
             next[startIndex + i] = {
@@ -107,8 +118,14 @@ export function ImageUploader({
             className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-md border border-felt-line bg-felt-surface"
           >
             {img.uploading && (
-              <span className="text-xs text-felt-sub">
+              <span className="px-1 text-center text-xs text-felt-sub">
                 Uploading{typeof img.progress === "number" ? ` ${Math.round(img.progress)}%` : "..."}
+                {img.retries ? (
+                  <>
+                    <br />
+                    Retrying (connection dropped, attempt {img.retries + 1})
+                  </>
+                ) : null}
               </span>
             )}
             {img.error && (
