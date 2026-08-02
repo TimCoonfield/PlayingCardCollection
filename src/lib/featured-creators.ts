@@ -44,6 +44,7 @@ export const FEATURED_CREATORS: FeaturedCreator[] = [
     bio: "Alessandra Gagliano is a Sicilian artist who hand-designs every Jocu deck from scratch, starting as pencil sketches or paintings before being reimagined digitally. Her work includes Fillide, inspired by Sicilian folklore, and The Green Man, exploring plant mythology.",
     accent: "sage",
     initials: "AG",
+    logoUrl: "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/jocu.jpeg",
   },
   {
     designer: "Elettra Deganello",
@@ -51,5 +52,6 @@ export const FEATURED_CREATORS: FeaturedCreator[] = [
     bio: "Elettra Deganello is an illustrator and designer based in Prato, Italy, who entered the custom playing card world in 2017 with Pinocchio and Florentia for Passione Playing Cards. She was nominated for 52 Plus Joker's Artist of the Year in the 2021 Diamond Awards and later designed the typography-driven Bicycle Bold Slab deck.",
     accent: "plum",
     initials: "ED",
+    logoUrl: "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/elettra-deganello.webp",
   },
 ];
