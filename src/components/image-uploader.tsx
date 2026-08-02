@@ -13,7 +13,43 @@ interface UploadedImage {
 }
 
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
-const UPLOAD_TIMEOUT_MS = 60_000;
+const UPLOAD_TIMEOUT_MS = 120_000;
+const COMPRESS_MAX_DIMENSION = 2000;
+const COMPRESS_QUALITY = 0.85;
+const COMPRESS_SKIP_UNDER_BYTES = 1.5 * 1024 * 1024;
+
+// Phone camera photos (5-15MB HEIC/JPEG) take long enough to upload that something along
+// the way reliably kills the transfer before it finishes. Shrinking the file client-side
+// cuts transfer time dramatically and sidesteps whatever that is. Falls back to the
+// original file untouched if decoding/encoding isn't supported for the given format.
+async function compressImage(file: File): Promise<File> {
+  if (!file.type.startsWith("image/") || file.size < COMPRESS_SKIP_UNDER_BYTES) return file;
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, COMPRESS_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    const width = Math.round(bitmap.width * scale);
+    const height = Math.round(bitmap.height * scale);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", COMPRESS_QUALITY)
+    );
+    if (!blob || blob.size >= file.size) return file;
+
+    const name = file.name.replace(/\.\w+$/, "") + ".jpg";
+    return new File([blob], name, { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
+}
 
 export function ImageUploader({
   initialImages = [],
@@ -57,9 +93,11 @@ export function ImageUploader({
         let lastPercentage = 0;
 
         try {
-          const blob = await upload(`decks/${Date.now()}-${file.name}`, file, {
+          const uploadFile = await compressImage(file);
+          const blob = await upload(`decks/${Date.now()}-${uploadFile.name}`, uploadFile, {
             access: "public",
             handleUploadUrl: "/api/upload",
+            multipart: true,
             abortSignal: controller.signal,
             onUploadProgress: ({ percentage }) => {
               // The SDK retries the whole PUT on transient network errors (common on flaky
@@ -123,7 +161,7 @@ export function ImageUploader({
                 {img.retries ? (
                   <>
                     <br />
-                    Retrying (connection dropped, attempt {img.retries + 1})
+                    Retrying upload (attempt {img.retries + 1})
                   </>
                 ) : null}
               </span>
