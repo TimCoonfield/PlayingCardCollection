@@ -1,10 +1,9 @@
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { DeckCard } from "@/components/deck-card";
 
-// A faint tiled camera-icon pattern behind the hero, echoing the same technique used on the
-// homepage hero — generated inline so it doesn't need a hosted image asset.
-const SOUVENIR_WATERMARK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="110" height="110" viewBox="0 0 110 110"><g transform="translate(6,8) scale(1.3)" fill="none" stroke="#f3ead1" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" /><circle cx="12" cy="13" r="3.5" /></g><g transform="translate(58,58) scale(1)" fill="none" stroke="#f3ead1" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" /><circle cx="12" cy="13" r="3.5" /></g></svg>`;
-const SOUVENIR_WATERMARK_URL = `url("data:image/svg+xml,${encodeURIComponent(SOUVENIR_WATERMARK_SVG)}")`;
+const SOUVENIR_HERO_IMAGE_URL =
+  "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/pages/souvenir-hero.jpg";
 
 export default async function SouvenirDecksPage() {
   const decks = await prisma.deck.findMany({
@@ -16,22 +15,25 @@ export default async function SouvenirDecksPage() {
   return (
     <div className="flex flex-col gap-8">
       <div className="relative overflow-hidden rounded-lg border border-felt-line bg-felt-surface">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.07]"
-          style={{ backgroundImage: SOUVENIR_WATERMARK_URL, backgroundRepeat: "repeat" }}
+        <Image
+          src={SOUVENIR_HERO_IMAGE_URL}
+          alt=""
+          fill
+          sizes="(min-width: 1024px) 60vw, 100vw"
+          className="pointer-events-none object-cover opacity-[0.1] lg:object-right lg:opacity-100 lg:[mask-image:linear-gradient(to_right,transparent,black_40%)] lg:[-webkit-mask-image:linear-gradient(to_right,transparent,black_40%)]"
         />
-        <div className="relative flex flex-col gap-3 p-6">
+        <div className="relative flex flex-col gap-3 p-6 lg:max-w-xl">
           <h1 className="font-display text-2xl font-semibold text-felt-ink sm:text-3xl">
             Souvenir Decks
           </h1>
-          <p className="max-w-2xl text-sm text-felt-sub">
+          <p className="text-sm text-felt-sub">
             Souvenir decks hold a special place in my collection because they are more than keepsakes—they are small historical objects. I first became interested in them after seeing the Niagara Falls and White Pass and Yukon Route decks at the 2024 52+Joker Convention, and Matt Schacht’s excellent talk the following year only deepened that interest. Made for tourists rather than collectors, these decks preserve how a place, attraction, railroad, or business chose to present itself at a particular moment in time. They can be cheerful, kitschy, and unassuming, but they also capture pieces of history that might otherwise disappear. This is where I’m gathering those stories together.
           </p>
         </div>
       </div>
 
       {decks.length === 0 ? (
-        <p className="py-16 text-center text-felt-sub">No souvenir decks tagged yet.</p>
+        <p className="py-16 text-center text-felt-sub">No souvenir decks yet.</p>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {decks.map((deck) => (
