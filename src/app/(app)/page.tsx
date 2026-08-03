@@ -4,6 +4,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { StatTile } from "@/components/stat-tile";
 import { DeckCard } from "@/components/deck-card";
 import { CreatorCard, type CreatorRandomDeck } from "@/components/creator-card";
+import { CreatorSpotlightCard } from "@/components/creator-spotlight-card";
 import { FEATURED_CREATORS } from "@/lib/featured-creators";
 import { getTagStyle } from "@/lib/placeholders";
 
@@ -104,29 +105,56 @@ export default async function HomePage() {
       <div className="flex flex-col gap-3">
         <h2 className="text-sm font-medium text-felt-sub">Featured creators</h2>
         <div className="flex flex-wrap justify-center gap-4">
-          {creatorsData.map((creator) => (
-            <div
-              key={creator.designer}
-              className="w-full sm:w-[calc(50%-0.5rem)] xl:w-[calc(33.333%-0.667rem)]"
-            >
-              <CreatorCard
-                designer={creator.designer}
-                producer={creator.producer}
-                bio={creator.bio}
-                accent={creator.accent}
-                initials={creator.initials}
-                logoUrl={creator.logoUrl}
-                logoAlt={creator.logoAlt}
-                deckCount={creator.deckCount}
-                randomDecks={creator.randomDecks}
-                viewAllHref={
-                  creator.matchProducerToo
-                    ? `/collection?creator=${encodeURIComponent(creator.designer)}`
-                    : `/collection?designer=${encodeURIComponent(creator.designer)}`
-                }
-              />
-            </div>
-          ))}
+          {creatorsData.map((creator) => {
+            const viewAllHref = creator.matchProducerToo
+              ? `/collection?creator=${encodeURIComponent(creator.designer)}`
+              : `/collection?designer=${encodeURIComponent(creator.designer)}`;
+            return (
+              <div
+                key={creator.designer}
+                className="w-full sm:w-[calc(50%-0.5rem)] xl:w-[calc(33.333%-0.667rem)]"
+              >
+                {creator.designer === "Karl Gerich" ? (
+                  // Poster-style treatment for Karl Gerich — the joker self-portrait as a
+                  // full-bleed watermark instead of the usual bio card. Revert by swapping
+                  // back to the commented CreatorCard call below.
+                  //
+                  // <CreatorCard
+                  //   designer={creator.designer}
+                  //   producer={creator.producer}
+                  //   bio={creator.bio}
+                  //   accent={creator.accent}
+                  //   initials={creator.initials}
+                  //   logoUrl={creator.logoUrl}
+                  //   logoAlt={creator.logoAlt}
+                  //   deckCount={creator.deckCount}
+                  //   randomDecks={creator.randomDecks}
+                  //   viewAllHref={viewAllHref}
+                  // />
+                  <CreatorSpotlightCard
+                    name={creator.designer}
+                    tagline="The Craftsman"
+                    imageUrl={creator.logoUrl!}
+                    imageAlt={creator.logoAlt ?? `${creator.designer} portrait`}
+                    href={viewAllHref}
+                  />
+                ) : (
+                  <CreatorCard
+                    designer={creator.designer}
+                    producer={creator.producer}
+                    bio={creator.bio}
+                    accent={creator.accent}
+                    initials={creator.initials}
+                    logoUrl={creator.logoUrl}
+                    logoAlt={creator.logoAlt}
+                    deckCount={creator.deckCount}
+                    randomDecks={creator.randomDecks}
+                    viewAllHref={viewAllHref}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
