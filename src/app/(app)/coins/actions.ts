@@ -27,12 +27,15 @@ function toCoinData(values: CoinFormValues) {
     designer: values.designer ?? null,
     producer: values.producer ?? null,
     material: values.material ?? null,
+    diameter: values.diameter ?? null,
     ownershipStatus: values.ownershipStatus,
     qty: values.qty,
     releaseYear: values.releaseYear ?? null,
     notes: values.notes ?? null,
     catalogNumber: values.catalogNumber ?? null,
     tags: values.tags,
+    obverseImageUrl: values.obverseImageUrl ?? null,
+    reverseImageUrl: values.reverseImageUrl ?? null,
   };
 }
 
@@ -50,12 +53,7 @@ export async function createCoin(
   }
 
   const coin = await prisma.coin.create({
-    data: {
-      ...toCoinData(parsed.data),
-      images: {
-        create: parsed.data.imageUrls.map((url, i) => ({ url, sortOrder: i })),
-      },
-    },
+    data: toCoinData(parsed.data),
   });
 
   revalidatePath("/coins");
@@ -76,18 +74,10 @@ export async function updateCoin(
     return { error: "Please fix the errors below.", fieldErrors: flatten(parsed.error) };
   }
 
-  await prisma.$transaction([
-    prisma.coinImage.deleteMany({ where: { coinId } }),
-    prisma.coin.update({
-      where: { id: coinId },
-      data: {
-        ...toCoinData(parsed.data),
-        images: {
-          create: parsed.data.imageUrls.map((url, i) => ({ url, sortOrder: i })),
-        },
-      },
-    }),
-  ]);
+  await prisma.coin.update({
+    where: { id: coinId },
+    data: toCoinData(parsed.data),
+  });
 
   revalidatePath("/coins");
   revalidatePath(`/coins/${coinId}`);

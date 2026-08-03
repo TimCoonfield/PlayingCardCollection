@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
-import { ImageUploader } from "./image-uploader";
+import { CoinPhotoSlots } from "./coin-photo-slots";
 import { COIN_TAGS } from "@/lib/coin-schemas";
 import type { CoinFormState } from "@/app/(app)/coins/actions";
 
@@ -11,6 +11,7 @@ export interface CoinFormDefaultValues {
   designer?: string;
   producer?: string;
   material?: string;
+  diameter?: string;
   qty?: number;
   releaseYear?: number | null;
   notes?: string;
@@ -21,21 +22,22 @@ export interface CoinFormDefaultValues {
 export function CoinForm({
   action,
   defaultValues = {},
-  initialImages = [],
+  initialObverseUrl,
+  initialReverseUrl,
   designers,
   producers,
   submitLabel,
 }: {
   action: (prevState: CoinFormState, formData: FormData) => Promise<CoinFormState>;
   defaultValues?: CoinFormDefaultValues;
-  initialImages?: { url: string }[];
+  initialObverseUrl?: string;
+  initialReverseUrl?: string;
   designers: string[];
   producers: string[];
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState<CoinFormState, FormData>(action, {});
   const [tags, setTags] = useState<string[]>(defaultValues.tags ?? []);
-  const [imageUrls, setImageUrls] = useState<string[]>(initialImages.map((i) => i.url));
 
   const nameRef = useRef<HTMLInputElement>(null);
   const seriesRef = useRef<HTMLInputElement>(null);
@@ -46,7 +48,7 @@ export function CoinForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-6 max-w-2xl">
-      <ImageUploader initialImages={initialImages} onImagesChange={setImageUrls} pathPrefix="coins" />
+      <CoinPhotoSlots initialObverseUrl={initialObverseUrl} initialReverseUrl={initialReverseUrl} />
 
       {state?.error && (
         <p className="rounded-md border border-red-900/60 bg-red-950/30 px-3 py-2 text-sm text-red-300">
@@ -65,7 +67,7 @@ export function CoinForm({
       </Field>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Series" error={state?.fieldErrors?.series}>
+        <Field label="Associated Deck" error={state?.fieldErrors?.series}>
           <input ref={seriesRef} name="series" defaultValue={defaultValues.series} className={inputClass} />
         </Field>
         <Field label="Quantity">
@@ -107,6 +109,9 @@ export function CoinForm({
         </Field>
         <Field label="Material (e.g. brass, silver-plated)">
           <input ref={materialRef} name="material" defaultValue={defaultValues.material} className={inputClass} />
+        </Field>
+        <Field label="Diameter (e.g. 38mm)">
+          <input name="diameter" defaultValue={defaultValues.diameter} className={inputClass} />
         </Field>
         <Field label="Catalog number">
           <input name="catalogNumber" defaultValue={defaultValues.catalogNumber} className={inputClass} />

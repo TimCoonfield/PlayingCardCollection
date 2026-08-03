@@ -11,10 +11,7 @@ export default async function EditCoinPage({
   const { id } = await params;
 
   const [coin, designers, producers] = await Promise.all([
-    prisma.coin.findUnique({
-      where: { id },
-      include: { images: { orderBy: { sortOrder: "asc" } } },
-    }),
+    prisma.coin.findUnique({ where: { id } }),
     prisma.coin.findMany({
       distinct: ["designer"],
       where: { designer: { not: null } },
@@ -44,13 +41,15 @@ export default async function EditCoinPage({
           designer: coin.designer ?? undefined,
           producer: coin.producer ?? undefined,
           material: coin.material ?? undefined,
+          diameter: coin.diameter ?? undefined,
           qty: coin.qty,
           releaseYear: coin.releaseYear,
           notes: coin.notes ?? undefined,
           catalogNumber: coin.catalogNumber ?? undefined,
           tags: coin.tags,
         }}
-        initialImages={coin.images.map((i) => ({ url: i.url }))}
+        initialObverseUrl={coin.obverseImageUrl ?? undefined}
+        initialReverseUrl={coin.reverseImageUrl ?? undefined}
         designers={designers.map((d) => d.designer!).filter(Boolean)}
         producers={producers.map((p) => p.producer!).filter(Boolean)}
         submitLabel="Save changes"

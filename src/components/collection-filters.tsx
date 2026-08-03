@@ -208,7 +208,7 @@ export function CollectionFilters({
           onChange={(e) => handleSelectChange("series", e.target.value)}
           className={`${expanded ? "flex" : "hidden"} rounded-md border border-felt-line bg-felt-bg px-3 py-2 text-sm text-felt-ink outline-none focus:border-brass sm:flex sm:w-52`}
         >
-          <option value="">All series</option>
+          <option value="">{type === "coin" ? "All associated decks" : "All series"}</option>
           {seriesList.map((s) => (
             <option key={s} value={s}>
               {s}

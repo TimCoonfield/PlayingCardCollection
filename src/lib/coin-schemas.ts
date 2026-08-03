@@ -12,12 +12,19 @@ const optionalInt = z
   .transform((v) => (v.length > 0 ? Number(v) : undefined))
   .pipe(z.number().int().positive().optional());
 
+const optionalUrl = z
+  .string()
+  .transform((v) => v.trim())
+  .transform((v) => (v.length > 0 ? v : undefined))
+  .pipe(z.string().url().optional());
+
 export const coinFormSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   series: optionalString,
   designer: optionalString,
   producer: optionalString,
   material: optionalString,
+  diameter: optionalString,
   ownershipStatus: z.string().trim().min(1).default("Owned"),
   qty: z
     .string()
@@ -27,7 +34,8 @@ export const coinFormSchema = z.object({
   notes: optionalString,
   catalogNumber: optionalString,
   tags: z.array(z.string()).default([]),
-  imageUrls: z.array(z.string().url()).default([]),
+  obverseImageUrl: optionalUrl,
+  reverseImageUrl: optionalUrl,
 });
 
 export type CoinFormValues = z.infer<typeof coinFormSchema>;
@@ -48,12 +56,14 @@ export function parseCoinFormData(formData: FormData) {
     designer: formData.get("designer") ?? "",
     producer: formData.get("producer") ?? "",
     material: formData.get("material") ?? "",
+    diameter: formData.get("diameter") ?? "",
     ownershipStatus: formData.get("ownershipStatus") || "Owned",
     qty: formData.get("qty") ?? "",
     releaseYear: formData.get("releaseYear") ?? "",
     notes: formData.get("notes") ?? "",
     catalogNumber: formData.get("catalogNumber") ?? "",
     tags: formData.getAll("tags").map(String),
-    imageUrls: formData.getAll("imageUrls").map(String),
+    obverseImageUrl: formData.get("obverseImageUrl") ?? "",
+    reverseImageUrl: formData.get("reverseImageUrl") ?? "",
   });
 }

@@ -15,10 +15,7 @@ export default async function CoinDetailPage({
 }) {
   const { id } = await params;
   const [coin, session] = await Promise.all([
-    prisma.coin.findUnique({
-      where: { id },
-      include: { images: { orderBy: { sortOrder: "asc" } } },
-    }),
+    prisma.coin.findUnique({ where: { id } }),
     getSession(),
   ]);
 
@@ -26,6 +23,9 @@ export default async function CoinDetailPage({
 
   const isAuthenticated = Boolean(session.authenticated);
   const deleteCoinWithId = deleteCoin.bind(null, coin.id);
+  const galleryImages = [coin.obverseImageUrl, coin.reverseImageUrl]
+    .filter((url): url is string => Boolean(url))
+    .map((url) => ({ url }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -61,7 +61,7 @@ export default async function CoinDetailPage({
       </div>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-        <CoinGallery images={coin.images} tags={coin.tags} coinName={coin.name} />
+        <CoinGallery images={galleryImages} tags={coin.tags} coinName={coin.name} />
 
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-1">
@@ -83,7 +83,7 @@ export default async function CoinDetailPage({
             </div>
           </div>
 
-          {(coin.designer || coin.producer || coin.material || coin.releaseYear) && (
+          {(coin.designer || coin.producer || coin.material || coin.diameter || coin.releaseYear) && (
             <div className="flex flex-col divide-y divide-felt-line rounded-lg border border-felt-line bg-felt-surface">
               {coin.designer && (
                 <CreditRow
@@ -100,6 +100,7 @@ export default async function CoinDetailPage({
                 />
               )}
               {coin.material && <CreditRow label="Material" value={coin.material} />}
+              {coin.diameter && <CreditRow label="Diameter" value={coin.diameter} />}
               {coin.releaseYear && <CreditRow label="Release year" value={String(coin.releaseYear)} />}
             </div>
           )}

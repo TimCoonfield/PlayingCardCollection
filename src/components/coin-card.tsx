@@ -10,11 +10,14 @@ export interface CoinCardData {
   producer: string | null;
   qty: number;
   tags: string[];
-  images: { url: string }[];
+  obverseImageUrl: string | null;
+  reverseImageUrl: string | null;
 }
 
 export function CoinCard({ coin }: { coin: CoinCardData }) {
-  const image = coin.images[0];
+  const hasObverse = Boolean(coin.obverseImageUrl);
+  const hasReverse = Boolean(coin.reverseImageUrl);
+  const canFlip = hasObverse && hasReverse;
 
   return (
     <Link
@@ -22,15 +25,30 @@ export function CoinCard({ coin }: { coin: CoinCardData }) {
       className="group flex flex-col overflow-hidden rounded-lg border border-felt-line bg-felt-surface transition-colors hover:border-brass"
     >
       <div className="relative aspect-[3/4] w-full bg-felt-surface-2">
-        {image ? (
+        {hasObverse || hasReverse ? (
           <>
-            <Image
-              src={image.url}
-              alt={coin.name}
-              fill
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
-              className="object-cover transition-transform group-hover:scale-105"
-            />
+            {hasObverse && (
+              <Image
+                src={coin.obverseImageUrl!}
+                alt={coin.name}
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
+                className={`object-cover transition-[opacity,transform] duration-200 group-hover:scale-105 ${
+                  canFlip ? "group-hover:opacity-0" : ""
+                }`}
+              />
+            )}
+            {hasReverse && (
+              <Image
+                src={coin.reverseImageUrl!}
+                alt={coin.name}
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
+                className={`object-cover transition-[opacity,transform] duration-200 group-hover:scale-105 ${
+                  canFlip ? "opacity-0 group-hover:opacity-100" : ""
+                } ${!canFlip && hasObverse ? "hidden" : ""}`}
+              />
+            )}
             <CoinAccentBar tags={coin.tags} />
           </>
         ) : (

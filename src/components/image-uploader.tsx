@@ -11,8 +11,8 @@ interface UploadedImage {
   error?: string;
 }
 
-const MAX_FILE_BYTES = 50 * 1024 * 1024;
-const UPLOAD_TIMEOUT_MS = 30_000;
+export const MAX_FILE_BYTES = 50 * 1024 * 1024;
+export const UPLOAD_TIMEOUT_MS = 30_000;
 const COMPRESS_MAX_DIMENSION = 2000;
 const COMPRESS_QUALITY = 0.85;
 const COMPRESS_SKIP_UNDER_BYTES = 1.5 * 1024 * 1024;
@@ -42,7 +42,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 // (e.g. createImageBitmap can hang indefinitely on HEIC in some Safari versions instead of
 // erroring, so we decode via <img> — the same path Safari uses for HEIC previews — and cap
 // every step with a timeout so a stuck decode can never block the upload).
-async function compressImage(file: File): Promise<File> {
+export async function compressImage(file: File): Promise<File> {
   if (!file.type.startsWith("image/") || file.size < COMPRESS_SKIP_UNDER_BYTES) return file;
 
   let objectUrl: string | null = null;
@@ -88,7 +88,7 @@ async function compressImage(file: File): Promise<File> {
 // Diagnostic-only probe: replicates the SDK's own token request (the very first network call
 // upload() makes) so a hang can be pinned to "our server never responded" vs. "the actual file
 // transfer stalled" — the SDK's real token fetch happens again right after via upload() itself.
-async function probeUploadPermission(pathname: string): Promise<void> {
+export async function probeUploadPermission(pathname: string): Promise<void> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TOKEN_PROBE_TIMEOUT_MS);
   try {

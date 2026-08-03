@@ -56,35 +56,26 @@ model DeckEdition {
 }
 
 model Coin {
-  id              String      @id @default(cuid())
-  name            String
-  series          String?
-  designer        String?
-  producer        String?
-  material        String?
-  tags            String[]    @default([])
-  ownershipStatus String      @default("Owned")
-  qty             Int         @default(1)
-  releaseYear     Int?
-  notes           String?
-  catalogNumber   String?
-  images          CoinImage[]
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id               String   @id @default(cuid())
+  name             String
+  series           String?
+  designer         String?
+  producer         String?
+  material         String?
+  diameter         String?
+  obverseImageUrl  String?
+  reverseImageUrl  String?
+  tags             String[] @default([])
+  ownershipStatus  String   @default("Owned")
+  qty              Int      @default(1)
+  releaseYear      Int?
+  notes            String?
+  catalogNumber    String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([tags], type: Gin)
   @@index([designer])
   @@index([producer])
   @@index([series])
-}
-
-model CoinImage {
-  id        String   @id @default(cuid())
-  coinId    String
-  coin      Coin     @relation(fields: [coinId], references: [id], onDelete: Cascade)
-  url       String
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
-
-  @@index([coinId])
 }

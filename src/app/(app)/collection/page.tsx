@@ -103,7 +103,6 @@ export default async function CollectionPage({
     wantCoins
       ? prisma.coin.findMany({
           where: coinWhere,
-          include: { images: { orderBy: { sortOrder: "asc" }, take: 1 } },
           orderBy: { name: "asc" },
         })
       : Promise.resolve([]),
