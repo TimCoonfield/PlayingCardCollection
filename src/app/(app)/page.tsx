@@ -114,44 +114,29 @@ export default async function HomePage() {
                 key={creator.designer}
                 className="w-full sm:w-[calc(50%-0.5rem)] xl:w-[calc(33.333%-0.667rem)]"
               >
-                {creator.designer === "Karl Gerich" ? (
-                  // Poster-style treatment for Karl Gerich — the joker self-portrait as a
-                  // full-bleed watermark instead of the usual bio card. Revert by swapping
-                  // back to the commented CreatorCard call below.
-                  //
-                  // <CreatorCard
-                  //   designer={creator.designer}
-                  //   producer={creator.producer}
-                  //   bio={creator.bio}
-                  //   accent={creator.accent}
-                  //   initials={creator.initials}
-                  //   logoUrl={creator.logoUrl}
-                  //   logoAlt={creator.logoAlt}
-                  //   deckCount={creator.deckCount}
-                  //   randomDecks={creator.randomDecks}
-                  //   viewAllHref={viewAllHref}
-                  // />
-                  <CreatorSpotlightCard
-                    name={creator.designer}
-                    tagline="The Craftsman"
-                    imageUrl={creator.logoUrl!}
-                    imageAlt={creator.logoAlt ?? `${creator.designer} portrait`}
-                    href={viewAllHref}
-                  />
-                ) : (
-                  <CreatorCard
-                    designer={creator.designer}
-                    producer={creator.producer}
-                    bio={creator.bio}
-                    accent={creator.accent}
-                    initials={creator.initials}
-                    logoUrl={creator.logoUrl}
-                    logoAlt={creator.logoAlt}
-                    deckCount={creator.deckCount}
-                    randomDecks={creator.randomDecks}
-                    viewAllHref={viewAllHref}
-                  />
-                )}
+                {/* Poster-style treatment for all featured creators — a wide image as a
+                    full-bleed watermark instead of the bio/logo card. Revert to the old
+                    style by swapping back to the commented CreatorCard call below.
+
+                    <CreatorCard
+                      designer={creator.designer}
+                      producer={creator.producer}
+                      bio={creator.bio}
+                      accent={creator.accent}
+                      initials={creator.initials}
+                      logoUrl={creator.logoUrl}
+                      logoAlt={creator.logoAlt}
+                      deckCount={creator.deckCount}
+                      randomDecks={creator.randomDecks}
+                      viewAllHref={viewAllHref}
+                    /> */}
+                <CreatorSpotlightCard
+                  name={creator.designer}
+                  tagline={creator.tagline}
+                  imageUrl={creator.spotlightImageUrl}
+                  imageAlt={creator.spotlightImageAlt}
+                  href={viewAllHref}
+                />
               </div>
             );
           })}

@@ -7,10 +7,18 @@ export interface FeaturedCreator {
   accent: CreatorAccent;
   initials: string;
   /** Real brand logo (or other representative image), hosted in Blob. Falls back to a
-   * monogram when absent. */
+   * monogram when absent. Not used by the current poster-style homepage card, but kept for
+   * the commented-out CreatorCard fallback in page.tsx. */
   logoUrl?: string;
   /** Alt text for logoUrl. Defaults to "{producer} logo" when omitted. */
   logoAlt?: string;
+  /** Short epithet shown under the name on the homepage spotlight card, e.g. "The Painter". */
+  tagline: string;
+  /** Wide/portrait image used as the full-bleed watermark background on the homepage
+   * spotlight card, hosted in Blob. */
+  spotlightImageUrl: string;
+  /** Alt text for spotlightImageUrl. */
+  spotlightImageAlt: string;
   /** When true, "their decks" also includes decks where they're only credited as producer
    * (not designer) — e.g. decks they produced but someone else drew. Changes the "View all"
    * link from ?designer= to the OR-matching ?creator= filter. */
@@ -28,6 +36,10 @@ export const FEATURED_CREATORS: FeaturedCreator[] = [
     accent: "brick",
     initials: "GM",
     logoUrl: "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/thirdway-industries.png",
+    tagline: "The Mythmaker",
+    spotlightImageUrl:
+      "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/giovanni-meroni-noRU3HevoEaag8w1MAVrWe1TkPjfIY.png",
+    spotlightImageAlt: "Illustrated card design by Giovanni Meroni",
   },
   {
     designer: "Lorenzo Gaggioti",
@@ -36,6 +48,10 @@ export const FEATURED_CREATORS: FeaturedCreator[] = [
     accent: "brass",
     initials: "LG",
     logoUrl: "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/stockholm17.png",
+    tagline: "The Architect",
+    spotlightImageUrl:
+      "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/lorenzo-gaggioti-CCuapqa1LykUfGAd4rZ5WnSNWk3Afa.webp",
+    spotlightImageAlt: "Hand-drawn map aces from a Lorenzo Gaggioti deck",
   },
   {
     designer: "Linnea Gits",
@@ -44,6 +60,10 @@ export const FEATURED_CREATORS: FeaturedCreator[] = [
     accent: "felt-ink",
     initials: "LG",
     logoUrl: "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/uusi.png",
+    tagline: "The Painter",
+    spotlightImageUrl:
+      "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/linnea-gits-n1daqfnRv94mpDmbyuUdU4Ix6pRg5x.webp",
+    spotlightImageAlt: "Linnea Gits hand-painting a deck",
   },
   {
     designer: "Alessandra Gagliano",
@@ -52,6 +72,10 @@ export const FEATURED_CREATORS: FeaturedCreator[] = [
     accent: "sage",
     initials: "AG",
     logoUrl: "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/jocu.jpeg",
+    tagline: "The Folklorist",
+    spotlightImageUrl:
+      "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/alessandra-gagliano-2uvyjYhOQt3rT21EyxThGqBvmyHM6s.webp",
+    spotlightImageAlt: "The Green Man deck box and ace by Alessandra Gagliano",
   },
   {
     designer: "Elettra Deganello",
@@ -60,6 +84,10 @@ export const FEATURED_CREATORS: FeaturedCreator[] = [
     accent: "plum",
     initials: "ED",
     logoUrl: "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/elettra-deganello.webp",
+    tagline: "The Interpreter",
+    spotlightImageUrl:
+      "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/elettra-deganello-portrait-LAuLHMIeFL4FGnsTg8UhArnXa521Nc.webp",
+    spotlightImageAlt: "Pinocchio Vermilion deck box by Elettra Deganello",
   },
   {
     designer: "Karl Gerich",
@@ -69,6 +97,9 @@ export const FEATURED_CREATORS: FeaturedCreator[] = [
     initials: "KG",
     logoUrl: "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/karl-gerich-joker.jpg",
     logoAlt: "Joker card self-portrait by Karl Gerich",
+    tagline: "The Craftsman",
+    spotlightImageUrl: "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/karl-gerich-joker.jpg",
+    spotlightImageAlt: "Joker card self-portrait by Karl Gerich",
     matchProducerToo: true,
   },
 ];
