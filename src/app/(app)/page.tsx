@@ -93,7 +93,7 @@ export default async function HomePage() {
       SPECIALTY_TAGS.map((tag) => prisma.deck.count({ where: { tags: { has: tag } } }))
     ),
     prisma.coin.count(),
-    prisma.deck.count({ where: { tags: { has: "Souvenir" } } }),
+    prisma.deck.count({ where: { series: "Souvenir Decks" } }),
   ]);
 
   return (

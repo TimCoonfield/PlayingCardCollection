@@ -8,7 +8,7 @@ const SOUVENIR_WATERMARK_URL = `url("data:image/svg+xml,${encodeURIComponent(SOU
 
 export default async function SouvenirDecksPage() {
   const decks = await prisma.deck.findMany({
-    where: { tags: { has: "Souvenir" } },
+    where: { series: "Souvenir Decks" },
     include: { images: { orderBy: { sortOrder: "asc" }, take: 1 } },
     orderBy: { name: "asc" },
   });

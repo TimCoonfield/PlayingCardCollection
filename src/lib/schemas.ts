@@ -48,7 +48,6 @@ export const ALL_TAGS = [
   "Tarot",
   "Prototype",
   "Edge Painted",
-  "Souvenir",
 ] as const;
 
 export function parseDeckFormData(formData: FormData) {

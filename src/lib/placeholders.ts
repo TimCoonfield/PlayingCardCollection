@@ -15,7 +15,6 @@ const TAG_STYLES: Record<string, PlaceholderStyle> = {
   Vintage: { icon: "📻", accent: "plum" },
   Gilded: { icon: "✨", accent: "brass" },
   "Edge Painted": { icon: "🎨", accent: "sage" },
-  Souvenir: { icon: "📸", accent: "brick" },
 };
 
 /** Highest-precedence tag first: an earlier entry overrides a later one. */

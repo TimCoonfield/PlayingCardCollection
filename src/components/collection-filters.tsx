@@ -14,7 +14,6 @@ const ALL_TAGS = [
   "Tarot",
   "Prototype",
   "Edge Painted",
-  "Souvenir",
 ];
 
 const DEBOUNCE_MS = 1000;
