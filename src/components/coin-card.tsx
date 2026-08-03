@@ -33,7 +33,7 @@ export function CoinCard({ coin }: { coin: CoinCardData }) {
                 alt={coin.name}
                 fill
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
-                className={`object-cover transition-[opacity,transform] duration-200 group-hover:scale-105 ${
+                className={`object-cover transition-opacity duration-200 ${
                   canFlip ? "group-hover:opacity-0" : ""
                 }`}
               />
@@ -44,7 +44,7 @@ export function CoinCard({ coin }: { coin: CoinCardData }) {
                 alt={coin.name}
                 fill
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
-                className={`object-cover transition-[opacity,transform] duration-200 group-hover:scale-105 ${
+                className={`object-cover transition-opacity duration-200 ${
                   canFlip ? "opacity-0 group-hover:opacity-100" : ""
                 } ${!canFlip && hasObverse ? "hidden" : ""}`}
               />
