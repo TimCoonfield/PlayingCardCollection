@@ -25,12 +25,7 @@ export default async function SouvenirDecksPage() {
             Souvenir Decks
           </h1>
           <p className="max-w-2xl text-sm text-felt-sub">
-            Souvenir decks hold a special place in the collection — the ones picked up from a
-            trip, a museum gift shop, or a roadside stand, each one a small paper postcard of
-            somewhere I&rsquo;ve been (or wish I had). Unlike a numbered art-deck release, these
-            are printed for tourists first and collectors second, which somehow makes them more
-            charming: cheerful, a little kitschy, and completely unpretentious about what they
-            are. This is where I&rsquo;m gathering them together.
+            Souvenir decks hold a special place in my collection because they are more than keepsakes—they are small historical objects. I first became interested in them after seeing the Niagara Falls and White Pass and Yukon Route decks at the 2024 52+Joker Convention, and Matt Schacht’s excellent talk the following year only deepened that interest. Made for tourists rather than collectors, these decks preserve how a place, attraction, railroad, or business chose to present itself at a particular moment in time. They can be cheerful, kitschy, and unassuming, but they also capture pieces of history that might otherwise disappear. This is where I’m gathering those stories together.
           </p>
         </div>
       </div>
