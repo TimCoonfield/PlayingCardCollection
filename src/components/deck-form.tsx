@@ -14,6 +14,7 @@ export interface DeckFormDefaultValues {
   qty?: number;
   editionNumbers?: number[];
   productionRun?: number | null;
+  releaseYear?: number | null;
   notes?: string;
   catalogNumber?: string;
   tags?: string[];
@@ -52,6 +53,7 @@ export function DeckForm({
   const designerRef = useRef<HTMLInputElement>(null);
   const producerRef = useRef<HTMLInputElement>(null);
   const productionRunRef = useRef<HTMLInputElement>(null);
+  const releaseYearRef = useRef<HTMLInputElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
 
   async function handleIdentify() {
@@ -79,6 +81,8 @@ export function DeckForm({
       }
       if (productionRunRef.current && result.productionRun)
         productionRunRef.current.value = String(result.productionRun);
+      if (releaseYearRef.current && result.releaseYear)
+        releaseYearRef.current.value = String(result.releaseYear);
       if (notesRef.current && result.notes) notesRef.current.value = result.notes;
       if (result.tags?.length) setTags((prev) => Array.from(new Set([...prev, ...result.tags])));
       setIdentified(true);
@@ -189,6 +193,16 @@ export function DeckForm({
         </Field>
         <Field label="Catalog number">
           <input name="catalogNumber" defaultValue={defaultValues.catalogNumber} className={inputClass} />
+        </Field>
+        <Field label="Release year" error={state?.fieldErrors?.releaseYear}>
+          <input
+            ref={releaseYearRef}
+            name="releaseYear"
+            type="number"
+            min={1}
+            defaultValue={defaultValues.releaseYear ?? ""}
+            className={inputClass}
+          />
         </Field>
       </div>
 

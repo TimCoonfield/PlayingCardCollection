@@ -49,6 +49,7 @@ export default async function EditDeckPage({
           qty: deck.qty,
           editionNumbers: deck.editions.map((e) => e.deckNumber),
           productionRun: deck.productionRun,
+          releaseYear: deck.releaseYear,
           notes: deck.notes ?? undefined,
           catalogNumber: deck.catalogNumber ?? undefined,
           tags: deck.tags,

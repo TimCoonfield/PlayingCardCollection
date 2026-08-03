@@ -20,6 +20,7 @@ model Deck {
   ownershipStatus String        @default("Owned")
   qty             Int           @default(1)
   productionRun   Int?
+  releaseYear     Int?
   notes           String?
   catalogNumber   String?
   images          DeckImage[]

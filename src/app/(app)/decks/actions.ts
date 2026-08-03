@@ -29,6 +29,7 @@ function toDeckData(values: DeckFormValues) {
     ownershipStatus: values.ownershipStatus,
     qty: values.qty,
     productionRun: values.productionRun ?? null,
+    releaseYear: values.releaseYear ?? null,
     notes: values.notes ?? null,
     catalogNumber: values.catalogNumber ?? null,
     tags: values.tags,

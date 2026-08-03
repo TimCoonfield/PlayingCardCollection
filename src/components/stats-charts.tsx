@@ -110,6 +110,47 @@ export function HorizontalRankedChart({
   );
 }
 
+export function YearHistogramChart({
+  data,
+  color,
+  height = 280,
+}: {
+  data: RankedDatum[];
+  color: string;
+  height?: number;
+}) {
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <BarChart data={data} margin={{ left: 4, right: 4, top: 16, bottom: 36 }}>
+        <CartesianGrid vertical={false} stroke="#3a6650" strokeWidth={1} />
+        <XAxis
+          dataKey="label"
+          interval={0}
+          angle={-45}
+          textAnchor="end"
+          height={50}
+          tick={{ fill: "#b9c9ba", fontSize: 11 }}
+          axisLine={false}
+          tickLine={false}
+        />
+        <YAxis hide domain={[0, (max: number) => Math.ceil(max * 1.15)]} />
+        <Tooltip
+          cursor={{ fill: "#f3ead108" }}
+          contentStyle={tooltipStyle}
+          formatter={(value) => [value, "Decks"] as [number, string]}
+        />
+        <Bar
+          dataKey="count"
+          fill={color}
+          radius={[4, 4, 0, 0]}
+          maxBarSize={28}
+          isAnimationActive={false}
+        />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
 const PIE_RADIAN = Math.PI / 180;
 
 interface PieLabelProps {

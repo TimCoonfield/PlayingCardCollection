@@ -87,7 +87,7 @@ export default async function DeckDetailPage({
             </div>
           </div>
 
-          {(deck.designer || deck.producer) && (
+          {(deck.designer || deck.producer || deck.releaseYear) && (
             <div className="flex flex-col divide-y divide-felt-line rounded-lg border border-felt-line bg-felt-surface">
               {deck.designer && (
                 <CreditRow
@@ -103,6 +103,7 @@ export default async function DeckDetailPage({
                   href={`/collection?producer=${encodeURIComponent(deck.producer)}`}
                 />
               )}
+              {deck.releaseYear && <CreditRow label="Release year" value={String(deck.releaseYear)} />}
             </div>
           )}
 
@@ -151,16 +152,26 @@ export default async function DeckDetailPage({
   );
 }
 
-function CreditRow({ label, value, href }: { label: string; value: string; href: string }) {
+function CreditRow({ label, value, href }: { label: string; value: string; href?: string }) {
+  const content = (
+    <>
+      <span className="text-xs uppercase tracking-wide text-felt-sub/70">{label}</span>
+      <span className="truncate text-sm font-medium text-felt-ink group-hover:text-brass">
+        {value}
+      </span>
+    </>
+  );
+
+  if (!href) {
+    return <div className="flex items-center justify-between gap-3 px-4 py-3">{content}</div>;
+  }
+
   return (
     <Link
       href={href}
       className="group flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-felt-surface-2"
     >
-      <span className="text-xs uppercase tracking-wide text-felt-sub/70">{label}</span>
-      <span className="truncate text-sm font-medium text-felt-ink group-hover:text-brass">
-        {value}
-      </span>
+      {content}
     </Link>
   );
 }

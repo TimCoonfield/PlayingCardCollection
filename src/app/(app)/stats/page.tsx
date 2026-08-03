@@ -1,12 +1,23 @@
 import { prisma } from "@/lib/prisma";
 import { StatTile } from "@/components/stat-tile";
-import { HorizontalRankedChart, PieBreakdownChart } from "@/components/stats-charts";
+import { HorizontalRankedChart, PieBreakdownChart, YearHistogramChart } from "@/components/stats-charts";
 import { SeriesShowcase, type SeriesSpotlightDatum } from "@/components/series-showcase";
 import { DeckCard } from "@/components/deck-card";
 
 const CHART_COLORS = {
   designer: "#b58a35",
 };
+
+// Buckets a release year into the histogram's x-axis label: one bar per year from 2000 on,
+// one bar per decade for 1900-1999, and a single catch-all bar for anything before 1900.
+function bucketReleaseYear(year: number): { label: string; sortKey: number } {
+  if (year >= 2000) return { label: String(year), sortKey: year };
+  if (year >= 1900) {
+    const decade = Math.floor(year / 10) * 10;
+    return { label: `${decade}s`, sortKey: decade };
+  }
+  return { label: "Before 1900", sortKey: 0 };
+}
 
 // Modern, Vintage, Antique — validated against the felt surface (#234f3a)
 const ERA_COLORS = ["#b58a35", "#8266b3", "#b1473f"];
@@ -24,6 +35,7 @@ export default async function StatsPage() {
     antiqueCount,
     topSeriesGroups,
     recentDecks,
+    releaseYearGroups,
   ] = await Promise.all([
     prisma.deck.count(),
     prisma.deck.aggregate({ _sum: { qty: true } }),
@@ -64,6 +76,11 @@ export default async function StatsPage() {
         images: { take: 1, orderBy: { sortOrder: "asc" }, select: { url: true } },
       },
     }),
+    prisma.deck.groupBy({
+      by: ["releaseYear"],
+      where: { releaseYear: { not: null } },
+      _count: { _all: true },
+    }),
   ]);
 
   const designerData = designerGroups.map((g) => ({
@@ -76,6 +93,17 @@ export default async function StatsPage() {
     { label: "Vintage", count: vintageCount },
     { label: "Antique", count: antiqueCount },
   ];
+
+  const yearBuckets = new Map<string, { count: number; sortKey: number }>();
+  for (const g of releaseYearGroups) {
+    const { label, sortKey } = bucketReleaseYear(g.releaseYear!);
+    const existing = yearBuckets.get(label);
+    if (existing) existing.count += g._count._all;
+    else yearBuckets.set(label, { count: g._count._all, sortKey });
+  }
+  const yearData = Array.from(yearBuckets.entries())
+    .map(([label, { count, sortKey }]) => ({ label, count, sortKey }))
+    .sort((a, b) => a.sortKey - b.sortKey);
 
   const seriesShowcase: SeriesSpotlightDatum[] = await Promise.all(
     topSeriesGroups.map((g) => buildSeriesSpotlight(g.series!, g._count._all))
@@ -113,6 +141,12 @@ export default async function StatsPage() {
       <ChartCard title="Biggest series in the collection">
         <SeriesShowcase items={seriesShowcase} />
       </ChartCard>
+
+      {yearData.length > 0 && (
+        <ChartCard title="Decks by release year">
+          <YearHistogramChart data={yearData} color={CHART_COLORS.designer} />
+        </ChartCard>
+      )}
 
       <div className="flex flex-col gap-3">
         <h2 className="text-sm font-medium text-felt-sub">Recently added</h2>

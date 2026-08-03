@@ -13,6 +13,7 @@ export const deckIdentificationSchema = z.object({
   tags: z.array(z.enum(ALL_TAGS)),
   deckNumber: z.number().int().nullable(),
   productionRun: z.number().int().nullable(),
+  releaseYear: z.number().int().nullable(),
   notes: z.string().nullable(),
 });
 
@@ -29,6 +30,7 @@ Return your best guess for each field. If you cannot confidently determine a fie
 - tags: Any of these that clearly apply, based on visual cues: ${ALL_TAGS.join(", ")}.
 - deckNumber: If the box shows a limited-edition number like "391/700" or "#391", the first number (391).
 - productionRun: If the box shows a limited-edition run like "391/700", the second number (700).
+- releaseYear: The deck's release/copyright year, if printed on the box (e.g. a "© 2019" mark), else null.
 - notes: Any other useful identifying detail visible (e.g. "Kickstarter exclusive", special foil, edition name), or null.`;
 
 export async function identifyDeck(imageUrls: string[]): Promise<DeckIdentification> {
