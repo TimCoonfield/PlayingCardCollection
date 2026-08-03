@@ -26,7 +26,7 @@ export default async function SouvenirDecksPage() {
           className="pointer-events-none absolute inset-0 hidden lg:block"
           style={{
             background:
-              "linear-gradient(to right, var(--felt-bg) 0%, var(--felt-bg) 32%, transparent 58%)",
+              "linear-gradient(to right, var(--felt-bg) 0%, var(--felt-bg) 50%, transparent 58%)",
           }}
         />
         <div className="relative flex flex-col gap-3 p-6 lg:max-w-xl">
