@@ -20,7 +20,14 @@ export default async function SouvenirDecksPage() {
           alt=""
           fill
           sizes="(min-width: 1024px) 60vw, 100vw"
-          className="pointer-events-none object-cover opacity-[0.1] lg:object-right lg:opacity-100 lg:[mask-image:linear-gradient(to_right,transparent,black_40%)] lg:[-webkit-mask-image:linear-gradient(to_right,transparent,black_40%)]"
+          className="pointer-events-none object-cover opacity-[0.18] lg:object-right lg:opacity-100"
+        />
+        <div
+          className="pointer-events-none absolute inset-0 hidden lg:block"
+          style={{
+            background:
+              "linear-gradient(to right, var(--felt-bg) 0%, var(--felt-bg) 32%, transparent 58%)",
+          }}
         />
         <div className="relative flex flex-col gap-3 p-6 lg:max-w-xl">
           <h1 className="font-display text-2xl font-semibold text-felt-ink sm:text-3xl">
