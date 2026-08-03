@@ -3,6 +3,7 @@ import { StatTile } from "@/components/stat-tile";
 import { HorizontalRankedChart, PieBreakdownChart, YearHistogramChart } from "@/components/stats-charts";
 import { SeriesShowcase, type SeriesSpotlightDatum } from "@/components/series-showcase";
 import { DeckCard } from "@/components/deck-card";
+import { CardsIcon, PaletteIcon, BuildingIcon, LayersIcon } from "@/components/icons";
 
 const CHART_COLORS = {
   designer: "#b58a35",
@@ -114,11 +115,11 @@ export default async function StatsPage() {
       <h1 className="font-display text-xl font-semibold text-felt-ink">Collection Stats</h1>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        <StatTile label="Total unique decks" value={totalDecks} />
-        <StatTile label="Total decks" value={qtySum._sum.qty ?? 0} />
-        <StatTile label="Designers" value={allDesigners.length} />
-        <StatTile label="Producers" value={allProducers.length} />
-        <StatTile label="Series" value={seriesGroups.length} />
+        <StatTile icon={<CardsIcon className="h-6 w-6" />} label="Total unique decks" value={totalDecks} />
+        <StatTile icon={<CardsIcon className="h-6 w-6" />} label="Total decks" value={qtySum._sum.qty ?? 0} />
+        <StatTile icon={<PaletteIcon className="h-6 w-6" />} label="Designers" value={allDesigners.length} />
+        <StatTile icon={<BuildingIcon className="h-6 w-6" />} label="Producers" value={allProducers.length} />
+        <StatTile icon={<LayersIcon className="h-6 w-6" />} label="Series" value={seriesGroups.length} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -138,15 +139,15 @@ export default async function StatsPage() {
         </ChartCard>
       </div>
 
-      <ChartCard title="Biggest series in the collection">
-        <SeriesShowcase items={seriesShowcase} />
-      </ChartCard>
-
       {yearData.length > 0 && (
         <ChartCard title="Decks by release year">
           <YearHistogramChart data={yearData} color={CHART_COLORS.designer} />
         </ChartCard>
       )}
+
+      <ChartCard title="Biggest series in the collection">
+        <SeriesShowcase items={seriesShowcase} />
+      </ChartCard>
 
       <div className="flex flex-col gap-3">
         <h2 className="text-sm font-medium text-felt-sub">Recently added</h2>

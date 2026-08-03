@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HeaderSearch } from "@/components/header-search";
-import { HomeIcon, CollectionIcon, StatsIcon, PlusIcon, SearchIcon } from "@/components/icons";
+import { CollectionIcon, StatsIcon, PlusIcon, SearchIcon } from "@/components/icons";
 import { logout } from "./logout-action";
 
 const baseLinks = [
-  { href: "/", label: "Home", icon: HomeIcon },
   { href: "/collection", label: "Collection", icon: CollectionIcon },
   { href: "/stats", label: "Stats", icon: StatsIcon },
 ];
@@ -15,7 +14,7 @@ const baseLinks = [
 export function NavBar({ isAuthenticated }: { isAuthenticated: boolean }) {
   const pathname = usePathname();
   const links = isAuthenticated
-    ? [baseLinks[0], baseLinks[1], { href: "/decks/new", label: "Add Deck", icon: PlusIcon }, baseLinks[2]]
+    ? [baseLinks[0], { href: "/decks/new", label: "Add Deck", icon: PlusIcon }, baseLinks[1]]
     : baseLinks;
 
   return (
