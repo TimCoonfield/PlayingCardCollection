@@ -133,6 +133,7 @@ export default async function HomePage() {
                 icon={<CardsIcon className="h-6 w-6" />}
                 label="Unique decks"
                 value={totalDecks}
+                href="/collection?type=deck"
               />
               <StatTile
                 icon={<PaletteIcon className="h-6 w-6" />}
@@ -143,6 +144,7 @@ export default async function HomePage() {
                 icon={<CoinIcon className="h-6 w-6" />}
                 label="Coins"
                 value={coinCount}
+                href="/collection?type=coin"
               />
               <StatTile
                 icon={<LayersIcon className="h-6 w-6" />}
