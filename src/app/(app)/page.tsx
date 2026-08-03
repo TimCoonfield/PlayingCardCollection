@@ -5,7 +5,7 @@ import { StatTile } from "@/components/stat-tile";
 import { DeckCard } from "@/components/deck-card";
 import { CreatorCard, type CreatorRandomDeck } from "@/components/creator-card";
 import { CreatorSpotlightCard } from "@/components/creator-spotlight-card";
-import { CardsIcon, PaletteIcon, LayersIcon, CoinIcon } from "@/components/icons";
+import { CardsIcon, PaletteIcon, LayersIcon, CoinIcon, CameraIcon } from "@/components/icons";
 import { FEATURED_CREATORS } from "@/lib/featured-creators";
 import { getTagStyle } from "@/lib/placeholders";
 
@@ -13,12 +13,14 @@ const SPECIALTY_TAGS = ["Mini", "Tarot"] as const;
 
 type SpecialtyTile =
   | { kind: "tag"; tag: (typeof SPECIALTY_TAGS)[number] }
-  | { kind: "coins" };
+  | { kind: "coins" }
+  | { kind: "souvenir" };
 
 const SPECIALTY_TILES: SpecialtyTile[] = [
   { kind: "tag", tag: "Mini" },
   { kind: "tag", tag: "Tarot" },
   { kind: "coins" },
+  { kind: "souvenir" },
 ];
 
 // A faint tiled suit pattern behind the hero, echoing the poster-style creator cards below —
@@ -43,6 +45,7 @@ export default async function HomePage() {
     recentDecks,
     specialtyCounts,
     coinCount,
+    souvenirCount,
   ] = await Promise.all([
     prisma.deck.count(),
     prisma.deck.groupBy({ by: ["designer"], where: { designer: { not: null } } }),
@@ -90,6 +93,7 @@ export default async function HomePage() {
       SPECIALTY_TAGS.map((tag) => prisma.deck.count({ where: { tags: { has: tag } } }))
     ),
     prisma.coin.count(),
+    prisma.deck.count({ where: { tags: { has: "Souvenir" } } }),
   ]);
 
   return (
@@ -200,7 +204,7 @@ export default async function HomePage() {
 
       <div className="flex flex-col gap-3">
         <h2 className="text-sm font-medium text-felt-sub">Specialty collections</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {SPECIALTY_TILES.map((tile) => {
             if (tile.kind === "coins") {
               const accentClass = SPECIALTY_ACCENT_CLASSES.brass;
@@ -214,6 +218,25 @@ export default async function HomePage() {
                   <div className="flex flex-col">
                     <span className="font-display text-lg font-semibold text-felt-ink">Coins</span>
                     <span className="text-sm text-felt-sub">{coinCount} in the collection →</span>
+                  </div>
+                </Link>
+              );
+            }
+
+            if (tile.kind === "souvenir") {
+              const accentClass = SPECIALTY_ACCENT_CLASSES.brick;
+              return (
+                <Link
+                  key="souvenir"
+                  href="/souvenir"
+                  className={`flex items-center gap-3 rounded-lg border bg-felt-surface p-4 transition-colors ${accentClass}`}
+                >
+                  <CameraIcon className="h-8 w-8 shrink-0 text-brass" />
+                  <div className="flex flex-col">
+                    <span className="font-display text-lg font-semibold text-felt-ink">
+                      Souvenir decks
+                    </span>
+                    <span className="text-sm text-felt-sub">{souvenirCount} in the collection →</span>
                   </div>
                 </Link>
               );
