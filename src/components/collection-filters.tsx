@@ -37,13 +37,14 @@ export function CollectionFilters({
   const producer = searchParams.get("producer") ?? "";
   const series = searchParams.get("series") ?? "";
   const tags = searchParams.getAll("tag");
+  const type = searchParams.get("type") ?? "all";
   // "creator" isn't a filter surfaced in this UI (see collection/page.tsx) — it's a link-only
   // param from the homepage's featured-creator cards — but it still needs to count here so
   // "Clear all" appears and the extra filters start expanded when arriving via that link.
   const creator = searchParams.get("creator") ?? "";
   const nonSearchFilterCount =
     [designer, producer, series, creator].filter(Boolean).length + tags.length;
-  const hasFilters = Boolean(q) || nonSearchFilterCount > 0;
+  const hasFilters = Boolean(q) || nonSearchFilterCount > 0 || type !== "all";
 
   // On mobile the extra filters start collapsed to save space, unless some are already
   // applied (e.g. arriving from a Stats page link) — then show them open so nothing's hidden.
@@ -98,6 +99,13 @@ export function CollectionFilters({
     }
   }
 
+  function handleTypeChange(value: "all" | "deck" | "coin") {
+    pushParams((params) => {
+      if (value === "all") params.delete("type");
+      else params.set("type", value);
+    });
+  }
+
   function handleSelectChange(key: "designer" | "producer" | "series", value: string) {
     pushParams((params) => {
       if (value) params.set(key, value);
@@ -121,6 +129,21 @@ export function CollectionFilters({
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-felt-line bg-felt-surface p-4">
+      <div className="flex w-fit rounded-md border border-felt-line p-0.5">
+        {(["all", "deck", "coin"] as const).map((option) => (
+          <button
+            key={option}
+            type="button"
+            onClick={() => handleTypeChange(option)}
+            className={`rounded px-3 py-1 text-sm transition-colors ${
+              type === option ? "bg-brass text-felt-bg" : "text-felt-sub hover:text-felt-ink"
+            }`}
+          >
+            {option === "all" ? "All" : option === "deck" ? "Decks" : "Coins"}
+          </button>
+        ))}
+      </div>
+
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <input

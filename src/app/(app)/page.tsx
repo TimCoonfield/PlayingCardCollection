@@ -213,7 +213,7 @@ export default async function HomePage() {
               return (
                 <Link
                   key="coins"
-                  href="/coins"
+                  href="/collection?type=coin"
                   className={`flex items-center gap-3 rounded-lg border bg-felt-surface p-4 transition-colors ${accentClass}`}
                 >
                   <CoinIcon className="h-8 w-8 shrink-0 text-brass" />
