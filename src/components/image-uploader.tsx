@@ -118,9 +118,11 @@ async function probeUploadPermission(pathname: string): Promise<void> {
 export function ImageUploader({
   initialImages = [],
   onImagesChange,
+  pathPrefix = "decks",
 }: {
   initialImages?: { url: string }[];
   onImagesChange?: (urls: string[]) => void;
+  pathPrefix?: string;
 }) {
   const [images, setImages] = useState<UploadedImage[]>(
     initialImages.map((i) => ({ url: i.url }))
@@ -158,7 +160,7 @@ export function ImageUploader({
         let uploadFileSize = file.size;
 
         try {
-          await probeUploadPermission(`decks/${Date.now()}-${file.name}`);
+          await probeUploadPermission(`${pathPrefix}/${Date.now()}-${file.name}`);
 
           const uploadFile = await compressImage(file);
           uploadFileSize = uploadFile.size;
@@ -172,7 +174,7 @@ export function ImageUploader({
           // instead of sending the file as a plain body — and that streaming path is where
           // uploads have been consistently stalling. Without it, the SDK just sends the file
           // directly, which is much more broadly supported.
-          const blob = await upload(`decks/${Date.now()}-${uploadFile.name}`, uploadFile, {
+          const blob = await upload(`${pathPrefix}/${Date.now()}-${uploadFile.name}`, uploadFile, {
             access: "public",
             handleUploadUrl: "/api/upload",
             abortSignal: controller.signal,

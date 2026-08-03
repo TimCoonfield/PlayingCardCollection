@@ -7,6 +7,8 @@ import { sessionOptions, type SessionData } from "@/lib/auth";
 function isProtectedPath(pathname: string): boolean {
   if (pathname === "/decks/new") return true;
   if (/^\/decks\/[^/]+\/edit$/.test(pathname)) return true;
+  if (pathname === "/coins/new") return true;
+  if (/^\/coins\/[^/]+\/edit$/.test(pathname)) return true;
   if (pathname === "/api/upload") return true;
   if (pathname === "/api/ai/identify") return true;
   return false;

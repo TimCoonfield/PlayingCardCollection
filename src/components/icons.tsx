@@ -199,6 +199,25 @@ export function LayersIcon({ className }: { className?: string }) {
   );
 }
 
+export function CoinIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="5.5" />
+      <path d="M12 8.2v7.6M9.8 12h4.4" />
+    </svg>
+  );
+}
+
 export function TrashIcon({ className }: { className?: string }) {
   return (
     <svg

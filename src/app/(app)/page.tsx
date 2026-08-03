@@ -5,11 +5,21 @@ import { StatTile } from "@/components/stat-tile";
 import { DeckCard } from "@/components/deck-card";
 import { CreatorCard, type CreatorRandomDeck } from "@/components/creator-card";
 import { CreatorSpotlightCard } from "@/components/creator-spotlight-card";
-import { CardsIcon, PaletteIcon, BuildingIcon, LayersIcon } from "@/components/icons";
+import { CardsIcon, PaletteIcon, BuildingIcon, LayersIcon, CoinIcon } from "@/components/icons";
 import { FEATURED_CREATORS } from "@/lib/featured-creators";
 import { getTagStyle } from "@/lib/placeholders";
 
 const SPECIALTY_TAGS = ["Mini", "Tarot"] as const;
+
+type SpecialtyTile =
+  | { kind: "tag"; tag: (typeof SPECIALTY_TAGS)[number] }
+  | { kind: "coins" };
+
+const SPECIALTY_TILES: SpecialtyTile[] = [
+  { kind: "tag", tag: "Mini" },
+  { kind: "tag", tag: "Tarot" },
+  { kind: "coins" },
+];
 
 // A faint tiled suit pattern behind the hero, echoing the poster-style creator cards below —
 // generated inline so the effect doesn't need a hosted image asset.
@@ -33,6 +43,7 @@ export default async function HomePage() {
     creatorsData,
     recentDecks,
     specialtyCounts,
+    coinCount,
   ] = await Promise.all([
     prisma.deck.count(),
     prisma.deck.groupBy({ by: ["designer"], where: { designer: { not: null } } }),
@@ -80,6 +91,7 @@ export default async function HomePage() {
     Promise.all(
       SPECIALTY_TAGS.map((tag) => prisma.deck.count({ where: { tags: { has: tag } } }))
     ),
+    prisma.coin.count(),
   ]);
 
   return (
@@ -194,23 +206,41 @@ export default async function HomePage() {
 
       <div className="flex flex-col gap-3">
         <h2 className="text-sm font-medium text-felt-sub">Specialty collections</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {SPECIALTY_TAGS.map((tag, i) => {
-            const style = getTagStyle(tag);
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {SPECIALTY_TILES.map((tile) => {
+            if (tile.kind === "coins") {
+              const accentClass = SPECIALTY_ACCENT_CLASSES.brass;
+              return (
+                <Link
+                  key="coins"
+                  href="/coins"
+                  className={`flex items-center gap-3 rounded-lg border bg-felt-surface p-4 transition-colors ${accentClass}`}
+                >
+                  <CoinIcon className="h-8 w-8 shrink-0 text-brass" />
+                  <div className="flex flex-col">
+                    <span className="font-display text-lg font-semibold text-felt-ink">Coins</span>
+                    <span className="text-sm text-felt-sub">{coinCount} in the collection →</span>
+                  </div>
+                </Link>
+              );
+            }
+
+            const tagIndex = SPECIALTY_TAGS.indexOf(tile.tag);
+            const style = getTagStyle(tile.tag);
             const accentClass = SPECIALTY_ACCENT_CLASSES[style.accent] ?? SPECIALTY_ACCENT_CLASSES.brass;
             return (
               <Link
-                key={tag}
-                href={`/collection?tag=${encodeURIComponent(tag)}`}
+                key={tile.tag}
+                href={`/collection?tag=${encodeURIComponent(tile.tag)}`}
                 className={`flex items-center gap-3 rounded-lg border bg-felt-surface p-4 transition-colors ${accentClass}`}
               >
                 <span className="text-3xl leading-none">{style.icon}</span>
                 <div className="flex flex-col">
                   <span className="font-display text-lg font-semibold text-felt-ink">
-                    {tag} decks
+                    {tile.tag} decks
                   </span>
                   <span className="text-sm text-felt-sub">
-                    {specialtyCounts[i]} in the collection →
+                    {specialtyCounts[tagIndex]} in the collection →
                   </span>
                 </div>
               </Link>

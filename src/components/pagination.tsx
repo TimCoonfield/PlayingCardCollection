@@ -2,17 +2,19 @@ export function Pagination({
   page,
   totalPages,
   searchParams,
+  basePath = "/collection",
 }: {
   page: number;
   totalPages: number;
   searchParams: URLSearchParams;
+  basePath?: string;
 }) {
   if (totalPages <= 1) return null;
 
   const hrefFor = (p: number) => {
     const params = new URLSearchParams(searchParams);
     params.set("page", String(p));
-    return `/collection?${params.toString()}`;
+    return `${basePath}?${params.toString()}`;
   };
 
   return (
