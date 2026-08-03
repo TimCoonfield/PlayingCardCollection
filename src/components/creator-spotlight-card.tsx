@@ -6,12 +6,14 @@ export function CreatorSpotlightCard({
   tagline,
   imageUrl,
   imageAlt,
+  deckCount,
   href,
 }: {
   name: string;
   tagline: string;
   imageUrl: string;
   imageAlt: string;
+  deckCount: number;
   href: string;
 }) {
   return (
@@ -32,6 +34,7 @@ export function CreatorSpotlightCard({
           {name}
         </span>
         <span className="mt-2 text-base tracking-wide text-brass">{tagline}</span>
+        <span className="mt-1 text-xs text-felt-sub">{deckCount} decks in the collection →</span>
       </div>
     </Link>
   );

@@ -135,6 +135,7 @@ export default async function HomePage() {
                   tagline={creator.tagline}
                   imageUrl={creator.spotlightImageUrl}
                   imageAlt={creator.spotlightImageAlt}
+                  deckCount={creator.deckCount}
                   href={viewAllHref}
                 />
               </div>

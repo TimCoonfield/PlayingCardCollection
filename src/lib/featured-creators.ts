@@ -42,16 +42,16 @@ export const FEATURED_CREATORS: FeaturedCreator[] = [
     spotlightImageAlt: "Illustrated card design by Giovanni Meroni",
   },
   {
-    designer: "Lorenzo Gaggioti",
+    designer: "Lorenzo Gaggiotti",
     producer: "Stockholm17",
-    bio: "Lorenzo Gaggioti is an Italian-born designer now based in Stockholm, who launched Stockholm17 in 2012 with his first crowdfunded deck. His mythology- and sacred-geometry-inspired work has earned him 52 Plus Joker's Artist of the Year four times (2019, 2022–2024) and multiple Deck of the Year awards.",
+    bio: "Lorenzo Gaggiotti is an Italian-born designer now based in Stockholm, who launched Stockholm17 in 2012 with his first crowdfunded deck. His mythology- and sacred-geometry-inspired work has earned him 52 Plus Joker's Artist of the Year four times (2019, 2022–2024) and multiple Deck of the Year awards.",
     accent: "brass",
     initials: "LG",
     logoUrl: "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/stockholm17.png",
     tagline: "The Architect",
     spotlightImageUrl:
       "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/lorenzo-gaggioti-CCuapqa1LykUfGAd4rZ5WnSNWk3Afa.webp",
-    spotlightImageAlt: "Hand-drawn map aces from a Lorenzo Gaggioti deck",
+    spotlightImageAlt: "Hand-drawn map aces from a Lorenzo Gaggiotti deck",
   },
   {
     designer: "Linnea Gits",
