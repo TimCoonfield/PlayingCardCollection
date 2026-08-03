@@ -2,6 +2,7 @@
 
 :root {
   --felt-bg: #1c4632;
+  --felt-header: #12291d;
   --felt-surface: #234f3a;
   --felt-surface-2: #2b5b43;
   --felt-line: #3a6650;
@@ -17,6 +18,7 @@
 
 @theme inline {
   --color-felt-bg: var(--felt-bg);
+  --color-felt-header: var(--felt-header);
   --color-felt-surface: var(--felt-surface);
   --color-felt-surface-2: var(--felt-surface-2);
   --color-felt-line: var(--felt-line);

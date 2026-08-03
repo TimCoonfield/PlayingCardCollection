@@ -14,7 +14,7 @@ export default async function LoginPage({
           ♠
         </span>
         <h1 className="font-display text-2xl font-semibold tracking-wide text-felt-ink">
-          Card Collection
+          Card Guy Archive
         </h1>
         <p className="text-sm text-felt-sub">Enter the password to continue.</p>
       </div>

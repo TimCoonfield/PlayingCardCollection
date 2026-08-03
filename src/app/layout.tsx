@@ -20,7 +20,7 @@ const spectral = Spectral({
 });
 
 export const metadata: Metadata = {
-  title: "Playing Card Collection",
+  title: "Card Guy Archive",
   description: "A visual tracker for a playing card collection.",
 };
 
