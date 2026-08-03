@@ -5,10 +5,16 @@ import { StatTile } from "@/components/stat-tile";
 import { DeckCard } from "@/components/deck-card";
 import { CreatorCard, type CreatorRandomDeck } from "@/components/creator-card";
 import { CreatorSpotlightCard } from "@/components/creator-spotlight-card";
+import { CardsIcon, PaletteIcon, BuildingIcon, LayersIcon } from "@/components/icons";
 import { FEATURED_CREATORS } from "@/lib/featured-creators";
 import { getTagStyle } from "@/lib/placeholders";
 
 const SPECIALTY_TAGS = ["Mini", "Tarot"] as const;
+
+// A faint tiled suit pattern behind the hero, echoing the poster-style creator cards below —
+// generated inline so the effect doesn't need a hosted image asset.
+const HERO_WATERMARK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><text x="4" y="42" font-size="38" fill="#f3ead1">♠</text><text x="50" y="88" font-size="34" fill="#f3ead1">♦</text></svg>`;
+const HERO_WATERMARK_URL = `url("data:image/svg+xml,${encodeURIComponent(HERO_WATERMARK_SVG)}")`;
 
 const SPECIALTY_ACCENT_CLASSES: Record<string, string> = {
   plum: "border-plum/40 hover:bg-plum/10",
@@ -19,9 +25,19 @@ const SPECIALTY_ACCENT_CLASSES: Record<string, string> = {
 };
 
 export default async function HomePage() {
-  const [totalDecks, qtySum, creatorsData, recentDecks, specialtyCounts] = await Promise.all([
+  const [
+    totalDecks,
+    designerGroups,
+    producerGroups,
+    seriesGroups,
+    creatorsData,
+    recentDecks,
+    specialtyCounts,
+  ] = await Promise.all([
     prisma.deck.count(),
-    prisma.deck.aggregate({ _sum: { qty: true } }),
+    prisma.deck.groupBy({ by: ["designer"], where: { designer: { not: null } } }),
+    prisma.deck.groupBy({ by: ["producer"], where: { producer: { not: null } } }),
+    prisma.deck.groupBy({ by: ["series"], where: { series: { not: null } } }),
     Promise.all(
       FEATURED_CREATORS.map(async (creator) => {
         const whereSql = creator.matchProducerToo
@@ -68,37 +84,69 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col gap-10">
-      <div className="flex flex-col gap-6 lg:flex-row">
-        <div className="flex flex-1 flex-col gap-4 rounded-lg border border-felt-line bg-felt-surface p-6">
-          <h1 className="font-display text-2xl font-semibold text-felt-ink">
-            Tim&rsquo;s Card Collection
-          </h1>
-          <p className="max-w-2xl text-sm text-felt-sub">
-            I&rsquo;ve been collecting playing cards since 2018, and spent several years running
-            a YouTube channel (
-            <a
-              href="https://www.youtube.com/@TheCardGuyReviews"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-brass hover:text-brass-deep"
+      <div className="relative overflow-hidden rounded-lg border border-felt-line bg-felt-surface">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.07]"
+          style={{ backgroundImage: HERO_WATERMARK_URL, backgroundRepeat: "repeat" }}
+        />
+        <div className="relative flex flex-col gap-6 p-6 lg:flex-row">
+          <div className="flex flex-1 flex-col gap-4">
+            <h1 className="font-display text-2xl font-semibold text-felt-ink sm:text-3xl">
+              Welcome to the Card Guy Archive
+            </h1>
+            <p className="max-w-2xl text-sm text-felt-sub">
+              I&rsquo;ve been collecting playing cards since 2018, and spent several years running
+              a YouTube channel (
+              <a
+                href="https://www.youtube.com/@TheCardGuyReviews"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brass hover:text-brass-deep"
+              >
+                The Card Guy Reviews
+              </a>
+              ) doing deck reviews. Along the way I even brought my own deck to life on
+              Kickstarter, Rattler Gorge. This is where I catalog and share the collection as it
+              keeps growing.
+            </p>
+            <Link
+              href="/collection"
+              className="self-start rounded-md bg-brass px-4 py-2 text-sm font-semibold text-felt-bg hover:bg-brass-deep"
             >
-              The Card Guy Reviews
-            </a>
-            ) doing deck reviews. Along the way I even brought my own deck to life on
-            Kickstarter, Rattler Gorge. This is where I catalog and share the collection as it
-            keeps growing.
-          </p>
-          <Link
-            href="/collection"
-            className="self-start rounded-md bg-brass px-4 py-2 text-sm font-semibold text-felt-bg hover:bg-brass-deep"
-          >
-            View the whole collection
-          </Link>
-        </div>
+              View the whole collection
+            </Link>
+          </div>
 
-        <div className="grid grid-cols-2 gap-4 lg:w-56 lg:grid-cols-1">
-          <StatTile label="Total unique decks" value={totalDecks} />
-          <StatTile label="Total decks" value={qtySum._sum.qty ?? 0} />
+          <div className="flex flex-col gap-3 lg:w-72 lg:shrink-0">
+            <div className="grid grid-cols-2 gap-3">
+              <StatTile
+                icon={<CardsIcon className="h-6 w-6" />}
+                label="Unique decks"
+                value={totalDecks}
+              />
+              <StatTile
+                icon={<PaletteIcon className="h-6 w-6" />}
+                label="Designers"
+                value={designerGroups.length}
+              />
+              <StatTile
+                icon={<BuildingIcon className="h-6 w-6" />}
+                label="Producers"
+                value={producerGroups.length}
+              />
+              <StatTile
+                icon={<LayersIcon className="h-6 w-6" />}
+                label="Series"
+                value={seriesGroups.length}
+              />
+            </div>
+            <Link
+              href="/collection"
+              className="rounded-md border border-brass px-4 py-2 text-center text-sm font-semibold text-brass hover:bg-brass/10"
+            >
+              Browse the full collection →
+            </Link>
+          </div>
         </div>
       </div>
 
