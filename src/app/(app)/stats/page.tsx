@@ -3,7 +3,7 @@ import { StatTile } from "@/components/stat-tile";
 import { HorizontalRankedChart, PieBreakdownChart, YearHistogramChart } from "@/components/stats-charts";
 import { SeriesShowcase, type SeriesSpotlightDatum } from "@/components/series-showcase";
 import { DeckCard } from "@/components/deck-card";
-import { CardsIcon, PaletteIcon, BuildingIcon, LayersIcon } from "@/components/icons";
+import { CardsIcon, PaletteIcon, CoinIcon, LayersIcon } from "@/components/icons";
 
 const CHART_COLORS = {
   designer: "#b58a35",
@@ -30,7 +30,7 @@ export default async function StatsPage() {
     designerGroups,
     seriesGroups,
     allDesigners,
-    allProducers,
+    coinCount,
     modernCount,
     vintageCount,
     antiqueCount,
@@ -52,7 +52,7 @@ export default async function StatsPage() {
       where: { series: { not: null } },
     }),
     prisma.deck.groupBy({ by: ["designer"], where: { designer: { not: null } } }),
-    prisma.deck.groupBy({ by: ["producer"], where: { producer: { not: null } } }),
+    prisma.coin.count(),
     prisma.deck.count({ where: { tags: { has: "Modern" } } }),
     prisma.deck.count({ where: { tags: { has: "Vintage" } } }),
     prisma.deck.count({ where: { tags: { has: "Antique" } } }),
@@ -118,7 +118,7 @@ export default async function StatsPage() {
         <StatTile icon={<CardsIcon className="h-6 w-6" />} label="Total unique decks" value={totalDecks} />
         <StatTile icon={<CardsIcon className="h-6 w-6" />} label="Total decks" value={qtySum._sum.qty ?? 0} />
         <StatTile icon={<PaletteIcon className="h-6 w-6" />} label="Designers" value={allDesigners.length} />
-        <StatTile icon={<BuildingIcon className="h-6 w-6" />} label="Producers" value={allProducers.length} />
+        <StatTile icon={<CoinIcon className="h-6 w-6" />} label="Coins" value={coinCount} />
         <StatTile icon={<LayersIcon className="h-6 w-6" />} label="Series" value={seriesGroups.length} />
       </div>
 

@@ -28,7 +28,7 @@ export function NavBar({ isAuthenticated }: { isAuthenticated: boolean }) {
               Card Guy Archive
             </span>
             <span className="text-[10px] uppercase tracking-[0.14em] text-brass/70">
-              Tim Coonfield&rsquo;s Playing Card Collection
+              Tim&rsquo;s Playing Card Collection
             </span>
           </span>
         </Link>

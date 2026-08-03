@@ -5,7 +5,7 @@ import { StatTile } from "@/components/stat-tile";
 import { DeckCard } from "@/components/deck-card";
 import { CreatorCard, type CreatorRandomDeck } from "@/components/creator-card";
 import { CreatorSpotlightCard } from "@/components/creator-spotlight-card";
-import { CardsIcon, PaletteIcon, BuildingIcon, LayersIcon, CoinIcon } from "@/components/icons";
+import { CardsIcon, PaletteIcon, LayersIcon, CoinIcon } from "@/components/icons";
 import { FEATURED_CREATORS } from "@/lib/featured-creators";
 import { getTagStyle } from "@/lib/placeholders";
 
@@ -38,7 +38,6 @@ export default async function HomePage() {
   const [
     totalDecks,
     designerGroups,
-    producerGroups,
     seriesGroups,
     creatorsData,
     recentDecks,
@@ -47,7 +46,6 @@ export default async function HomePage() {
   ] = await Promise.all([
     prisma.deck.count(),
     prisma.deck.groupBy({ by: ["designer"], where: { designer: { not: null } } }),
-    prisma.deck.groupBy({ by: ["producer"], where: { producer: { not: null } } }),
     prisma.deck.groupBy({ by: ["series"], where: { series: { not: null } } }),
     Promise.all(
       FEATURED_CREATORS.map(async (creator) => {
@@ -125,7 +123,7 @@ export default async function HomePage() {
               href="/collection"
               className="self-start rounded-md bg-brass px-4 py-2 text-sm font-semibold text-felt-bg hover:bg-brass-deep"
             >
-              View the whole collection
+              Enter the archives →
             </Link>
           </div>
 
@@ -142,9 +140,9 @@ export default async function HomePage() {
                 value={designerGroups.length}
               />
               <StatTile
-                icon={<BuildingIcon className="h-6 w-6" />}
-                label="Producers"
-                value={producerGroups.length}
+                icon={<CoinIcon className="h-6 w-6" />}
+                label="Coins"
+                value={coinCount}
               />
               <StatTile
                 icon={<LayersIcon className="h-6 w-6" />}
@@ -152,12 +150,6 @@ export default async function HomePage() {
                 value={seriesGroups.length}
               />
             </div>
-            <Link
-              href="/collection"
-              className="rounded-md border border-brass px-4 py-2 text-center text-sm font-semibold text-brass hover:bg-brass/10"
-            >
-              Browse the full collection →
-            </Link>
           </div>
         </div>
       </div>
