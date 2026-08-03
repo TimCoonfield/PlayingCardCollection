@@ -3,19 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HeaderSearch } from "@/components/header-search";
-import { CollectionIcon, StatsIcon, PlusIcon, SearchIcon } from "@/components/icons";
+import { AddMenu } from "@/components/add-menu";
+import { CollectionIcon, StatsIcon, SearchIcon } from "@/components/icons";
 import { logout } from "./logout-action";
 
-const baseLinks = [
+const navLinks = [
   { href: "/collection", label: "Collection", icon: CollectionIcon },
   { href: "/stats", label: "Stats", icon: StatsIcon },
 ];
 
 export function NavBar({ isAuthenticated }: { isAuthenticated: boolean }) {
   const pathname = usePathname();
-  const links = isAuthenticated
-    ? [baseLinks[0], { href: "/decks/new", label: "Add Deck", icon: PlusIcon }, baseLinks[1]]
-    : baseLinks;
 
   return (
     <header className="sticky top-0 z-10 border-b border-felt-line bg-felt-header/95 backdrop-blur">
@@ -35,7 +33,7 @@ export function NavBar({ isAuthenticated }: { isAuthenticated: boolean }) {
           </span>
         </Link>
         <nav className="flex items-center gap-0.5 text-xs sm:gap-1 sm:text-sm">
-          {links.map((link) => {
+          {navLinks.map((link) => {
             const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
             const Icon = link.icon;
             return (
@@ -51,6 +49,7 @@ export function NavBar({ isAuthenticated }: { isAuthenticated: boolean }) {
               </Link>
             );
           })}
+          {isAuthenticated && <AddMenu />}
           <form
             action="/collection"
             method="GET"
