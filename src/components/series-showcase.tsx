@@ -9,11 +9,11 @@ export interface SeriesSpotlightDatum {
 }
 
 const RANK_BADGE_STYLES = [
-  "bg-brass/20 text-brass ring-brass/40",
-  "bg-felt-ink/15 text-felt-ink ring-felt-ink/30",
-  "bg-brick/20 text-brick ring-brick/40",
-  "bg-sage/20 text-sage ring-sage/40",
-  "bg-plum/20 text-plum ring-plum/40",
+  "bg-felt-bg text-brass ring-brass/50",
+  "bg-felt-bg text-felt-ink ring-felt-ink/40",
+  "bg-felt-bg text-brick ring-brick/50",
+  "bg-felt-bg text-sage ring-sage/50",
+  "bg-felt-bg text-plum ring-plum/50",
 ];
 
 export function SeriesShowcase({ items }: { items: SeriesSpotlightDatum[] }) {
@@ -53,12 +53,10 @@ export function SeriesShowcase({ items }: { items: SeriesSpotlightDatum[] }) {
           </div>
         );
 
-        return item.deck ? (
-          <Link key={item.series} href={`/decks/${item.deck.id}`}>
+        return (
+          <Link key={item.series} href={`/collection?series=${encodeURIComponent(item.series)}`}>
             {content}
           </Link>
-        ) : (
-          <div key={item.series}>{content}</div>
         );
       })}
     </div>
