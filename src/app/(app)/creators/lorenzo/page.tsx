@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { DeckCard } from "@/components/deck-card";
 
 const LORENZO_HERO_IMAGE_URL =
-  "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/pages/lorenzo-hero.webp";
+  "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/pages/lorenzo-hero-2.webp";
 
 export default async function LorenzoLandingPage() {
   const decks = await prisma.deck.findMany({
