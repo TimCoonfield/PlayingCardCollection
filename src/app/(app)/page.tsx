@@ -12,13 +12,13 @@ import { getTagStyle } from "@/lib/placeholders";
 const SPECIALTY_TAGS = ["Mini", "Tarot"] as const;
 
 type SpecialtyTile =
-  | { kind: "tag"; tag: (typeof SPECIALTY_TAGS)[number] }
+  | { kind: "tag"; tag: (typeof SPECIALTY_TAGS)[number]; href?: string }
   | { kind: "coins" }
   | { kind: "souvenir" };
 
 const SPECIALTY_TILES: SpecialtyTile[] = [
-  { kind: "tag", tag: "Mini" },
-  { kind: "tag", tag: "Tarot" },
+  { kind: "tag", tag: "Mini", href: "/mini" },
+  { kind: "tag", tag: "Tarot", href: "/tarot" },
   { kind: "coins" },
   { kind: "souvenir" },
 ];
@@ -250,7 +250,7 @@ export default async function HomePage() {
             return (
               <Link
                 key={tile.tag}
-                href={`/collection?tag=${encodeURIComponent(tile.tag)}`}
+                href={tile.href ?? `/collection?tag=${encodeURIComponent(tile.tag)}`}
                 className={`flex items-center gap-3 rounded-lg border bg-felt-surface p-4 transition-colors ${accentClass}`}
               >
                 <span className="text-3xl leading-none">{style.icon}</span>
