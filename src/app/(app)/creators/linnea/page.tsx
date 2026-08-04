@@ -34,10 +34,7 @@ export default async function LinneaLandingPage() {
             Linnea Gits
           </h1>
           <p className="text-sm text-felt-sub">
-            Linnea Gits co-founded the design studio Uusi with Peter Dunham in 2010, hand-painting
-            original artwork in oils and watercolors for decks like Blue Blood, Pagan, and
-            Republic. The duo has funded 13 tarot and playing card projects on Kickstarter and
-            collaborated with brands like Herman Miller and Taschen.
+            Linnea Gits may be the finest pure artist working in playing cards. Her painting is on another level, and I’m not sure anyone else in the industry can truly match it. But the appeal of Uusi goes beyond technical skill. Linnea and Peter Dunham take a deeply considered, emotional approach to every project, whether they are creating a tarot or a traditional playing-card deck. The imagery feels lived-in and human, with texture and imperfections that could never be replicated by work that was merely polished. Pagan was my first deck of theirs, given to me as a gift, and I’ve been in love with their work ever since. Their decks feel less like products than complete artistic statements.
           </p>
         </div>
       </div>

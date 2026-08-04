@@ -34,10 +34,7 @@ export default async function AlessandraLandingPage() {
             Alessandra Gagliano
           </h1>
           <p className="text-sm text-felt-sub">
-            Alessandra Gagliano is a Sicilian artist who hand-designs every Jocu deck from
-            scratch, starting as pencil sketches or paintings before being reimagined digitally.
-            Her work includes Fillide, inspired by Sicilian folklore, and The Green Man, exploring
-            plant mythology.
+            I was backer number two on Jocu’s first Kickstarter campaign, Fillide, and I haven’t looked back. Alessandra Gagliano creates wonderful artwork rooted in mythology, folklore, and the natural world—often drawing from stories obscure enough that the deck becomes an introduction to them. Her work can be beautiful and inviting at first glance, but there is always more underneath: symbolism, history, emotion, and a genuine reverence for the traditions inspiring it. That balance is what makes Jocu’s decks so appealing to me. They do not simply borrow the imagery of nature and mythology; they explore why those stories endured and find new ways to tell them through playing cards.
           </p>
         </div>
       </div>

@@ -34,10 +34,7 @@ export default async function KarlLandingPage() {
             Karl Gerich
           </h1>
           <p className="text-sm text-felt-sub">
-            Karl Alexander Gerich (1956–2016) hand-etched and hand-coloured playing cards from his
-            studio in Bath, England, producing 37 numbered designs between 1980 and 1998 on his
-            own printing press — he even made the boxes himself. His partner Georgina Harvey drew
-            several of the decks he produced, working together as the Victoria Playing Card Co.
+            Few creators have changed the way I understand playing cards as profoundly as Karl Gerich. I have poured more time into studying, collecting, and appreciating his work than perhaps that of any other artist. His decks are stunning, but beauty is only the beginning. Gerich understood the history and visual language of playing cards intimately, then reinterpreted them with extraordinary craftsmanship, intelligence, and imagination. Because he controlled so much of the process himself, every deck feels intensely personal—an object made by an artist rather than simply designed by one. His work rewards close study, and each new deck has expanded my appreciation for what playing cards can be. Collecting Gerich has become a collection within the collection.
           </p>
         </div>
       </div>

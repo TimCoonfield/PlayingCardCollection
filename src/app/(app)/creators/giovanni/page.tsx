@@ -34,10 +34,7 @@ export default async function GiovanniLandingPage() {
             Giovanni Meroni
           </h1>
           <p className="text-sm text-felt-sub">
-            Giovanni Meroni is a freelance designer and art director from Italy who founded
-            Thirdway Industries in 2014, weaving ancient myths and Mediterranean-inspired artwork
-            into decks like Good &amp; Evil and SINS. His work is known for a distinctive
-            classical, literary feel that sets it apart from typical playing card designs.
+            Giovanni Meroni is another of my absolute favorite creators, largely because of the depth of the stories he builds behind his decks. My first was Dedalo, which arrived almost accidentally as a single deck in an eBay lot. Its interpretation of the Minotaur, the Labyrinth, and the larger mythology surrounding them drew me in immediately. Since then, I’ve had the privilege of speaking with Giovanni several times, and his excitement when explaining the characters, symbolism, and hidden lore behind his work is infectious. The artwork is striking on its own, but understanding how thoughtfully every detail fits into the story makes the decks far more rewarding. Giovanni creates designs that invite you to keep looking, reading, and discovering.
           </p>
         </div>
       </div>

@@ -34,10 +34,7 @@ export default async function ElettraLandingPage() {
             Elettra Deganello
           </h1>
           <p className="text-sm text-felt-sub">
-            Elettra Deganello is an illustrator and designer based in Prato, Italy, who entered
-            the custom playing card world in 2017 with Pinocchio and Florentia for Passione
-            Playing Cards. She was nominated for 52 Plus Joker&rsquo;s Artist of the Year in the
-            2021 Diamond Awards and later designed the typography-driven Bicycle Bold Slab deck.
+            I’ve had the pleasure of meeting Elettra Deganello at the last several 52+Joker conventions, including 2024, when she created the club deck. She is a wonderful person and an extraordinarily talented illustrator whose care for the form is apparent in everything she makes. Even her simplest designs feel deliberate; every line, character, ornament, and historical reference seems to be there for a reason. Her Pinocchio deck is the one I often describe as the most flawless deck I know. That does not necessarily mean the most elaborate or ambitious—only that there is genuinely nothing about it I would change. It is imaginative, beautifully drawn, perfectly suited to its subject, and executed with remarkable clarity from beginning to end.
           </p>
         </div>
       </div>
