@@ -29,7 +29,7 @@ export default async function LorenzoLandingPage() {
               "linear-gradient(to right, color-mix(in srgb, var(--felt-bg) 90%, transparent) 0%, color-mix(in srgb, var(--felt-bg) 90%, transparent) 44%, transparent 58%)",
           }}
         />
-        <div className="relative flex flex-col gap-3 p-6 lg:max-w-xl">
+        <div className="relative flex flex-col gap-3 p-6 lg:max-w-lg">
           <h1 className="font-display text-2xl font-semibold text-felt-ink sm:text-3xl">
             Lorenzo Gaggiotti
           </h1>
