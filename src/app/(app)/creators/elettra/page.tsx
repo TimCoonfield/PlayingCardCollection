@@ -30,9 +30,10 @@ export default async function ElettraLandingPage() {
           }}
         />
         <div className="relative flex flex-col gap-3 p-6 lg:max-w-lg">
-          <h1 className="font-display text-2xl font-semibold text-felt-ink sm:text-3xl">
+          <h1 className="font-display text-3xl font-semibold text-felt-ink sm:text-4xl">
             Elettra Deganello
           </h1>
+          <p className="text-sm font-medium tracking-wide text-brass">The Interpreter</p>
           <p className="text-sm text-felt-sub">
             I’ve had the pleasure of meeting Elettra Deganello at the last several 52+Joker conventions, including 2024, when she created the club deck. She is a wonderful person and an extraordinarily talented illustrator whose care for the form is apparent in everything she makes. Even her simplest designs feel deliberate; every line, character, ornament, and historical reference seems to be there for a reason. Her Pinocchio deck is the one I often describe as the most flawless deck I know. That does not necessarily mean the most elaborate or ambitious—only that there is genuinely nothing about it I would change. It is imaginative, beautifully drawn, perfectly suited to its subject, and executed with remarkable clarity from beginning to end.
           </p>

@@ -14,7 +14,7 @@ export default async function LorenzoLandingPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="relative overflow-hidden rounded-lg border border-felt-line bg-felt-surface lg:min-h-[440px]">
+      <div className="relative overflow-hidden rounded-lg border border-felt-line bg-felt-surface">
         <Image
           src={LORENZO_HERO_IMAGE_URL}
           alt=""
@@ -30,9 +30,10 @@ export default async function LorenzoLandingPage() {
           }}
         />
         <div className="relative flex flex-col gap-3 p-6 lg:max-w-lg">
-          <h1 className="font-display text-2xl font-semibold text-felt-ink sm:text-3xl">
+          <h1 className="font-display text-3xl font-semibold text-felt-ink sm:text-4xl">
             Lorenzo Gaggiotti
           </h1>
+          <p className="text-sm font-medium tracking-wide text-brass">The Architect</p>
           <p className="text-sm text-felt-sub">
             Lorenzo Gaggiotti may or may not be my single favorite playing card creator—there are too many artists whose work I love to make that an easy call. But he is probably the clearest archetype of what I want a creator in my collection to be. The House of the Rising Spade was my first deck of his, and it immediately showed me the full package: impeccable artwork, rich storytelling, and phenomenal execution. Lorenzo does not simply design cards; he builds complete worlds around them, with their own characters, symbols, histories, and artifacts. The artistry is second to none, but it is the way every element supports the larger vision that makes his work feel so complete.
           </p>

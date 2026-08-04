@@ -30,9 +30,10 @@ export default async function KarlLandingPage() {
           }}
         />
         <div className="relative flex flex-col gap-3 p-6 lg:max-w-lg">
-          <h1 className="font-display text-2xl font-semibold text-felt-ink sm:text-3xl">
+          <h1 className="font-display text-3xl font-semibold text-felt-ink sm:text-4xl">
             Karl Gerich
           </h1>
+          <p className="text-sm font-medium tracking-wide text-brass">The Craftsman</p>
           <p className="text-sm text-felt-sub">
             Few creators have changed the way I understand playing cards as profoundly as Karl Gerich. I have poured more time into studying, collecting, and appreciating his work than perhaps that of any other artist. His decks are stunning, but beauty is only the beginning. Gerich understood the history and visual language of playing cards intimately, then reinterpreted them with extraordinary craftsmanship, intelligence, and imagination. Because he controlled so much of the process himself, every deck feels intensely personal—an object made by an artist rather than simply designed by one. His work rewards close study, and each new deck has expanded my appreciation for what playing cards can be. Collecting Gerich has become a collection within the collection.
           </p>

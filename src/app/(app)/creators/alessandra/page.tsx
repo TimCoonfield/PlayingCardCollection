@@ -30,9 +30,10 @@ export default async function AlessandraLandingPage() {
           }}
         />
         <div className="relative flex flex-col gap-3 p-6 lg:max-w-lg">
-          <h1 className="font-display text-2xl font-semibold text-felt-ink sm:text-3xl">
+          <h1 className="font-display text-3xl font-semibold text-felt-ink sm:text-4xl">
             Alessandra Gagliano
           </h1>
+          <p className="text-sm font-medium tracking-wide text-brass">The Folklorist</p>
           <p className="text-sm text-felt-sub">
             I was backer number two on Jocu’s first Kickstarter campaign, Fillide, and I haven’t looked back. Alessandra Gagliano creates wonderful artwork rooted in mythology, folklore, and the natural world—often drawing from stories obscure enough that the deck becomes an introduction to them. Her work can be beautiful and inviting at first glance, but there is always more underneath: symbolism, history, emotion, and a genuine reverence for the traditions inspiring it. That balance is what makes Jocu’s decks so appealing to me. They do not simply borrow the imagery of nature and mythology; they explore why those stories endured and find new ways to tell them through playing cards.
           </p>
