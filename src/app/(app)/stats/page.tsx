@@ -61,7 +61,7 @@ export default async function StatsPage() {
       where: { series: { not: null } },
       _count: { _all: true },
       orderBy: { _count: { series: "desc" } },
-      take: 3,
+      take: 5,
     }),
     prisma.deck.findMany({
       orderBy: { createdAt: "desc" },

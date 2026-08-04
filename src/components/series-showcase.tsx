@@ -12,16 +12,18 @@ const RANK_BADGE_STYLES = [
   "bg-brass/20 text-brass ring-brass/40",
   "bg-felt-ink/15 text-felt-ink ring-felt-ink/30",
   "bg-brick/20 text-brick ring-brick/40",
+  "bg-sage/20 text-sage ring-sage/40",
+  "bg-plum/20 text-plum ring-plum/40",
 ];
 
 export function SeriesShowcase({ items }: { items: SeriesSpotlightDatum[] }) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
       {items.map((item, i) => {
-        const badgeStyle = RANK_BADGE_STYLES[i] ?? RANK_BADGE_STYLES[2];
+        const badgeStyle = RANK_BADGE_STYLES[i] ?? RANK_BADGE_STYLES[RANK_BADGE_STYLES.length - 1];
         const content = (
           <div className="group flex flex-col overflow-hidden rounded-lg border border-felt-line bg-felt-surface transition-colors hover:border-brass">
-            <div className="relative aspect-[4/3] w-full">
+            <div className="relative aspect-[3/4] w-full bg-felt-surface-2">
               {item.deck?.imageUrl ? (
                 <Image
                   src={item.deck.imageUrl}
