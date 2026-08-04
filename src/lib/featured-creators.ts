@@ -32,6 +32,7 @@ export interface FeaturedCreator {
 export const FEATURED_CREATORS: FeaturedCreator[] = [
   {
     designer: "Giovanni Meroni",
+    landingPageHref: "/creators/giovanni",
     producer: "Thirdway Industries",
     bio: "Giovanni Meroni is a freelance designer and art director from Italy who founded Thirdway Industries in 2014, weaving ancient myths and Mediterranean-inspired artwork into decks like Good & Evil and SINS. His work is known for a distinctive classical, literary feel that sets it apart from typical playing card designs.",
     accent: "brick",
@@ -57,6 +58,7 @@ export const FEATURED_CREATORS: FeaturedCreator[] = [
   },
   {
     designer: "Linnea Gits",
+    landingPageHref: "/creators/linnea",
     producer: "Uusi",
     bio: "Linnea Gits co-founded the design studio Uusi with Peter Dunham in 2010, hand-painting original artwork in oils and watercolors for decks like Blue Blood, Pagan, and Republic. The duo has funded 13 tarot and playing card projects on Kickstarter and collaborated with brands like Herman Miller and Taschen.",
     accent: "felt-ink",
@@ -69,6 +71,7 @@ export const FEATURED_CREATORS: FeaturedCreator[] = [
   },
   {
     designer: "Alessandra Gagliano",
+    landingPageHref: "/creators/alessandra",
     producer: "Jocu",
     bio: "Alessandra Gagliano is a Sicilian artist who hand-designs every Jocu deck from scratch, starting as pencil sketches or paintings before being reimagined digitally. Her work includes Fillide, inspired by Sicilian folklore, and The Green Man, exploring plant mythology.",
     accent: "sage",
@@ -81,6 +84,7 @@ export const FEATURED_CREATORS: FeaturedCreator[] = [
   },
   {
     designer: "Elettra Deganello",
+    landingPageHref: "/creators/elettra",
     producer: "Elettra Deganello",
     bio: "Elettra Deganello is an illustrator and designer based in Prato, Italy, who entered the custom playing card world in 2017 with Pinocchio and Florentia for Passione Playing Cards. She was nominated for 52 Plus Joker's Artist of the Year in the 2021 Diamond Awards and later designed the typography-driven Bicycle Bold Slab deck.",
     accent: "plum",
@@ -93,6 +97,7 @@ export const FEATURED_CREATORS: FeaturedCreator[] = [
   },
   {
     designer: "Karl Gerich",
+    landingPageHref: "/creators/karl",
     producer: "Karl Gerich",
     bio: "Karl Alexander Gerich (1956–2016) hand-etched and hand-coloured playing cards from his studio in Bath, England, producing 37 numbered designs between 1980 and 1998 on his own printing press — he even made the boxes himself. His partner Georgina Harvey drew several of the decks he produced, working together as the Victoria Playing Card Co.",
     accent: "brick",
