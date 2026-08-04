@@ -57,7 +57,7 @@ export default async function CollectionPage({
   if (producer) deckAnd.push({ producer });
   if (creator) deckAnd.push({ OR: [{ designer: creator }, { producer: creator }] });
   if (series) deckAnd.push({ series });
-  if (tags.length > 0) deckAnd.push({ tags: { hasSome: tags } });
+  if (tags.length > 0) deckAnd.push({ tags: { hasEvery: tags } });
   const deckWhere: Prisma.DeckWhereInput = deckAnd.length > 0 ? { AND: deckAnd } : {};
 
   const coinAnd: Prisma.CoinWhereInput[] = [];
@@ -76,7 +76,7 @@ export default async function CollectionPage({
   if (producer) coinAnd.push({ producer });
   if (creator) coinAnd.push({ OR: [{ designer: creator }, { producer: creator }] });
   if (series) coinAnd.push({ series });
-  if (tags.length > 0) coinAnd.push({ tags: { hasSome: tags } });
+  if (tags.length > 0) coinAnd.push({ tags: { hasEvery: tags } });
   const coinWhere: Prisma.CoinWhereInput = coinAnd.length > 0 ? { AND: coinAnd } : {};
 
   const wantDecks = type !== "coin";
