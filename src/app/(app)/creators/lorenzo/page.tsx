@@ -2,9 +2,8 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { DeckCard } from "@/components/deck-card";
 
-// Placeholder — reusing the Souvenir page's hero photo until a Lorenzo-specific image is ready.
 const LORENZO_HERO_IMAGE_URL =
-  "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/pages/souvenir-hero.jpg";
+  "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/pages/lorenzo-hero.webp";
 
 export default async function LorenzoLandingPage() {
   const decks = await prisma.deck.findMany({
