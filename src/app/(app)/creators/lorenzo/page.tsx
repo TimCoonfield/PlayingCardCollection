@@ -20,7 +20,7 @@ export default async function LorenzoLandingPage() {
           alt=""
           fill
           sizes="(min-width: 1024px) 60vw, 100vw"
-          className="pointer-events-none object-cover opacity-[0.18] lg:object-right lg:opacity-100"
+          className="pointer-events-none object-cover opacity-[0.18] lg:opacity-100 lg:[object-position:68%_center]"
         />
         <div
           className="pointer-events-none absolute inset-0 hidden lg:block"
