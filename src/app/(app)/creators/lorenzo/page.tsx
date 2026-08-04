@@ -14,13 +14,13 @@ export default async function LorenzoLandingPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="relative overflow-hidden rounded-lg border border-felt-line bg-felt-surface">
+      <div className="relative overflow-hidden rounded-lg border border-felt-line bg-felt-surface lg:min-h-[440px]">
         <Image
           src={LORENZO_HERO_IMAGE_URL}
           alt=""
           fill
           sizes="(min-width: 1024px) 60vw, 100vw"
-          className="pointer-events-none object-cover opacity-[0.18] lg:opacity-100 lg:[object-position:68%_center]"
+          className="pointer-events-none object-cover opacity-[0.18] lg:opacity-100"
         />
         <div
           className="pointer-events-none absolute inset-0 hidden lg:block"
