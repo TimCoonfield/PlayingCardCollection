@@ -164,9 +164,11 @@ export default async function HomePage() {
         <h2 className="text-sm font-medium text-felt-sub">Featured creators</h2>
         <div className="flex flex-wrap justify-center gap-4">
           {creatorsData.map((creator) => {
-            const viewAllHref = creator.matchProducerToo
-              ? `/collection?creator=${encodeURIComponent(creator.designer)}`
-              : `/collection?designer=${encodeURIComponent(creator.designer)}`;
+            const viewAllHref =
+              creator.landingPageHref ??
+              (creator.matchProducerToo
+                ? `/collection?creator=${encodeURIComponent(creator.designer)}`
+                : `/collection?designer=${encodeURIComponent(creator.designer)}`);
             return (
               <div
                 key={creator.designer}

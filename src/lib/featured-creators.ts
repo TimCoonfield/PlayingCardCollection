@@ -23,6 +23,7 @@ export interface FeaturedCreator {
    * (not designer) — e.g. decks they produced but someone else drew. Changes the "View all"
    * link from ?designer= to the OR-matching ?creator= filter. */
   matchProducerToo?: boolean;
+  landingPageHref?: string;
 }
 
 // Hand-picked, not derived from collection stats. Bios are a starting point sourced from
@@ -43,6 +44,7 @@ export const FEATURED_CREATORS: FeaturedCreator[] = [
   },
   {
     designer: "Lorenzo Gaggiotti",
+    landingPageHref: "/creators/lorenzo",
     producer: "Stockholm17",
     bio: "Lorenzo Gaggiotti is an Italian-born designer now based in Stockholm, who launched Stockholm17 in 2012 with his first crowdfunded deck. His mythology- and sacred-geometry-inspired work has earned him 52 Plus Joker's Artist of the Year four times (2019, 2022–2024) and multiple Deck of the Year awards.",
     accent: "brass",
