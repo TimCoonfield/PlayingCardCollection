@@ -115,7 +115,7 @@ export default async function DeckDetailPage({
             </div>
           )}
 
-          {deck.editions.length > 0 && (
+          {deck.editions.length > 0 ? (
             <div className="flex flex-wrap gap-3">
               {deck.editions.map((edition) => (
                 <StatTile
@@ -129,6 +129,12 @@ export default async function DeckDetailPage({
                 />
               ))}
             </div>
+          ) : (
+            deck.productionRun && (
+              <div className="flex flex-wrap gap-3">
+                <StatTile label="Edition" value={`XX/${deck.productionRun}`} />
+              </div>
+            )
           )}
 
           {deck.catalogNumber && (
