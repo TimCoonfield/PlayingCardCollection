@@ -7,6 +7,7 @@ import { StatTile } from "@/components/stat-tile";
 import { TagChip } from "@/components/tag-chip";
 import { PencilIcon, TrashIcon, HeartIcon } from "@/components/icons";
 import { FavoriteButton } from "@/components/favorite-button";
+import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { getSession } from "@/lib/auth";
 import { deleteDeck } from "../actions";
 
@@ -53,14 +54,14 @@ export default async function DeckDetailPage({
                 await deleteDeckWithId();
               }}
             >
-              <button
-                type="submit"
-                aria-label="Delete deck"
+              <ConfirmSubmitButton
+                confirmMessage={`Delete "${deck.name}"? This can't be undone.`}
+                ariaLabel="Delete deck"
                 title="Delete"
                 className="flex h-9 w-9 items-center justify-center rounded-full border border-brick/50 text-brick transition-colors hover:bg-brick/10"
               >
                 <TrashIcon className="h-4 w-4" />
-              </button>
+              </ConfirmSubmitButton>
             </form>
           </div>
         )}

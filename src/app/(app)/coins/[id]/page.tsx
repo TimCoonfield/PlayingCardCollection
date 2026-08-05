@@ -5,6 +5,7 @@ import { CoinGallery } from "@/components/coin-gallery";
 import { BackLink } from "@/components/back-link";
 import { CoinTagChip } from "@/components/coin-tag-chip";
 import { PencilIcon, TrashIcon } from "@/components/icons";
+import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { getSession } from "@/lib/auth";
 import { deleteCoin } from "../actions";
 
@@ -47,14 +48,14 @@ export default async function CoinDetailPage({
                 await deleteCoinWithId();
               }}
             >
-              <button
-                type="submit"
-                aria-label="Delete coin"
+              <ConfirmSubmitButton
+                confirmMessage={`Delete "${coin.name}"? This can't be undone.`}
+                ariaLabel="Delete coin"
                 title="Delete"
                 className="flex h-9 w-9 items-center justify-center rounded-full border border-brick/50 text-brick transition-colors hover:bg-brick/10"
               >
                 <TrashIcon className="h-4 w-4" />
-              </button>
+              </ConfirmSubmitButton>
             </form>
           </div>
         )}
