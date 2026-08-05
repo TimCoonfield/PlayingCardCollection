@@ -3,7 +3,7 @@ import { StatTile } from "@/components/stat-tile";
 import { HorizontalRankedChart, PieBreakdownChart, YearHistogramChart } from "@/components/stats-charts";
 import { SeriesShowcase, type SeriesSpotlightDatum } from "@/components/series-showcase";
 import { DeckCard } from "@/components/deck-card";
-import { CardsIcon, PaletteIcon, CoinIcon, LayersIcon } from "@/components/icons";
+import { CardsIcon, PaletteIcon, CoinIcon, LayersIcon, CameraIcon } from "@/components/icons";
 
 const CHART_COLORS = {
   designer: "#b58a35",
@@ -37,6 +37,7 @@ export default async function StatsPage() {
     topSeriesGroups,
     recentDecks,
     releaseYearGroups,
+    decksWithPhoto,
   ] = await Promise.all([
     prisma.deck.count(),
     prisma.deck.aggregate({ _sum: { qty: true } }),
@@ -82,7 +83,10 @@ export default async function StatsPage() {
       where: { releaseYear: { not: null } },
       _count: { _all: true },
     }),
+    prisma.deck.count({ where: { images: { some: {} } } }),
   ]);
+
+  const photoPct = totalDecks > 0 ? Math.round((decksWithPhoto / totalDecks) * 100) : 0;
 
   const designerData = designerGroups.map((g) => ({
     label: g.designer!,
@@ -114,12 +118,17 @@ export default async function StatsPage() {
     <div className="flex flex-col gap-8">
       <h1 className="font-display text-xl font-semibold text-felt-ink">Collection Stats</h1>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <StatTile icon={<CardsIcon className="h-6 w-6" />} label="Total unique decks" value={totalDecks} />
         <StatTile icon={<CardsIcon className="h-6 w-6" />} label="Total decks" value={qtySum._sum.qty ?? 0} />
         <StatTile icon={<PaletteIcon className="h-6 w-6" />} label="Designers" value={allDesigners.length} />
         <StatTile icon={<CoinIcon className="h-6 w-6" />} label="Coins" value={coinCount} />
         <StatTile icon={<LayersIcon className="h-6 w-6" />} label="Series" value={seriesGroups.length} />
+        <StatTile
+          icon={<CameraIcon className="h-6 w-6" />}
+          label={`${decksWithPhoto}/${totalDecks} have a photo`}
+          value={`${photoPct}%`}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
