@@ -22,6 +22,13 @@ function toArrayParam(value: string | string[] | undefined): string[] {
   return Array.isArray(value) ? value : [value];
 }
 
+function toOptionalNumberParam(value: string | string[] | undefined): number | null {
+  const raw = toParam(value);
+  if (!raw) return null;
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) ? parsed : null;
+}
+
 export default async function CollectionPage({
   searchParams,
 }: {
@@ -37,9 +44,31 @@ export default async function CollectionPage({
   const creator = toParam(params.creator);
   const series = toParam(params.series);
   const tags = toArrayParam(params.tag);
+  const requestedMinYear = toOptionalNumberParam(params.minYear);
+  const requestedMaxYear = toOptionalNumberParam(params.maxYear);
   const page = Math.max(1, Number(toParam(params.page)) || 1);
   const typeParam = toParam(params.type);
   const type: "all" | "deck" | "coin" = typeParam === "deck" || typeParam === "coin" ? typeParam : "all";
+
+  const [deckYearRange, coinYearRange] = await Promise.all([
+    prisma.deck.aggregate({ _min: { releaseYear: true }, _max: { releaseYear: true } }),
+    prisma.coin.aggregate({ _min: { releaseYear: true }, _max: { releaseYear: true } }),
+  ]);
+  const yearValues = [
+    deckYearRange._min.releaseYear,
+    deckYearRange._max.releaseYear,
+    coinYearRange._min.releaseYear,
+    coinYearRange._max.releaseYear,
+  ].filter((year): year is number => year !== null);
+  const availableMinYear = yearValues.length > 0 ? Math.min(...yearValues) : new Date().getFullYear();
+  const availableMaxYear = yearValues.length > 0 ? Math.max(...yearValues) : availableMinYear;
+  const minYear = requestedMinYear !== null
+    ? Math.max(availableMinYear, Math.min(requestedMinYear, availableMaxYear))
+    : availableMinYear;
+  const maxYear = requestedMaxYear !== null
+    ? Math.max(minYear, Math.min(requestedMaxYear, availableMaxYear))
+    : availableMaxYear;
+  const hasYearFilter = minYear !== availableMinYear || maxYear !== availableMaxYear;
 
   const deckAnd: Prisma.DeckWhereInput[] = [];
   if (q) {
@@ -58,6 +87,7 @@ export default async function CollectionPage({
   if (creator) deckAnd.push({ OR: [{ designer: creator }, { producer: creator }] });
   if (series) deckAnd.push({ series });
   if (tags.length > 0) deckAnd.push({ tags: { hasEvery: tags } });
+  if (hasYearFilter) deckAnd.push({ releaseYear: { gte: minYear, lte: maxYear } });
   const deckWhere: Prisma.DeckWhereInput = deckAnd.length > 0 ? { AND: deckAnd } : {};
 
   const coinAnd: Prisma.CoinWhereInput[] = [];
@@ -77,6 +107,7 @@ export default async function CollectionPage({
   if (creator) coinAnd.push({ OR: [{ designer: creator }, { producer: creator }] });
   if (series) coinAnd.push({ series });
   if (tags.length > 0) coinAnd.push({ tags: { hasEvery: tags } });
+  if (hasYearFilter) coinAnd.push({ releaseYear: { gte: minYear, lte: maxYear } });
   const coinWhere: Prisma.CoinWhereInput = coinAnd.length > 0 ? { AND: coinAnd } : {};
 
   const wantDecks = type !== "coin";
@@ -182,6 +213,10 @@ export default async function CollectionPage({
   if (series) currentSearchParams.set("series", series);
   if (type !== "all") currentSearchParams.set("type", type);
   for (const tag of tags) currentSearchParams.append("tag", tag);
+  if (hasYearFilter) {
+    currentSearchParams.set("minYear", String(minYear));
+    currentSearchParams.set("maxYear", String(maxYear));
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -208,7 +243,13 @@ export default async function CollectionPage({
       </div>
 
       <Suspense fallback={null}>
-        <CollectionFilters designers={designers} producers={producers} seriesList={seriesList} />
+        <CollectionFilters
+          designers={designers}
+          producers={producers}
+          seriesList={seriesList}
+          availableMinYear={availableMinYear}
+          availableMaxYear={availableMaxYear}
+        />
       </Suspense>
 
       {pageItems.length === 0 ? (

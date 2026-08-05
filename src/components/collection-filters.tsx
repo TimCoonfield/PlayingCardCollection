@@ -22,10 +22,14 @@ export function CollectionFilters({
   designers,
   producers,
   seriesList,
+  availableMinYear,
+  availableMaxYear,
 }: {
   designers: string[];
   producers: string[];
   seriesList: string[];
+  availableMinYear: number;
+  availableMaxYear: number;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -38,12 +42,24 @@ export function CollectionFilters({
   const series = searchParams.get("series") ?? "";
   const tags = searchParams.getAll("tag");
   const type = searchParams.get("type") ?? "all";
+  const rawMinYear = searchParams.get("minYear");
+  const rawMaxYear = searchParams.get("maxYear");
+  const urlMinYear = rawMinYear ? Number(rawMinYear) : null;
+  const urlMaxYear = rawMaxYear ? Number(rawMaxYear) : null;
+  const selectedMinYear = urlMinYear !== null && Number.isInteger(urlMinYear)
+    ? Math.max(availableMinYear, Math.min(urlMinYear, availableMaxYear))
+    : availableMinYear;
+  const selectedMaxYear = urlMaxYear !== null && Number.isInteger(urlMaxYear)
+    ? Math.max(selectedMinYear, Math.min(urlMaxYear, availableMaxYear))
+    : availableMaxYear;
+  const hasYearFilter =
+    selectedMinYear !== availableMinYear || selectedMaxYear !== availableMaxYear;
   // "creator" isn't a filter surfaced in this UI (see collection/page.tsx) — it's a link-only
   // param from the homepage's featured-creator cards — but it still needs to count here so
   // "Clear all" appears and the extra filters start expanded when arriving via that link.
   const creator = searchParams.get("creator") ?? "";
   const nonSearchFilterCount =
-    [designer, producer, series, creator].filter(Boolean).length + tags.length;
+    [designer, producer, series, creator].filter(Boolean).length + tags.length + (hasYearFilter ? 1 : 0);
   const hasFilters = Boolean(q) || nonSearchFilterCount > 0 || type !== "all";
 
   // On mobile the extra filters start collapsed to save space, unless some are already
@@ -118,6 +134,18 @@ export function CollectionFilters({
       const remaining = params.getAll("tag").filter((t) => t !== tag);
       params.delete("tag");
       for (const t of checked ? [...remaining, tag] : remaining) params.append("tag", t);
+    });
+  }
+
+  function commitYearRange(minYear: number, maxYear: number) {
+    pushParams((params) => {
+      if (minYear === availableMinYear && maxYear === availableMaxYear) {
+        params.delete("minYear");
+        params.delete("maxYear");
+      } else {
+        params.set("minYear", String(minYear));
+        params.set("maxYear", String(maxYear));
+      }
     });
   }
 
@@ -233,6 +261,17 @@ export function CollectionFilters({
         ))}
       </div>
 
+      <div className={`${expanded ? "block" : "hidden"} sm:block`}>
+        <YearRangeFilter
+          key={`${selectedMinYear}-${selectedMaxYear}`}
+          availableMinYear={availableMinYear}
+          availableMaxYear={availableMaxYear}
+          selectedMinYear={selectedMinYear}
+          selectedMaxYear={selectedMaxYear}
+          onCommit={commitYearRange}
+        />
+      </div>
+
       {hasFilters && (
         <div>
           <button
@@ -245,5 +284,78 @@ export function CollectionFilters({
         </div>
       )}
     </div>
+  );
+}
+
+function YearRangeFilter({
+  availableMinYear,
+  availableMaxYear,
+  selectedMinYear,
+  selectedMaxYear,
+  onCommit,
+}: {
+  availableMinYear: number;
+  availableMaxYear: number;
+  selectedMinYear: number;
+  selectedMaxYear: number;
+  onCommit: (minYear: number, maxYear: number) => void;
+}) {
+  const [yearRange, setYearRange] = useState<[number, number]>([
+    selectedMinYear,
+    selectedMaxYear,
+  ]);
+  const isFullRange =
+    yearRange[0] === availableMinYear && yearRange[1] === availableMaxYear;
+  const yearSpan = Math.max(1, availableMaxYear - availableMinYear);
+
+  return (
+    <>
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <span className="text-sm text-felt-sub">Release year</span>
+        <span className="text-sm font-medium tabular-nums text-felt-ink">
+          {isFullRange ? "All years (including unknown)" : `${yearRange[0]}–${yearRange[1]}`}
+        </span>
+      </div>
+      <div className="relative h-6" aria-label="Release year range">
+        <div className="absolute left-0 right-0 top-2.5 h-1 rounded-full bg-felt-line" />
+        <div
+          className="absolute top-2.5 h-1 rounded-full bg-brass"
+          style={{
+            left: `${((yearRange[0] - availableMinYear) / yearSpan) * 100}%`,
+            right: `${100 - ((yearRange[1] - availableMinYear) / yearSpan) * 100}%`,
+          }}
+        />
+        <input
+          type="range"
+          min={availableMinYear}
+          max={availableMaxYear}
+          value={yearRange[0]}
+          aria-label="Earliest release year"
+          onChange={(e) =>
+            setYearRange([Math.min(Number(e.target.value), yearRange[1]), yearRange[1]])
+          }
+          onPointerUp={() => onCommit(yearRange[0], yearRange[1])}
+          onKeyUp={() => onCommit(yearRange[0], yearRange[1])}
+          className="collection-year-range absolute inset-x-0 top-0 w-full"
+        />
+        <input
+          type="range"
+          min={availableMinYear}
+          max={availableMaxYear}
+          value={yearRange[1]}
+          aria-label="Latest release year"
+          onChange={(e) =>
+            setYearRange([yearRange[0], Math.max(Number(e.target.value), yearRange[0])])
+          }
+          onPointerUp={() => onCommit(yearRange[0], yearRange[1])}
+          onKeyUp={() => onCommit(yearRange[0], yearRange[1])}
+          className="collection-year-range absolute inset-x-0 top-0 w-full"
+        />
+      </div>
+      <div className="flex justify-between text-xs tabular-nums text-felt-sub">
+        <span>{availableMinYear}</span>
+        <span>{availableMaxYear}</span>
+      </div>
+    </>
   );
 }

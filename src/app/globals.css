@@ -1,5 +1,38 @@
 @import "tailwindcss";
 
+.collection-year-range {
+  pointer-events: none;
+  appearance: none;
+  background: transparent;
+}
+
+.collection-year-range::-webkit-slider-thumb {
+  pointer-events: auto;
+  appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--felt-bg);
+  border-radius: 9999px;
+  background: var(--brass);
+  cursor: grab;
+}
+
+.collection-year-range::-moz-range-thumb {
+  pointer-events: auto;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--felt-bg);
+  border-radius: 9999px;
+  background: var(--brass);
+  cursor: grab;
+}
+
+.collection-year-range::-webkit-slider-runnable-track,
+.collection-year-range::-moz-range-track {
+  background: transparent;
+  border: 0;
+}
+
 :root {
   --felt-bg: #1c4632;
   --felt-header: #12291d;
