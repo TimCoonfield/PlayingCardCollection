@@ -5,36 +5,23 @@ import { StatTile } from "@/components/stat-tile";
 import { DeckCard } from "@/components/deck-card";
 import { CreatorCard, type CreatorRandomDeck } from "@/components/creator-card";
 import { CreatorSpotlightCard } from "@/components/creator-spotlight-card";
-import { CardsIcon, PaletteIcon, LayersIcon, CoinIcon, CameraIcon } from "@/components/icons";
+import { SpecialtyCollectionCard } from "@/components/specialty-collection-card";
+import {
+  CardsIcon,
+  PaletteIcon,
+  LayersIcon,
+  CoinIcon,
+  CameraIcon,
+  SearchIcon,
+} from "@/components/icons";
 import { FEATURED_CREATORS } from "@/lib/featured-creators";
-import { getTagStyle } from "@/lib/placeholders";
 
 const SPECIALTY_TAGS = ["Mini", "Tarot"] as const;
-
-type SpecialtyTile =
-  | { kind: "tag"; tag: (typeof SPECIALTY_TAGS)[number]; href?: string }
-  | { kind: "coins" }
-  | { kind: "souvenir" };
-
-const SPECIALTY_TILES: SpecialtyTile[] = [
-  { kind: "tag", tag: "Mini", href: "/mini" },
-  { kind: "tag", tag: "Tarot", href: "/tarot" },
-  { kind: "coins" },
-  { kind: "souvenir" },
-];
 
 // A faint tiled suit pattern behind the hero, echoing the poster-style creator cards below —
 // generated inline so the effect doesn't need a hosted image asset.
 const HERO_WATERMARK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><text x="4" y="42" font-size="38" fill="#f3ead1">♠</text><text x="50" y="88" font-size="34" fill="#f3ead1">♦</text></svg>`;
 const HERO_WATERMARK_URL = `url("data:image/svg+xml,${encodeURIComponent(HERO_WATERMARK_SVG)}")`;
-
-const SPECIALTY_ACCENT_CLASSES: Record<string, string> = {
-  plum: "border-plum/40 hover:bg-plum/10",
-  brass: "border-brass/40 hover:bg-brass/10",
-  sage: "border-sage/40 hover:bg-sage/10",
-  brick: "border-brick/40 hover:bg-brick/10",
-  "felt-ink": "border-felt-ink/30 hover:bg-felt-ink/10",
-};
 
 export default async function HomePage() {
   const [
@@ -96,6 +83,41 @@ export default async function HomePage() {
     prisma.coin.count(),
     prisma.deck.count({ where: { series: "Souvenir Decks" } }),
   ]);
+
+  const specialtyCollections = [
+    {
+      title: "Mini decks",
+      description: "Small scale. Full character.",
+      count: specialtyCounts[0],
+      href: "/mini",
+      icon: <SearchIcon />,
+      accent: "brass" as const,
+    },
+    {
+      title: "Tarot decks",
+      description: "Illustrated worlds & arcana.",
+      count: specialtyCounts[1],
+      href: "/tarot",
+      icon: <span>☾</span>,
+      accent: "plum" as const,
+    },
+    {
+      title: "Coins",
+      description: "Pocket-sized artifacts.",
+      count: coinCount,
+      href: "/collection?type=coin",
+      icon: <CoinIcon />,
+      accent: "brass" as const,
+    },
+    {
+      title: "Souvenir decks",
+      description: "Places, journeys & histories.",
+      count: souvenirCount,
+      href: "/souvenir",
+      icon: <CameraIcon />,
+      accent: "brick" as const,
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-10">
@@ -207,65 +229,10 @@ export default async function HomePage() {
 
       <div className="flex flex-col gap-3">
         <h2 className="font-display text-base font-semibold tracking-wide text-brass">Specialty collections</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {SPECIALTY_TILES.map((tile) => {
-            if (tile.kind === "coins") {
-              const accentClass = SPECIALTY_ACCENT_CLASSES.brass;
-              return (
-                <Link
-                  key="coins"
-                  href="/collection?type=coin"
-                  className={`flex items-center gap-3 rounded-lg border bg-felt-surface p-4 transition-colors ${accentClass}`}
-                >
-                  <CoinIcon className="h-8 w-8 shrink-0 text-brass" />
-                  <div className="flex flex-col">
-                    <span className="font-display text-lg font-semibold text-felt-ink">Coins</span>
-                    <span className="text-sm text-felt-sub">{coinCount} in the collection →</span>
-                  </div>
-                </Link>
-              );
-            }
-
-            if (tile.kind === "souvenir") {
-              const accentClass = SPECIALTY_ACCENT_CLASSES.brick;
-              return (
-                <Link
-                  key="souvenir"
-                  href="/souvenir"
-                  className={`flex items-center gap-3 rounded-lg border bg-felt-surface p-4 transition-colors ${accentClass}`}
-                >
-                  <CameraIcon className="h-8 w-8 shrink-0 text-brass" />
-                  <div className="flex flex-col">
-                    <span className="font-display text-lg font-semibold text-felt-ink">
-                      Souvenir decks
-                    </span>
-                    <span className="text-sm text-felt-sub">{souvenirCount} in the collection →</span>
-                  </div>
-                </Link>
-              );
-            }
-
-            const tagIndex = SPECIALTY_TAGS.indexOf(tile.tag);
-            const style = getTagStyle(tile.tag);
-            const accentClass = SPECIALTY_ACCENT_CLASSES[style.accent] ?? SPECIALTY_ACCENT_CLASSES.brass;
-            return (
-              <Link
-                key={tile.tag}
-                href={tile.href ?? `/collection?tag=${encodeURIComponent(tile.tag)}`}
-                className={`flex items-center gap-3 rounded-lg border bg-felt-surface p-4 transition-colors ${accentClass}`}
-              >
-                <span className="text-3xl leading-none">{style.icon}</span>
-                <div className="flex flex-col">
-                  <span className="font-display text-lg font-semibold text-felt-ink">
-                    {tile.tag} decks
-                  </span>
-                  <span className="text-sm text-felt-sub">
-                    {specialtyCounts[tagIndex]} in the collection →
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
+          {specialtyCollections.map((collection, index) => (
+            <SpecialtyCollectionCard key={collection.href} index={index} {...collection} />
+          ))}
         </div>
       </div>
 
