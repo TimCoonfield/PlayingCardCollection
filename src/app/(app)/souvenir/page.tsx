@@ -12,8 +12,8 @@ export default async function SouvenirDecksPage() {
     include: { images: { orderBy: { sortOrder: "asc" } } },
     orderBy: { name: "asc" },
   });
-  const favoriteDecks = decks.filter((d) => d.favorite);
-  const restDecks = decks.filter((d) => !d.favorite);
+  const favoriteDecks = decks.filter((d) => d.favorite).slice(0, 3);
+  const restDecks = decks.filter((d) => !favoriteDecks.includes(d));
 
   return (
     <div className="flex flex-col gap-8">
@@ -47,10 +47,18 @@ export default async function SouvenirDecksPage() {
       ) : (
         <>
           {favoriteDecks.length > 0 && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {favoriteDecks.map((deck) => (
-                <DeckSpotlightCard key={deck.id} deck={deck} />
-              ))}
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-3">
+                <h2 className="whitespace-nowrap font-display text-sm font-bold uppercase tracking-[0.2em] text-brass">
+                  Featured Decks
+                </h2>
+                <div className="h-px flex-1 bg-brass/30" />
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {favoriteDecks.map((deck) => (
+                  <DeckSpotlightCard key={deck.id} deck={deck} />
+                ))}
+              </div>
             </div>
           )}
           {restDecks.length > 0 && (

@@ -1,10 +1,6 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { DeckPlaceholder } from "./deck-placeholder";
-import { HeartIcon } from "./icons";
 
 export interface DeckSpotlightDatum {
   id: string;
@@ -14,50 +10,50 @@ export interface DeckSpotlightDatum {
   images: { url: string }[];
 }
 
-const CYCLE_INTERVAL_MS = 5000;
-
 export function DeckSpotlightCard({ deck }: { deck: DeckSpotlightDatum }) {
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    if (deck.images.length <= 1) return;
-    const id = setInterval(() => {
-      setIndex((i) => (i + 1) % deck.images.length);
-    }, CYCLE_INTERVAL_MS);
-    return () => clearInterval(id);
-  }, [deck.images.length]);
+  const [main, ...rest] = deck.images;
+  const secondary = rest.slice(0, 6);
+  const secondaryRows = Math.max(1, Math.ceil(secondary.length / 2));
 
   return (
     <Link
       href={`/decks/${deck.id}`}
-      className="group relative flex aspect-[3/4] w-full overflow-hidden rounded-lg border border-brass/50 bg-felt-bg shadow-lg shadow-black/30 transition-transform duration-300 hover:-translate-y-1"
+      className="group flex flex-col gap-4 rounded-lg border border-brass/40 bg-felt-surface p-4 transition-colors hover:border-brass"
     >
-      {deck.images.length > 0 ? (
-        deck.images.map((img, i) => (
-          <Image
-            key={img.url}
-            src={img.url}
-            alt={deck.name}
-            fill
-            sizes="(min-width: 1024px) 33vw, 100vw"
-            className={`object-contain transition-opacity duration-1000 ${
-              i === index ? "opacity-100" : "opacity-0"
-            }`}
-          />
-        ))
-      ) : (
-        <DeckPlaceholder tags={deck.tags} size="lg" />
-      )}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-felt-bg/95 via-felt-bg/5 to-transparent" />
-      <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1 rounded-full bg-felt-bg/85 px-2.5 py-1 text-xs font-semibold text-brass ring-1 ring-brass/50">
-        <HeartIcon filled className="h-3 w-3" />
-        Featured
-      </span>
-      <div className="relative mt-auto flex flex-col gap-0.5 p-4">
+      <div className="flex aspect-[16/10] gap-2">
+        <div className="relative h-full flex-[1.4] overflow-hidden rounded-md bg-felt-bg">
+          {main ? (
+            <Image
+              src={main.url}
+              alt={deck.name}
+              fill
+              sizes="(min-width: 1024px) 20vw, 60vw"
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : (
+            <DeckPlaceholder tags={deck.tags} size="lg" />
+          )}
+        </div>
+        {secondary.length > 0 && (
+          <div
+            className="grid flex-1 grid-cols-2 gap-2"
+            style={{ gridTemplateRows: `repeat(${secondaryRows}, 1fr)` }}
+          >
+            {secondary.map((img, i) => (
+              <div key={i} className="relative overflow-hidden rounded-md bg-felt-bg">
+                <Image src={img.url} alt="" fill sizes="10vw" className="object-cover" />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="flex flex-col gap-1">
         <p className="font-display text-xl font-semibold leading-tight text-felt-ink line-clamp-2">
           {deck.name}
         </p>
-        {deck.designer && <p className="text-sm text-felt-sub">{deck.designer}</p>}
+        <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-brass">
+          View deck <span aria-hidden="true">→</span>
+        </span>
       </div>
     </Link>
   );
