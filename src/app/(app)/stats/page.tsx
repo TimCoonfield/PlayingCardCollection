@@ -76,7 +76,7 @@ export default async function StatsPage() {
         qty: true,
         tags: true,
         favorite: true,
-        images: { take: 1, orderBy: { sortOrder: "asc" }, select: { url: true } },
+        images: { orderBy: { sortOrder: "asc" }, select: { url: true } },
       },
     }),
     prisma.deck.groupBy({

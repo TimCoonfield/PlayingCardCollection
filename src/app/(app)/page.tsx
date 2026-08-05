@@ -87,7 +87,7 @@ export default async function HomePage() {
         qty: true,
         tags: true,
         favorite: true,
-        images: { take: 1, orderBy: { sortOrder: "asc" }, select: { url: true } },
+        images: { orderBy: { sortOrder: "asc" }, select: { url: true } },
       },
     }),
     Promise.all(

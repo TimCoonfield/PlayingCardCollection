@@ -1,7 +1,13 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { DeckPlaceholder, AccentBar } from "./deck-placeholder";
 import { HeartIcon } from "./icons";
+
+const HOVER_DELAY_MS = 600;
+const CYCLE_INTERVAL_MS = 1000;
 
 export interface DeckCardData {
   id: string;
@@ -16,18 +22,51 @@ export interface DeckCardData {
 }
 
 export function DeckCard({ deck }: { deck: DeckCardData }) {
-  const image = deck.images[0];
+  const hasImages = deck.images.length > 0;
+  const [imageIndex, setImageIndex] = useState(0);
+  const hoverDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cycleRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function stopCycling() {
+    if (hoverDelayRef.current) clearTimeout(hoverDelayRef.current);
+    if (cycleRef.current) clearInterval(cycleRef.current);
+    hoverDelayRef.current = null;
+    cycleRef.current = null;
+  }
+
+  function handleMouseEnter() {
+    if (deck.images.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+
+    stopCycling();
+    hoverDelayRef.current = setTimeout(() => {
+      setImageIndex(1);
+      cycleRef.current = setInterval(() => {
+        setImageIndex((current) => (current + 1) % deck.images.length);
+      }, CYCLE_INTERVAL_MS);
+    }, HOVER_DELAY_MS);
+  }
+
+  function handleMouseLeave() {
+    stopCycling();
+    setImageIndex(0);
+  }
+
+  useEffect(() => stopCycling, []);
 
   return (
     <Link
       href={`/decks/${deck.id}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       className="group flex flex-col overflow-hidden rounded-lg border border-felt-line bg-felt-surface transition-colors hover:border-brass"
     >
       <div className="relative aspect-[3/4] w-full bg-felt-surface-2">
-        {image ? (
+        {hasImages ? (
           <>
             <Image
-              src={image.url}
+              src={deck.images[imageIndex].url}
               alt={deck.name}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"

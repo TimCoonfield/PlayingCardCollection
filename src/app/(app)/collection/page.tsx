@@ -127,7 +127,7 @@ export default async function CollectionPage({
     wantDecks
       ? prisma.deck.findMany({
           where: deckWhere,
-          include: { images: { orderBy: { sortOrder: "asc" }, take: 1 } },
+          include: { images: { orderBy: { sortOrder: "asc" } } },
           orderBy: { name: "asc" },
         })
       : Promise.resolve([]),
