@@ -12,8 +12,7 @@ export interface DeckSpotlightDatum {
 
 export function DeckSpotlightCard({ deck }: { deck: DeckSpotlightDatum }) {
   const [main, ...rest] = deck.images;
-  const secondary = rest.slice(0, 6);
-  const secondaryRows = Math.max(1, Math.ceil(secondary.length / 2));
+  const secondary = rest.slice(0, 4);
 
   return (
     <Link
@@ -28,20 +27,17 @@ export function DeckSpotlightCard({ deck }: { deck: DeckSpotlightDatum }) {
               alt={deck.name}
               fill
               sizes="(min-width: 1024px) 20vw, 60vw"
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              className="object-contain transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
             <DeckPlaceholder tags={deck.tags} size="lg" />
           )}
         </div>
         {secondary.length > 0 && (
-          <div
-            className="grid flex-1 grid-cols-2 gap-2"
-            style={{ gridTemplateRows: `repeat(${secondaryRows}, 1fr)` }}
-          >
+          <div className="grid flex-1 grid-cols-2 grid-rows-2 gap-2">
             {secondary.map((img, i) => (
               <div key={i} className="relative overflow-hidden rounded-md bg-felt-bg">
-                <Image src={img.url} alt="" fill sizes="10vw" className="object-cover" />
+                <Image src={img.url} alt="" fill sizes="10vw" className="object-contain" />
               </div>
             ))}
           </div>
