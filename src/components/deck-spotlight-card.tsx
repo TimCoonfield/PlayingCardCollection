@@ -17,7 +17,7 @@ export function DeckSpotlightCard({ deck }: { deck: DeckSpotlightDatum }) {
   return (
     <Link
       href={`/decks/${deck.id}`}
-      className="group relative flex aspect-[3/4] w-full flex-col overflow-hidden rounded-lg border border-brass/40 bg-felt-bg shadow-lg shadow-black/30 transition-transform duration-300 hover:-translate-y-1"
+      className="group relative flex aspect-square w-full flex-col overflow-hidden rounded-lg border border-brass/40 bg-felt-bg shadow-lg shadow-black/30 transition-transform duration-300 hover:-translate-y-1"
     >
       <div className="absolute inset-0 grid grid-cols-[1.5fr_1fr] gap-1 p-1">
         <div className="relative overflow-hidden rounded-sm bg-felt-surface">
