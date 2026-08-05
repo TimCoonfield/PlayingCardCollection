@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HeaderSearch } from "@/components/header-search";
 import { AddMenu } from "@/components/add-menu";
+import { SpecialtyCollectionsMenu } from "@/components/specialty-collections-menu";
 import { CollectionIcon, StatsIcon, SearchIcon } from "@/components/icons";
 import { logout } from "./logout-action";
 
@@ -12,8 +13,19 @@ const navLinks = [
   { href: "/stats", label: "Stats", icon: StatsIcon },
 ];
 
-export function NavBar({ isAuthenticated }: { isAuthenticated: boolean }) {
+export function NavBar({
+  isAuthenticated,
+  creatorNavItems,
+}: {
+  isAuthenticated: boolean;
+  creatorNavItems: { name: string; href: string }[];
+}) {
   const pathname = usePathname();
+  const specialtyIsActive =
+    pathname.startsWith("/creators/") ||
+    pathname === "/mini" ||
+    pathname === "/tarot" ||
+    pathname === "/souvenir";
 
   return (
     <header className="sticky top-0 z-10 border-b border-felt-line bg-felt-header/95 backdrop-blur">
@@ -49,6 +61,7 @@ export function NavBar({ isAuthenticated }: { isAuthenticated: boolean }) {
               </Link>
             );
           })}
+          <SpecialtyCollectionsMenu creators={creatorNavItems} isActive={specialtyIsActive} />
           {isAuthenticated && <AddMenu />}
           <form
             action="/collection"
