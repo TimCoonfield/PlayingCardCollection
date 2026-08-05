@@ -86,6 +86,7 @@ export default async function HomePage() {
         producer: true,
         qty: true,
         tags: true,
+        favorite: true,
         images: { take: 1, orderBy: { sortOrder: "asc" }, select: { url: true } },
       },
     }),

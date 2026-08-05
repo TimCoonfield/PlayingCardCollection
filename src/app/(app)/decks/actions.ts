@@ -111,6 +111,18 @@ export async function deleteDeck(deckId: string) {
   redirect("/collection");
 }
 
+export async function toggleFavorite(deckId: string) {
+  if (!(await isAuthenticated())) return;
+
+  const deck = await prisma.deck.findUnique({ where: { id: deckId }, select: { favorite: true } });
+  if (!deck) return;
+
+  await prisma.deck.update({ where: { id: deckId }, data: { favorite: !deck.favorite } });
+  // Favorites affect sort order/spotlights on the collection page and every landing page, so
+  // just revalidate everything under the app layout rather than tracking each one individually.
+  revalidatePath("/", "layout");
+}
+
 function flatten(error: ZodError) {
   const out: Record<string, string> = {};
   for (const issue of error.issues) {

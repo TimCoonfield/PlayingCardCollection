@@ -236,6 +236,23 @@ export function CameraIcon({ className }: { className?: string }) {
   );
 }
 
+export function HeartIcon({ className, filled }: { className?: string; filled?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M12 20.3s-7.6-4.5-10-9.2C.5 7.7 2.4 4.4 5.9 4c2-.2 3.9.8 4.9 2.4C11.9 4.7 13.9 3.7 15.9 4c3.5.4 5.4 3.7 3.9 7.1-2.4 4.7-9.9 9.2-9.9 9.2Z" />
+    </svg>
+  );
+}
+
 export function TrashIcon({ className }: { className?: string }) {
   return (
     <svg

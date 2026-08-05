@@ -142,7 +142,12 @@ export default async function CollectionPage({
   const merged: CollectionItem[] = [
     ...deckRows.map((d) => ({ kind: "deck" as const, ...d })),
     ...coinRows.map((c) => ({ kind: "coin" as const, ...c })),
-  ].sort((a, b) => a.name.localeCompare(b.name));
+  ].sort((a, b) => {
+    const aFav = a.kind === "deck" && a.favorite;
+    const bFav = b.kind === "deck" && b.favorite;
+    if (aFav !== bFav) return aFav ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
 
   const total = merged.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));

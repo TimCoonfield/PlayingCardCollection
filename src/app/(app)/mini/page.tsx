@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { DeckCard } from "@/components/deck-card";
+import { DeckSpotlightCard } from "@/components/deck-spotlight-card";
+import { HeartIcon } from "@/components/icons";
 
 // Placeholder hero art (magnifying glass over a few mini cards) until a real photo replaces it —
 // see the docs at the bottom of this file for how to swap it out.
@@ -19,6 +21,8 @@ export default async function MiniDecksPage() {
     include: { images: { orderBy: { sortOrder: "asc" }, take: 1 } },
     orderBy: { name: "asc" },
   });
+  const favoriteDecks = decks.filter((d) => d.favorite);
+  const restDecks = decks.filter((d) => !d.favorite);
 
   return (
     <div className="flex flex-col gap-8">
@@ -57,11 +61,28 @@ export default async function MiniDecksPage() {
       {decks.length === 0 ? (
         <p className="py-16 text-center text-felt-sub">No mini decks yet.</p>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {decks.map((deck) => (
-            <DeckCard key={deck.id} deck={deck} />
-          ))}
-        </div>
+        <>
+          {favoriteDecks.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <h2 className="flex items-center gap-2 text-sm font-medium text-felt-sub">
+                <HeartIcon filled className="h-4 w-4 text-brick" />
+                Featured
+              </h2>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {favoriteDecks.map((deck) => (
+                  <DeckSpotlightCard key={deck.id} deck={deck} />
+                ))}
+              </div>
+            </div>
+          )}
+          {restDecks.length > 0 && (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {restDecks.map((deck) => (
+                <DeckCard key={deck.id} deck={deck} />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

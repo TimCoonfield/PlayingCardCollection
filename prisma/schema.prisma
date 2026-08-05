@@ -23,6 +23,7 @@ model Deck {
   releaseYear     Int?
   notes           String?
   catalogNumber   String?
+  favorite        Boolean       @default(false)
   images          DeckImage[]
   editions        DeckEdition[]
   createdAt       DateTime      @default(now())

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { DeckPlaceholder, AccentBar } from "./deck-placeholder";
+import { HeartIcon } from "./icons";
 
 export interface DeckCardData {
   id: string;
@@ -10,6 +11,7 @@ export interface DeckCardData {
   producer: string | null;
   qty: number;
   tags: string[];
+  favorite: boolean;
   images: { url: string }[];
 }
 
@@ -39,6 +41,11 @@ export function DeckCard({ deck }: { deck: DeckCardData }) {
         {deck.qty > 1 && (
           <span className="absolute right-1.5 top-1.5 rounded-full bg-felt-bg/80 px-2 py-0.5 text-xs font-medium text-felt-ink">
             ×{deck.qty}
+          </span>
+        )}
+        {deck.favorite && (
+          <span className="absolute left-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-felt-bg/80 text-brick">
+            <HeartIcon filled className="h-3.5 w-3.5" />
           </span>
         )}
       </div>

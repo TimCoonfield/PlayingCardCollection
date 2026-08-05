@@ -5,7 +5,8 @@ import { DeckGallery } from "@/components/deck-gallery";
 import { BackLink } from "@/components/back-link";
 import { StatTile } from "@/components/stat-tile";
 import { TagChip } from "@/components/tag-chip";
-import { PencilIcon, TrashIcon } from "@/components/icons";
+import { PencilIcon, TrashIcon, HeartIcon } from "@/components/icons";
+import { FavoriteButton } from "@/components/favorite-button";
 import { getSession } from "@/lib/auth";
 import { deleteDeck } from "../actions";
 
@@ -37,6 +38,7 @@ export default async function DeckDetailPage({
         <BackLink fallbackHref="/collection">← Back to collection</BackLink>
         {isAuthenticated && (
           <div className="flex gap-2">
+            <FavoriteButton deckId={deck.id} initialFavorite={deck.favorite} />
             <Link
               href={`/decks/${deck.id}/edit`}
               aria-label="Edit deck"
@@ -83,6 +85,9 @@ export default async function DeckDetailPage({
                 <span className="rounded-full bg-felt-surface px-2 py-0.5 text-xs font-medium text-felt-sub">
                   ×{deck.qty}
                 </span>
+              )}
+              {deck.favorite && (
+                <HeartIcon filled className="h-5 w-5 shrink-0 text-brick" aria-label="Favorite" />
               )}
             </div>
           </div>
