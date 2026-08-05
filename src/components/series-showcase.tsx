@@ -42,7 +42,7 @@ export function SeriesShowcase({ items }: { items: SeriesSpotlightDatum[] }) {
               </span>
             </div>
             <div className="flex flex-col gap-0.5 p-3">
-              <p className="truncate text-sm font-semibold text-felt-ink">{item.series}</p>
+              <p className="truncate font-display text-base font-semibold text-felt-ink">{item.series}</p>
               <p className="text-xs text-felt-sub">
                 {item.count} {item.count === 1 ? "deck" : "decks"} in this series
               </p>

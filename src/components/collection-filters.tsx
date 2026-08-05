@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDownIcon } from "./icons";
+import { getTagStyle } from "@/lib/placeholders";
 
 const ALL_TAGS = [
   "Modern",
@@ -17,6 +18,29 @@ const ALL_TAGS = [
 ];
 
 const DEBOUNCE_MS = 1000;
+
+const TAG_PILL_CLASSES: Record<string, { idle: string; selected: string }> = {
+  plum: {
+    idle: "hover:border-plum/70 hover:text-plum",
+    selected: "border-plum bg-plum/20 text-felt-ink shadow-sm",
+  },
+  brass: {
+    idle: "hover:border-brass/70 hover:text-brass",
+    selected: "border-brass bg-brass/20 text-felt-ink shadow-sm",
+  },
+  sage: {
+    idle: "hover:border-sage/70 hover:text-sage",
+    selected: "border-sage bg-sage/20 text-felt-ink shadow-sm",
+  },
+  brick: {
+    idle: "hover:border-brick/70 hover:text-brick",
+    selected: "border-brick bg-brick/20 text-felt-ink shadow-sm",
+  },
+  "felt-ink": {
+    idle: "hover:border-felt-ink/60 hover:text-felt-ink",
+    selected: "border-felt-ink/70 bg-felt-ink/15 text-felt-ink shadow-sm",
+  },
+};
 
 export function CollectionFilters({
   designers,
@@ -245,20 +269,38 @@ export function CollectionFilters({
         </select>
       </div>
 
-      <div
-        className={`${expanded ? "flex" : "hidden"} flex-wrap items-center gap-x-4 gap-y-2 sm:flex`}
-      >
-        {ALL_TAGS.map((tag) => (
-          <label key={tag} className="flex items-center gap-1.5 text-sm text-felt-sub">
-            <input
-              type="checkbox"
-              checked={tags.includes(tag)}
-              onChange={(e) => handleTagToggle(tag, e.target.checked)}
-              className="accent-brass"
-            />
-            {tag}
-          </label>
-        ))}
+      <div className={`${expanded ? "flex" : "hidden"} flex-wrap items-center gap-2 sm:flex`}>
+        {ALL_TAGS.map((tag) => {
+          const checked = tags.includes(tag);
+          const style = getTagStyle(tag);
+          const colorClasses = TAG_PILL_CLASSES[style.accent] ?? TAG_PILL_CLASSES.brass;
+
+          return (
+            <label
+              key={tag}
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all focus-within:ring-2 focus-within:ring-brass/60 focus-within:ring-offset-2 focus-within:ring-offset-felt-surface ${
+                checked
+                  ? colorClasses.selected
+                  : `border-felt-line bg-felt-bg/40 text-felt-sub ${colorClasses.idle}`
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={(e) => handleTagToggle(tag, e.target.checked)}
+                className="sr-only"
+              />
+              <span
+                aria-hidden="true"
+                className={style.icon ? "text-sm leading-none" : "font-display text-sm leading-none"}
+              >
+                {style.icon ?? "♠"}
+              </span>
+              {tag}
+              {checked && <span aria-hidden="true" className="ml-0.5 text-brass">✓</span>}
+            </label>
+          );
+        })}
       </div>
 
       <div className={`${expanded ? "block" : "hidden"} sm:block`}>

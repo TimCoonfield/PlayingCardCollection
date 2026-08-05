@@ -139,7 +139,7 @@ function CreditRow({ label, value, href }: { label: string; value: string; href?
   const content = (
     <>
       <span className="text-xs uppercase tracking-wide text-felt-sub/70">{label}</span>
-      <span className="truncate text-sm font-medium text-felt-ink group-hover:text-brass">
+      <span className="truncate font-display text-base font-medium text-felt-ink group-hover:text-brass">
         {value}
       </span>
     </>

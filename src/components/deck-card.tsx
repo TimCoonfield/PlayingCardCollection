@@ -89,7 +89,9 @@ export function DeckCard({ deck }: { deck: DeckCardData }) {
         )}
       </div>
       <div className="flex flex-col gap-0.5 p-2.5">
-        <p className="line-clamp-2 text-sm font-medium text-felt-ink">{deck.name}</p>
+        <p className="line-clamp-2 font-display text-base font-semibold leading-snug text-felt-ink">
+          {deck.name}
+        </p>
         {deck.designer && (
           <p className="truncate text-xs text-felt-sub">{deck.designer}</p>
         )}

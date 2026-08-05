@@ -76,7 +76,11 @@ export function DecksLandingPage({
           >
             {title}
           </h1>
-          {tagline && <p className="text-sm font-medium tracking-wide text-brass">{tagline}</p>}
+          {tagline && (
+            <p className="font-display text-base font-medium italic tracking-wide text-brass">
+              {tagline}
+            </p>
+          )}
           <p className="text-sm text-felt-sub">{blurb}</p>
         </div>
       </div>

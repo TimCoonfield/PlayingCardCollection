@@ -33,7 +33,7 @@ export function CreatorSpotlightCard({
         <span className="font-display text-5xl font-semibold leading-tight text-felt-ink">
           {name}
         </span>
-        <span className="mt-2 text-base tracking-wide text-brass">{tagline}</span>
+        <span className="mt-2 font-display text-lg italic tracking-wide text-brass">{tagline}</span>
         <span className="mt-1 text-xs text-felt-sub">{deckCount} decks in the collection →</span>
       </div>
     </Link>

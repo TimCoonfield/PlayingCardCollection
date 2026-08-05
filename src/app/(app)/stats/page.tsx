@@ -160,7 +160,7 @@ export default async function StatsPage() {
       </ChartCard>
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-felt-sub">Recently added</h2>
+        <h2 className="font-display text-base font-semibold tracking-wide text-brass">Recently added</h2>
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10">
           {recentDecks.map((deck) => (
             <DeckCard key={deck.id} deck={deck} />
@@ -192,7 +192,7 @@ async function buildSeriesSpotlight(seriesName: string, count: number): Promise<
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-felt-line bg-felt-surface p-4">
-      <h2 className="text-sm font-medium text-felt-sub">{title}</h2>
+      <h2 className="font-display text-base font-semibold tracking-wide text-brass">{title}</h2>
       {children}
     </div>
   );

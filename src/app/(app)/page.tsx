@@ -162,7 +162,7 @@ export default async function HomePage() {
       </div>
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-felt-sub">Featured creators</h2>
+        <h2 className="font-display text-base font-semibold tracking-wide text-brass">Featured creators</h2>
         <div className="flex flex-wrap justify-center gap-4">
           {creatorsData.map((creator) => {
             const viewAllHref =
@@ -206,7 +206,7 @@ export default async function HomePage() {
       </div>
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-felt-sub">Specialty collections</h2>
+        <h2 className="font-display text-base font-semibold tracking-wide text-brass">Specialty collections</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {SPECIALTY_TILES.map((tile) => {
             if (tile.kind === "coins") {
@@ -270,7 +270,7 @@ export default async function HomePage() {
       </div>
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-sm font-medium text-felt-sub">Recently added</h2>
+        <h2 className="font-display text-base font-semibold tracking-wide text-brass">Recently added</h2>
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10">
           {recentDecks.map((deck) => (
             <DeckCard key={deck.id} deck={deck} />

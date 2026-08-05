@@ -80,7 +80,7 @@ export function SpecialtyCollectionsMenu({
           role="menu"
           className="absolute right-0 top-full z-20 mt-1 w-64 overflow-hidden rounded-md border border-felt-line bg-felt-surface py-1 shadow-lg"
         >
-          <div className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wider text-brass">
+          <div className="px-3 pb-1 pt-2 font-display text-sm font-semibold uppercase tracking-wider text-brass">
             Featured Creators
           </div>
           {creators.map((creator) => (

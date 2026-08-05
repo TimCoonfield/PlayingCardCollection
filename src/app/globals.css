@@ -73,3 +73,10 @@ body {
   background: var(--felt-bg);
   color: var(--felt-ink);
 }
+
+h1,
+h2,
+h3,
+legend {
+  font-family: var(--font-spectral), Georgia, serif;
+}
