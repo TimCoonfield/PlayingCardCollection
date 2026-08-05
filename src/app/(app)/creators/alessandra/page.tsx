@@ -2,7 +2,6 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { DeckCard } from "@/components/deck-card";
 import { DeckSpotlightCard } from "@/components/deck-spotlight-card";
-import { HeartIcon } from "@/components/icons";
 
 const ALESSANDRA_HERO_IMAGE_URL =
   "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/alessandra-gagliano-2uvyjYhOQt3rT21EyxThGqBvmyHM6s.webp";
@@ -10,7 +9,7 @@ const ALESSANDRA_HERO_IMAGE_URL =
 export default async function AlessandraLandingPage() {
   const decks = await prisma.deck.findMany({
     where: { designer: "Alessandra Gagliano" },
-    include: { images: { orderBy: { sortOrder: "asc" }, take: 1 } },
+    include: { images: { orderBy: { sortOrder: "asc" } } },
     orderBy: { name: "asc" },
   });
   const favoriteDecks = decks.filter((d) => d.favorite);
@@ -49,16 +48,10 @@ export default async function AlessandraLandingPage() {
       ) : (
         <>
           {favoriteDecks.length > 0 && (
-            <div className="flex flex-col gap-3">
-              <h2 className="flex items-center gap-2 text-sm font-medium text-felt-sub">
-                <HeartIcon filled className="h-4 w-4 text-brick" />
-                Featured
-              </h2>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {favoriteDecks.map((deck) => (
-                  <DeckSpotlightCard key={deck.id} deck={deck} />
-                ))}
-              </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {favoriteDecks.map((deck) => (
+                <DeckSpotlightCard key={deck.id} deck={deck} />
+              ))}
             </div>
           )}
           {restDecks.length > 0 && (

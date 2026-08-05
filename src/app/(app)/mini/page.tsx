@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { DeckCard } from "@/components/deck-card";
 import { DeckSpotlightCard } from "@/components/deck-spotlight-card";
-import { HeartIcon } from "@/components/icons";
 
 // Placeholder hero art (magnifying glass over a few mini cards) until a real photo replaces it —
 // see the docs at the bottom of this file for how to swap it out.
@@ -18,7 +17,7 @@ const MINI_HERO_SVG = (
 export default async function MiniDecksPage() {
   const decks = await prisma.deck.findMany({
     where: { tags: { has: "Mini" } },
-    include: { images: { orderBy: { sortOrder: "asc" }, take: 1 } },
+    include: { images: { orderBy: { sortOrder: "asc" } } },
     orderBy: { name: "asc" },
   });
   const favoriteDecks = decks.filter((d) => d.favorite);
@@ -63,16 +62,10 @@ export default async function MiniDecksPage() {
       ) : (
         <>
           {favoriteDecks.length > 0 && (
-            <div className="flex flex-col gap-3">
-              <h2 className="flex items-center gap-2 text-sm font-medium text-felt-sub">
-                <HeartIcon filled className="h-4 w-4 text-brick" />
-                Featured
-              </h2>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {favoriteDecks.map((deck) => (
-                  <DeckSpotlightCard key={deck.id} deck={deck} />
-                ))}
-              </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {favoriteDecks.map((deck) => (
+                <DeckSpotlightCard key={deck.id} deck={deck} />
+              ))}
             </div>
           )}
           {restDecks.length > 0 && (
