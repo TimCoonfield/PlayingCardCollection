@@ -46,6 +46,29 @@ Major content types (see [§6 Data model](#6-data-model) for details):
 - Every write path re-checks authentication itself, never trusting the UI alone (see
   [§4 Architecture](#4-architecture)) — this is a deliberate, repeated pattern, not an oversight.
 
+## Product owner preferences
+
+These aren't derivable from the code alone — they come from how this project's owner has
+directed changes to it over time, and matter for judgment calls the sections below don't cover:
+
+- This is a personal archive and storytelling project, not just an inventory database. Creator
+  bios and landing-page copy are written in the owner's own first-person voice (see
+  `src/lib/featured-creators.ts` and the blurb text passed into `DecksLandingPage` on each
+  landing page) — favor historical context, creator intent, and collection storytelling over
+  dry catalog listings when adding this kind of content.
+- The owner is receptive to distinctive visual/interaction ideas but has repeatedly pushed back
+  on motion or novelty that competes with the deck artwork itself — a slow full-image crossfade
+  on the featured-deck cards was tried and explicitly rejected as "distracting" in favor of a
+  static layout. Default to static, restrained interactions; treat animation as something to
+  justify, not a default.
+- When there are multiple reasonable ways to build something, a brief tradeoff explanation is
+  more useful than silently picking the most conventional option and moving on.
+- Preserve the owner's existing copy and voice (hero blurbs, bios, nav labels) unless a task
+  explicitly asks for a rewrite — don't "clean up" prose while doing an unrelated change.
+- Don't add features just because they're common on inventory/collection or e-commerce sites
+  (ratings, carts, generic dashboards) — see [§10](#10-ui-and-design-conventions) for the visual
+  character this would violate.
+
 ## 2. Technology stack
 
 | Layer | Choice | Where configured |
@@ -431,6 +454,13 @@ one directory per migration, each containing a `migration.sql`.
 - Local: `npx prisma migrate dev` (generates + applies + regenerates the client).
 - Production: `npx prisma migrate deploy` run once against the prod `DATABASE_URL`.
 
+**Do not run the manual production-migration procedure below on your own initiative.** It
+describes what has worked in this project's history, not standing authorization to touch
+production. Default to preparing the schema change and migration SQL locally, applying and
+verifying it against the local database, then stopping to explain what still needs to be applied
+to production and how — don't run step 4 (or anything else against the prod `DATABASE_URL`)
+unless the user explicitly asks for that specific migration to be deployed.
+
 **What has actually worked in this project's history**, because the local Prisma-Postgres dev
 database has proven unreliable for `prisma migrate dev`:
 1. Hand-write the migration SQL yourself under
@@ -523,9 +553,11 @@ beyond Vercel's own auto-detection) — verification is entirely manual/local ri
   passwords). If you need to reference an env var in code or docs, name it, don't paste its value.
 - Don't claim `tsc`/lint/tests passed, or that a UI change was verified, unless you actually ran
   it in this session. State plainly which commands you ran and what they showed.
-- If a request is ambiguous or would require a real product decision (new data model shape, new
-  auth model, removing an existing feature), surface that ambiguity and ask rather than deciding
-  unilaterally.
+- Ask before making a consequential product, data-model, security, destructive, or irreversible
+  decision (new data model shape, new auth model, removing an existing feature, a production
+  migration). For minor implementation details, follow the established repository patterns
+  (§10, §11) and state the assumption afterward instead of stopping to ask — don't turn small
+  choices into an interview.
 - Avoid broad, unrelated refactors while doing feature work — if you spot something worth fixing
   that's out of scope, mention it rather than fixing it inline.
 - Preserve backward compatibility (existing URLs, existing data shapes) unless the task
