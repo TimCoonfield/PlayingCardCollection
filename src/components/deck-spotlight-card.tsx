@@ -17,33 +17,34 @@ export function DeckSpotlightCard({ deck }: { deck: DeckSpotlightDatum }) {
   return (
     <Link
       href={`/decks/${deck.id}`}
-      className="group flex flex-col gap-4 rounded-lg border border-brass/40 bg-felt-surface p-4 transition-colors hover:border-brass"
+      className="group relative flex aspect-[3/4] w-full flex-col overflow-hidden rounded-lg border border-brass/40 bg-felt-bg shadow-lg shadow-black/30 transition-transform duration-300 hover:-translate-y-1"
     >
-      <div className="flex aspect-[16/10] gap-2">
-        <div className="relative h-full flex-[1.4] overflow-hidden rounded-md bg-felt-bg">
+      <div className="absolute inset-0 grid grid-cols-[1.5fr_1fr] gap-1 p-1">
+        <div className="relative overflow-hidden rounded-sm bg-felt-surface">
           {main ? (
             <Image
               src={main.url}
               alt={deck.name}
               fill
               sizes="(min-width: 1024px) 20vw, 60vw"
-              className="object-contain transition-transform duration-300 group-hover:scale-105"
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
             <DeckPlaceholder tags={deck.tags} size="lg" />
           )}
         </div>
         {secondary.length > 0 && (
-          <div className="grid flex-1 grid-cols-2 grid-rows-2 gap-2">
+          <div className="grid grid-cols-2 grid-rows-2 gap-1">
             {secondary.map((img, i) => (
-              <div key={i} className="relative overflow-hidden rounded-md bg-felt-bg">
-                <Image src={img.url} alt="" fill sizes="10vw" className="object-contain" />
+              <div key={i} className="relative overflow-hidden rounded-sm bg-felt-surface">
+                <Image src={img.url} alt="" fill sizes="10vw" className="object-cover" />
               </div>
             ))}
           </div>
         )}
       </div>
-      <div className="flex flex-col gap-1">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-felt-bg via-felt-bg/70 to-transparent" />
+      <div className="relative z-10 mt-auto flex flex-col gap-1 p-4">
         <p className="font-display text-xl font-semibold leading-tight text-felt-ink line-clamp-2">
           {deck.name}
         </p>
