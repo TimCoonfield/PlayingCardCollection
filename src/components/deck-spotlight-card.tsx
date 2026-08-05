@@ -27,7 +27,7 @@ export function DeckSpotlightCard({ deck }: { deck: DeckSpotlightDatum }) {
               alt={deck.name}
               fill
               sizes="(min-width: 1024px) 20vw, 60vw"
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              className="object-contain transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
             <DeckPlaceholder tags={deck.tags} size="lg" />
@@ -37,7 +37,7 @@ export function DeckSpotlightCard({ deck }: { deck: DeckSpotlightDatum }) {
           <div className="grid grid-cols-2 grid-rows-2 gap-1">
             {secondary.map((img, i) => (
               <div key={i} className="relative overflow-hidden rounded-sm bg-felt-surface">
-                <Image src={img.url} alt="" fill sizes="10vw" className="object-cover" />
+                <Image src={img.url} alt="" fill sizes="10vw" className="object-contain" />
               </div>
             ))}
           </div>
