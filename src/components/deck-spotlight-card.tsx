@@ -43,14 +43,24 @@ export function DeckSpotlightCard({ deck }: { deck: DeckSpotlightDatum }) {
           </div>
         )}
       </div>
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-felt-bg via-felt-bg/70 to-transparent" />
-      <div className="relative z-10 mt-auto flex flex-col gap-1 p-4">
-        <p className="font-display text-xl font-semibold leading-tight text-felt-ink line-clamp-2">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-felt-bg/95 via-felt-bg/60 to-felt-bg/10" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-felt-bg/90 via-transparent to-felt-bg/20" />
+      <div className="relative z-10 flex h-full flex-col p-5">
+        <p className="my-auto line-clamp-3 max-w-[88%] font-display text-4xl font-bold leading-[0.9] tracking-tight text-felt-ink drop-shadow-lg">
           {deck.name}
         </p>
-        <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-brass">
-          View deck <span aria-hidden="true">→</span>
-        </span>
+        <div className="flex items-end justify-between gap-3">
+          {deck.designer ? (
+            <span className="truncate font-display text-sm italic text-felt-sub">
+              {deck.designer}
+            </span>
+          ) : (
+            <span />
+          )}
+          <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold uppercase tracking-wide text-brass">
+            View deck <span aria-hidden="true">→</span>
+          </span>
+        </div>
       </div>
     </Link>
   );

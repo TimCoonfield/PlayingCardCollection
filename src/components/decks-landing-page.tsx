@@ -34,7 +34,6 @@ export function DecksLandingPage({
   emptyMessage?: string;
 }) {
   const favoriteDecks = decks.filter((d) => d.favorite).slice(0, 3);
-  const restDecks = decks.filter((d) => !favoriteDecks.includes(d));
 
   return (
     <div className="flex flex-col gap-8">
@@ -99,11 +98,11 @@ export function DecksLandingPage({
               </div>
             </div>
           )}
-          {restDecks.length > 0 && (
+          {decks.length > 0 && (
             <div className="flex flex-col gap-4">
               <SectionLabel>The Collection</SectionLabel>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                {restDecks.map((deck) => (
+                {decks.map((deck) => (
                   <DeckCard key={deck.id} deck={deck} />
                 ))}
               </div>
