@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { DeckCard } from "@/components/deck-card";
-import { DeckSpotlightCard } from "@/components/deck-spotlight-card";
+import { DecksLandingPage } from "@/components/decks-landing-page";
 
 // Placeholder hero art (magnifying glass over a few mini cards) until a real photo replaces it —
 // see the docs at the bottom of this file for how to swap it out.
@@ -20,79 +19,14 @@ export default async function MiniDecksPage() {
     include: { images: { orderBy: { sortOrder: "asc" } } },
     orderBy: { name: "asc" },
   });
-  const favoriteDecks = decks.filter((d) => d.favorite).slice(0, 3);
-  const restDecks = decks.filter((d) => !favoriteDecks.includes(d));
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="relative overflow-hidden rounded-lg border border-felt-line bg-felt-surface">
-        <svg
-          viewBox="0 0 800 500"
-          preserveAspectRatio="xMaxYMid slice"
-          className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.1] lg:opacity-40"
-          aria-hidden="true"
-        >
-          {MINI_HERO_SVG}
-        </svg>
-        <div
-          className="pointer-events-none absolute inset-0 hidden lg:block"
-          style={{
-            background:
-              "linear-gradient(to right, color-mix(in srgb, var(--felt-bg) 90%, transparent) 0%, color-mix(in srgb, var(--felt-bg) 90%, transparent) 44%, transparent 58%)",
-          }}
-        />
-        <div className="relative flex flex-col gap-3 p-6 lg:max-w-lg">
-          <h1 className="font-display text-2xl font-semibold text-felt-ink sm:text-3xl">
-            Mini Decks
-          </h1>
-          <p className="text-sm text-felt-sub">
-            There&rsquo;s something irresistible about a deck of cards you can barely believe is
-            full-size. Mini decks compress every design decision—typography, line weight,
-            color—into a fraction of the space, and somehow the best ones still read perfectly at
-            a glance. I love hunting these down as a kind of bonus format: the same artists and
-            studios I already follow, reimagined in miniature, often as limited extras rather than
-            the main release. They take up almost no shelf space and pack an outsized amount of
-            craft into a few square inches. This is where I&rsquo;m keeping track of them.
-          </p>
-        </div>
-      </div>
-
-      {decks.length === 0 ? (
-        <p className="py-16 text-center text-felt-sub">No mini decks yet.</p>
-      ) : (
-        <>
-          {favoriteDecks.length > 0 && (
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-3">
-                <h2 className="whitespace-nowrap font-display text-sm font-bold uppercase tracking-[0.2em] text-brass">
-                  Featured Decks
-                </h2>
-                <div className="h-px flex-1 bg-brass/30" />
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {favoriteDecks.map((deck) => (
-                  <DeckSpotlightCard key={deck.id} deck={deck} />
-                ))}
-              </div>
-            </div>
-          )}
-          {restDecks.length > 0 && (
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-3">
-                <h2 className="whitespace-nowrap font-display text-sm font-bold uppercase tracking-[0.2em] text-brass">
-                  The Collection
-                </h2>
-                <div className="h-px flex-1 bg-brass/30" />
-              </div>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                {restDecks.map((deck) => (
-                  <DeckCard key={deck.id} deck={deck} />
-                ))}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-    </div>
+    <DecksLandingPage
+      title="Mini Decks"
+      heroSvg={MINI_HERO_SVG}
+      blurb="There’s something irresistible about a deck of cards you can barely believe is full-size. Mini decks compress every design decision—typography, line weight, color—into a fraction of the space, and somehow the best ones still read perfectly at a glance. I love hunting these down as a kind of bonus format: the same artists and studios I already follow, reimagined in miniature, often as limited extras rather than the main release. They take up almost no shelf space and pack an outsized amount of craft into a few square inches. This is where I’m keeping track of them."
+      decks={decks}
+      emptyMessage="No mini decks yet."
+    />
   );
 }
