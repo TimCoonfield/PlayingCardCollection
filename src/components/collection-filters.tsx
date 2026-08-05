@@ -350,6 +350,13 @@ function YearRangeFilter({
     yearRange[0] === availableMinYear && yearRange[1] === availableMaxYear;
   const yearSpan = Math.max(1, availableMaxYear - availableMinYear);
 
+  function moveRangeHandle(handle: "lower" | "upper", value: number) {
+    setYearRange((current) => {
+      const otherValue = handle === "lower" ? current[1] : current[0];
+      return value <= otherValue ? [value, otherValue] : [otherValue, value];
+    });
+  }
+
   return (
     <>
       <div className="mb-2 flex items-baseline justify-between gap-3">
@@ -373,14 +380,10 @@ function YearRangeFilter({
           max={availableMaxYear}
           value={yearRange[0]}
           aria-label="Earliest release year"
-          onChange={(e) =>
-            setYearRange([Math.min(Number(e.target.value), yearRange[1]), yearRange[1]])
-          }
+          onChange={(e) => moveRangeHandle("lower", Number(e.target.value))}
           onPointerUp={() => onCommit(yearRange[0], yearRange[1])}
           onKeyUp={() => onCommit(yearRange[0], yearRange[1])}
-          className={`collection-year-range absolute inset-x-0 top-0 w-full ${
-            yearRange[0] === yearRange[1] ? "z-20" : "z-10"
-          }`}
+          className="collection-year-range absolute inset-x-0 top-0 z-10 w-full"
         />
         <input
           type="range"
@@ -388,9 +391,7 @@ function YearRangeFilter({
           max={availableMaxYear}
           value={yearRange[1]}
           aria-label="Latest release year"
-          onChange={(e) =>
-            setYearRange([yearRange[0], Math.max(Number(e.target.value), yearRange[0])])
-          }
+          onChange={(e) => moveRangeHandle("upper", Number(e.target.value))}
           onPointerUp={() => onCommit(yearRange[0], yearRange[1])}
           onKeyUp={() => onCommit(yearRange[0], yearRange[1])}
           className="collection-year-range absolute inset-x-0 top-0 z-10 w-full"
