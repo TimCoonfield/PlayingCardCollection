@@ -378,7 +378,9 @@ function YearRangeFilter({
           }
           onPointerUp={() => onCommit(yearRange[0], yearRange[1])}
           onKeyUp={() => onCommit(yearRange[0], yearRange[1])}
-          className="collection-year-range absolute inset-x-0 top-0 w-full"
+          className={`collection-year-range absolute inset-x-0 top-0 w-full ${
+            yearRange[0] === yearRange[1] ? "z-20" : "z-10"
+          }`}
         />
         <input
           type="range"
@@ -391,7 +393,7 @@ function YearRangeFilter({
           }
           onPointerUp={() => onCommit(yearRange[0], yearRange[1])}
           onKeyUp={() => onCommit(yearRange[0], yearRange[1])}
-          className="collection-year-range absolute inset-x-0 top-0 w-full"
+          className="collection-year-range absolute inset-x-0 top-0 z-10 w-full"
         />
       </div>
       <div className="flex justify-between text-xs tabular-nums text-felt-sub">
