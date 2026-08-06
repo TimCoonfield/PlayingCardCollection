@@ -5,13 +5,25 @@ import { CreatorSpotlightCard } from "@/components/creator-spotlight-card";
 export default async function CreatorsPage() {
   const creators = await Promise.all(
     CREATORS.map(async (creator) => {
-      const deckCount = await prisma.deck.count({
-        where: creator.matchProducerToo
-          ? { OR: [{ designer: creator.designer }, { producer: creator.designer }] }
-          : { designer: creator.designer },
-      });
+      const where = creator.matchProducerToo
+        ? { OR: [{ designer: creator.designer }, { producer: creator.designer }] }
+        : { designer: creator.designer };
+      const [deckCount, representativeDeck] = await Promise.all([
+        prisma.deck.count({ where }),
+        prisma.deck.findFirst({
+          where: { AND: [where, { images: { some: {} } }] },
+          orderBy: { name: "asc" },
+          select: { images: { orderBy: { sortOrder: "asc" }, take: 1, select: { url: true } } },
+        }),
+      ]);
 
-      return { ...creator, deckCount };
+      return {
+        ...creator,
+        deckCount,
+        directoryImageUrl: creator.spotlightImageUrl ?? representativeDeck?.images[0]?.url,
+        directoryImageAlt:
+          creator.spotlightImageAlt ?? `Artwork from a deck by ${creator.designer}`,
+      };
     })
   );
 
@@ -32,8 +44,8 @@ export default async function CreatorsPage() {
             key={creator.designer}
             name={creator.designer}
             tagline={creator.tagline}
-            imageUrl={creator.spotlightImageUrl}
-            imageAlt={creator.spotlightImageAlt}
+            imageUrl={creator.directoryImageUrl}
+            imageAlt={creator.directoryImageAlt}
             deckCount={creator.deckCount}
             href={creator.landingPageHref}
             accent={creator.accent}

@@ -21,8 +21,8 @@ export function CreatorSpotlightCard({
 }: {
   name: string;
   tagline: string;
-  imageUrl: string;
-  imageAlt: string;
+  imageUrl?: string;
+  imageAlt?: string;
   deckCount: number;
   href: string;
   accent: CreatorAccent;
@@ -32,13 +32,25 @@ export function CreatorSpotlightCard({
       href={href}
       className={`group relative flex aspect-[4/3] w-full overflow-hidden rounded-lg border border-felt-line bg-felt-surface shadow-lg shadow-black/20 transition duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/35 ${ACCENT_BORDER_CLASSES[accent]}`}
     >
-      <Image
-        src={imageUrl}
-        alt={imageAlt}
-        fill
-        sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
-        className="object-cover opacity-30 saturate-[0.85] transition duration-300 group-hover:scale-[1.03] group-hover:opacity-40 group-hover:saturate-100"
-      />
+      {imageUrl ? (
+        <Image
+          src={imageUrl}
+          alt={imageAlt ?? `Artwork by ${name}`}
+          fill
+          sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
+          className="object-cover opacity-30 saturate-[0.85] transition duration-300 group-hover:scale-[1.03] group-hover:opacity-40 group-hover:saturate-100"
+        />
+      ) : (
+        <span
+          aria-hidden="true"
+          className="absolute inset-0 flex items-center justify-center font-display text-8xl font-semibold text-brass/15"
+        >
+          {name
+            .split(" ")
+            .map((part) => part[0])
+            .join("")}
+        </span>
+      )}
       <div className="absolute inset-0 bg-gradient-to-b from-felt-bg/15 via-felt-bg/55 to-felt-bg/95" />
       <div className="relative mt-auto flex flex-col p-5">
         <span className="font-display text-5xl font-semibold leading-tight text-felt-ink">

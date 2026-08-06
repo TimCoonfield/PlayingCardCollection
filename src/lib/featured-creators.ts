@@ -14,11 +14,11 @@ export interface CreatorProfile {
   logoAlt?: string;
   /** Short epithet shown under the name on the homepage spotlight card, e.g. "The Painter". */
   tagline: string;
-  /** Wide/portrait image used as the full-bleed watermark background on the homepage
-   * spotlight card, hosted in Blob. */
-  spotlightImageUrl: string;
+  /** Wide/portrait image used as the full-bleed watermark background on creator cards,
+   * hosted in Blob. The directory falls back to collection artwork when absent. */
+  spotlightImageUrl?: string;
   /** Alt text for spotlightImageUrl. */
-  spotlightImageAlt: string;
+  spotlightImageAlt?: string;
   /** When true, "their decks" also includes decks where they're only credited as producer
    * (not designer) — e.g. decks they produced but someone else drew. Changes the "View all"
    * link from ?designer= to the OR-matching ?creator= filter. */
@@ -122,6 +122,17 @@ export const CREATORS: CreatorProfile[] = [
     spotlightImageUrl: "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/karl-gerich-joker.jpg",
     spotlightImageAlt: "Joker card self-portrait by Karl Gerich",
     matchProducerToo: true,
+  },
+  {
+    designer: "Jack Brutus Penny",
+    landingPageHref: "/creators/jack",
+    featuredOnHomepage: false,
+    featuredInNavigation: false,
+    producer: "Jack Brutus Penny",
+    bio: "Jack Brutus Penny transforms marvelously absurd ideas into intricate, story-rich works of art filled with detail, whimsy, and hidden surprises.",
+    accent: "plum",
+    initials: "JBP",
+    tagline: "Master of the Marvelously Absurd",
   },
 ];
 
