@@ -57,7 +57,17 @@ export function CreatorSpotlightCard({
           {name}
         </span>
         <span className="mt-2 font-display text-lg italic tracking-wide text-brass">{tagline}</span>
-        <span className="mt-1 text-xs text-felt-sub">{deckCount} decks in the collection →</span>
+        <span className="mt-4 flex items-baseline justify-between gap-3 border-t border-felt-line/60 pt-3">
+          <span className="flex items-baseline gap-2">
+            <span className="font-display text-3xl font-semibold leading-none text-felt-ink">
+              {deckCount}
+            </span>
+            <span className="text-[11px] uppercase tracking-wider text-felt-sub">collected</span>
+          </span>
+          <span className="text-xl text-brass" aria-hidden="true">
+            →
+          </span>
+        </span>
       </div>
     </Link>
   );
