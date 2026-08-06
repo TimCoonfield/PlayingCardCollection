@@ -25,7 +25,7 @@ export function DecksLandingPage({
 }: {
   title: string;
   tagline?: string;
-  blurb: string;
+  blurb: ReactNode;
   heroImageUrl?: string;
   heroObjectRight?: boolean;
   heroSvg?: ReactNode;

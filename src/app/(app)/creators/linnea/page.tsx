@@ -16,7 +16,18 @@ export default async function LinneaLandingPage() {
       title="Linnea Gits"
       tagline="The Painter"
       heroImageUrl={LINNEA_HERO_IMAGE_URL}
-      blurb="Linnea Gits may be the finest pure artist working in playing cards. Her painting is on another level, and I’m not sure anyone else in the industry can truly match it. But the appeal of Uusi goes beyond technical skill. Linnea and Peter Dunham take a deeply considered, emotional approach to every project, whether they are creating a tarot or a traditional playing-card deck. The imagery feels lived-in and human, with texture and imperfections that could never be replicated by work that was merely polished. Pagan was my first deck of theirs, given to me as a gift, and I’ve been in love with their work ever since. Their decks feel less like products than complete artistic statements."
+      blurb={
+        <>
+          Linnea Gits may be the finest pure artist working in playing cards. Her painting is
+          simply on another level. But what makes Uusi special isn&apos;t just Linnea&apos;s
+          remarkable artwork—it&apos;s the creative partnership she shares with Peter Dunham.
+          Together they create decks with an emotional depth and sense of purpose that few others
+          can match. Every release feels handcrafted, thoughtful, and unmistakably human. <em>Pagan</em>{" "}
+          was my first deck of theirs, given to me as a gift, and I&apos;ve been captivated by
+          their work ever since. Their decks feel less like products and more like enduring works
+          of art.
+        </>
+      }
       decks={decks}
     />
   );
