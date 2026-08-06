@@ -94,6 +94,14 @@ export function SpecialtyCollectionsMenu({
               {creator.name}
             </Link>
           ))}
+          <Link
+            href="/creators"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="block px-3 py-2 text-sm font-medium normal-case tracking-normal text-brass transition-colors hover:bg-felt-surface-2 hover:text-brass-deep"
+          >
+            View all creators →
+          </Link>
           <div className="my-1 border-t border-felt-line" />
           {COLLECTION_LINKS.map((link) => (
             <Link

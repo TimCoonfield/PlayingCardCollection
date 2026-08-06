@@ -1,16 +1,15 @@
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
-import { FEATURED_CREATORS } from "@/lib/featured-creators";
+import { NAVIGATION_CREATORS } from "@/lib/featured-creators";
 import { NavBar } from "./nav-bar";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
   const isAuthenticated = Boolean(session.authenticated);
-  const creatorNavItems = FEATURED_CREATORS.flatMap((creator) =>
-    creator.landingPageHref
-      ? [{ name: creator.designer, href: creator.landingPageHref }]
-      : []
-  );
+  const creatorNavItems = NAVIGATION_CREATORS.map((creator) => ({
+    name: creator.designer,
+    href: creator.landingPageHref,
+  }));
 
   return (
     <div className="flex min-h-screen flex-1 flex-col bg-felt-bg text-felt-ink">

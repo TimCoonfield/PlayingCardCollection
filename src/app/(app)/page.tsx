@@ -14,7 +14,7 @@ import {
   CameraIcon,
   SearchIcon,
 } from "@/components/icons";
-import { FEATURED_CREATORS } from "@/lib/featured-creators";
+import { HOMEPAGE_CREATORS } from "@/lib/featured-creators";
 
 const SPECIALTY_TAGS = ["Mini", "Tarot"] as const;
 
@@ -38,7 +38,7 @@ export default async function HomePage() {
     prisma.deck.groupBy({ by: ["designer"], where: { designer: { not: null } } }),
     prisma.deck.groupBy({ by: ["series"], where: { series: { not: null } } }),
     Promise.all(
-      FEATURED_CREATORS.map(async (creator) => {
+      HOMEPAGE_CREATORS.map(async (creator) => {
         const whereSql = creator.matchProducerToo
           ? Prisma.sql`(d.designer = ${creator.designer} OR d.producer = ${creator.designer})`
           : Prisma.sql`d.designer = ${creator.designer}`;
@@ -184,7 +184,14 @@ export default async function HomePage() {
       </div>
 
       <div className="flex flex-col gap-3">
-        <h2 className="font-display text-base font-semibold tracking-wide text-brass">Featured creators</h2>
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="font-display text-base font-semibold tracking-wide text-brass">
+            Featured creators
+          </h2>
+          <Link href="/creators" className="text-xs text-felt-sub hover:text-brass">
+            Browse all creators →
+          </Link>
+        </div>
         <div className="flex flex-wrap justify-center gap-4">
           {creatorsData.map((creator) => {
             const viewAllHref =
