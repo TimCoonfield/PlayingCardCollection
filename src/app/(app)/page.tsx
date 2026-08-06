@@ -220,6 +220,7 @@ export default async function HomePage() {
                   imageAlt={creator.spotlightImageAlt}
                   deckCount={creator.deckCount}
                   href={viewAllHref}
+                  accent={creator.accent}
                 />
               </div>
             );
