@@ -117,7 +117,7 @@ export default async function HomePage() {
   return (
     <div className="flex flex-col gap-10">
       <section className="archive-hero overflow-hidden rounded-xl border border-brass/35 bg-felt-header shadow-2xl shadow-black/25">
-        <div className="archive-hero-art relative isolate flex min-h-[42rem] items-start overflow-hidden sm:min-h-[43rem] lg:min-h-[36rem] lg:items-center">
+        <div className="archive-hero-art relative isolate flex min-h-[clamp(34rem,108vw,42rem)] items-start overflow-hidden lg:min-h-[36rem] lg:items-center">
           <div className="archive-hero-shade pointer-events-none absolute inset-0 -z-10" />
           <div className="archive-hero-frame pointer-events-none absolute inset-4 z-10 sm:inset-6" />
 
