@@ -1,7 +1,7 @@
 export type CreatorAccent = "plum" | "brass" | "sage" | "brick" | "felt-ink";
 
 export const JACK_BRUTUS_PENNY_IMAGE_URL =
-  "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/jack-brutus-penny-1V07WnSuMlNgtRWWqDE5limgzeoU3y.jpeg";
+  "/images/creators/jack-brutus-penny.webp";
 
 export interface CreatorProfile {
   designer: string;
@@ -17,8 +17,9 @@ export interface CreatorProfile {
   logoAlt?: string;
   /** Short epithet shown under the name on the homepage spotlight card, e.g. "The Painter". */
   tagline: string;
-  /** Wide/portrait image used as the full-bleed watermark background on creator cards,
-   * hosted in Blob. The directory falls back to collection artwork when absent. */
+  /** Wide/portrait image used as the full-bleed watermark background on creator cards.
+   * Fixed artwork can be a compressed static asset; the directory falls back to collection
+   * artwork when absent. */
   spotlightImageUrl?: string;
   /** Alt text for spotlightImageUrl. */
   spotlightImageAlt?: string;

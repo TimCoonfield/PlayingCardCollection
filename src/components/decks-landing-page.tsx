@@ -43,6 +43,7 @@ export function DecksLandingPage({
             src={heroImageUrl}
             alt=""
             fill
+            unoptimized={heroImageUrl.startsWith("/")}
             sizes="(min-width: 1024px) 60vw, 100vw"
             className={`pointer-events-none object-cover opacity-[0.18] lg:opacity-100 ${
               heroObjectRight ? "lg:object-right" : ""

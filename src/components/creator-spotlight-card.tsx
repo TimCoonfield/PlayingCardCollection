@@ -37,6 +37,7 @@ export function CreatorSpotlightCard({
           src={imageUrl}
           alt={imageAlt ?? `Artwork by ${name}`}
           fill
+          unoptimized={imageUrl.startsWith("/")}
           sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
           className="object-cover opacity-30 saturate-[0.85] transition duration-300 group-hover:scale-[1.03] group-hover:opacity-40 group-hover:saturate-100"
         />
