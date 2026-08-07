@@ -39,5 +39,15 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Public browsing routes do not need a proxy/session pass. Server Actions still perform
+  // their own authentication checks, while these write pages and APIs retain the early gate.
+  matcher: [
+    "/login",
+    "/decks/new",
+    "/decks/:id/edit",
+    "/coins/new",
+    "/coins/:id/edit",
+    "/api/upload",
+    "/api/ai/identify",
+  ],
 };

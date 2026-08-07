@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { deleteUnreferencedBlobUrls } from "@/lib/blob-cleanup";
 import { parseDeckFormData, type DeckFormValues } from "@/lib/schemas";
 
 export interface DeckFormState {
@@ -79,6 +80,11 @@ export async function updateDeck(
     return { error: "Please fix the errors below.", fieldErrors: flatten(parsed.error) };
   }
 
+  const existingImages = await prisma.deckImage.findMany({
+    where: { deckId },
+    select: { url: true },
+  });
+
   await prisma.$transaction([
     prisma.deckImage.deleteMany({ where: { deckId } }),
     prisma.deckEdition.deleteMany({ where: { deckId } }),
@@ -96,6 +102,11 @@ export async function updateDeck(
     }),
   ]);
 
+  const retainedUrls = new Set(parsed.data.imageUrls);
+  await deleteUnreferencedBlobUrls(
+    existingImages.map(({ url }) => url).filter((url) => !retainedUrls.has(url))
+  );
+
   revalidatePath("/collection");
   revalidatePath(`/decks/${deckId}`);
   redirect(`/decks/${deckId}`);
@@ -106,7 +117,12 @@ export async function deleteDeck(deckId: string) {
     redirect("/login");
   }
 
+  const deck = await prisma.deck.findUnique({
+    where: { id: deckId },
+    select: { images: { select: { url: true } } },
+  });
   await prisma.deck.delete({ where: { id: deckId } });
+  await deleteUnreferencedBlobUrls(deck?.images.map(({ url }) => url) ?? []);
   revalidatePath("/collection");
   redirect("/collection");
 }

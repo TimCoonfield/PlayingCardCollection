@@ -5,7 +5,7 @@ import Image from "next/image";
 import { upload } from "@vercel/blob/client";
 import {
   compressImage,
-  probeUploadPermission,
+  requestBlobCleanup,
   MAX_FILE_BYTES,
   UPLOAD_TIMEOUT_MS,
 } from "./image-uploader";
@@ -105,8 +105,6 @@ export function CoinPhotoSlots({
     let uploadFileSize = file.size;
 
     try {
-      await probeUploadPermission(`coins/${Date.now()}-${file.name}`);
-
       const uploadFile = await compressImage(file);
       uploadFileSize = uploadFile.size;
       setSlot({ url: "", uploading: true, stage: "transfer" });
@@ -140,14 +138,20 @@ export function CoinPhotoSlots({
           name="obverseImageUrl"
           slot={obverse}
           onUpload={(file) => handleUpload(file, setObverse)}
-          onRemove={() => setObverse({ url: "" })}
+          onRemove={() => {
+            if (obverse.url) requestBlobCleanup(obverse.url);
+            setObverse({ url: "" });
+          }}
         />
         <PhotoSlot
           label="Reverse"
           name="reverseImageUrl"
           slot={reverse}
           onUpload={(file) => handleUpload(file, setReverse)}
-          onRemove={() => setReverse({ url: "" })}
+          onRemove={() => {
+            if (reverse.url) requestBlobCleanup(reverse.url);
+            setReverse({ url: "" });
+          }}
         />
       </div>
     </div>

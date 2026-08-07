@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { deleteUnreferencedBlobUrls } from "@/lib/blob-cleanup";
 import { parseCoinFormData, type CoinFormValues } from "@/lib/coin-schemas";
 
 export interface CoinFormState {
@@ -74,10 +75,27 @@ export async function updateCoin(
     return { error: "Please fix the errors below.", fieldErrors: flatten(parsed.error) };
   }
 
+  const existingCoin = await prisma.coin.findUnique({
+    where: { id: coinId },
+    select: { obverseImageUrl: true, reverseImageUrl: true },
+  });
+
   await prisma.coin.update({
     where: { id: coinId },
     data: toCoinData(parsed.data),
   });
+
+  const retainedUrls = new Set(
+    [parsed.data.obverseImageUrl, parsed.data.reverseImageUrl].filter(
+      (url): url is string => Boolean(url)
+    )
+  );
+  const previousUrls = [existingCoin?.obverseImageUrl, existingCoin?.reverseImageUrl].filter(
+    (url): url is string => Boolean(url)
+  );
+  await deleteUnreferencedBlobUrls(
+    previousUrls.filter((url) => !retainedUrls.has(url))
+  );
 
   revalidatePath("/coins");
   revalidatePath(`/coins/${coinId}`);
@@ -89,7 +107,16 @@ export async function deleteCoin(coinId: string) {
     redirect("/login");
   }
 
+  const coin = await prisma.coin.findUnique({
+    where: { id: coinId },
+    select: { obverseImageUrl: true, reverseImageUrl: true },
+  });
   await prisma.coin.delete({ where: { id: coinId } });
+  await deleteUnreferencedBlobUrls(
+    [coin?.obverseImageUrl, coin?.reverseImageUrl].filter(
+      (url): url is string => Boolean(url)
+    )
+  );
   revalidatePath("/coins");
   redirect("/coins");
 }

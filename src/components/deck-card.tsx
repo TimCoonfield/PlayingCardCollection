@@ -15,12 +15,22 @@ export interface DeckCardData {
   images: { url: string }[];
 }
 
-export function DeckCard({ deck }: { deck: DeckCardData }) {
+const DEFAULT_CARD_SIZES =
+  "(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw";
+
+export function DeckCard({
+  deck,
+  sizes = DEFAULT_CARD_SIZES,
+}: {
+  deck: DeckCardData;
+  sizes?: string;
+}) {
   const hasImages = deck.images.length > 0;
 
   return (
     <Link
       href={`/decks/${deck.id}`}
+      prefetch={false}
       className="group flex flex-col overflow-hidden rounded-lg border border-felt-line bg-felt-surface transition-colors hover:border-brass"
     >
       <div className="relative aspect-[3/4] w-full bg-felt-surface-2">
@@ -30,7 +40,7 @@ export function DeckCard({ deck }: { deck: DeckCardData }) {
               src={deck.images[0].url}
               alt={deck.name}
               fill
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
+              sizes={sizes}
               className="object-cover transition-transform group-hover:scale-105"
             />
             <AccentBar tags={deck.tags} />

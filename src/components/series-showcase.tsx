@@ -29,7 +29,7 @@ export function SeriesShowcase({ items }: { items: SeriesSpotlightDatum[] }) {
                   src={item.deck.imageUrl}
                   alt={item.deck.name}
                   fill
-                  sizes="(max-width: 640px) 100vw, 33vw"
+                  sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
                   className="object-cover transition-transform group-hover:scale-105"
                 />
               ) : (
@@ -54,7 +54,11 @@ export function SeriesShowcase({ items }: { items: SeriesSpotlightDatum[] }) {
         );
 
         return (
-          <Link key={item.series} href={`/collection?series=${encodeURIComponent(item.series)}`}>
+          <Link
+            key={item.series}
+            href={`/collection?series=${encodeURIComponent(item.series)}`}
+            prefetch={false}
+          >
             {content}
           </Link>
         );

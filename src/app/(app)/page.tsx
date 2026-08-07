@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { StatTile } from "@/components/stat-tile";
 import { DeckCard } from "@/components/deck-card";
-import { CreatorCard, type CreatorRandomDeck } from "@/components/creator-card";
+import type { CreatorRandomDeck } from "@/components/creator-card";
 import { CreatorSpotlightCard } from "@/components/creator-spotlight-card";
 import { SpecialtyCollectionCard } from "@/components/specialty-collection-card";
 import {
@@ -248,7 +248,11 @@ export default async function HomePage() {
         <h2 className="font-display text-base font-semibold tracking-wide text-brass">Recently added</h2>
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10">
           {recentDecks.map((deck) => (
-            <DeckCard key={deck.id} deck={deck} />
+            <DeckCard
+              key={deck.id}
+              deck={deck}
+              sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 10vw"
+            />
           ))}
         </div>
       </div>

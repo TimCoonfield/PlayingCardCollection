@@ -163,7 +163,11 @@ export default async function StatsPage() {
         <h2 className="font-display text-base font-semibold tracking-wide text-brass">Recently added</h2>
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10">
           {recentDecks.map((deck) => (
-            <DeckCard key={deck.id} deck={deck} />
+            <DeckCard
+              key={deck.id}
+              deck={deck}
+              sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 10vw"
+            />
           ))}
         </div>
       </div>

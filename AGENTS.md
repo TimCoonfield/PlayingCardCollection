@@ -65,6 +65,11 @@ directed changes to it over time, and matter for judgment calls the sections bel
   more useful than silently picking the most conventional option and moving on.
 - Preserve the owner's existing copy and voice (hero blurbs, bios, nav labels) unless a task
   explicitly asks for a rewrite — don't "clean up" prose while doing an unrelated change.
+- Treat Blob as the home for dynamically uploaded deck and coin photos. For future fixed creator
+  portraits, logos, hero backgrounds, and decorative imagery, consider a pre-sized, compressed,
+  content-hashed static asset first; this keeps durable design assets out of the catalog's Blob
+  storage and transformation budget. Do not migrate existing curated images without a specific
+  request—the current volume is too small to materially affect usage.
 - Don't add features just because they're common on inventory/collection or e-commerce sites
   (ratings, carts, generic dashboards) — see [§10](#10-ui-and-design-conventions) for the visual
   character this would violate.

@@ -22,6 +22,7 @@ export function CoinCard({ coin }: { coin: CoinCardData }) {
   return (
     <Link
       href={`/coins/${coin.id}`}
+      prefetch={false}
       className="group flex flex-col overflow-hidden rounded-lg border border-felt-line bg-felt-surface transition-colors hover:border-brass"
     >
       <div className="relative aspect-[3/4] w-full bg-felt-surface-2">
@@ -32,7 +33,7 @@ export function CoinCard({ coin }: { coin: CoinCardData }) {
                 src={coin.obverseImageUrl!}
                 alt={coin.name}
                 fill
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
+                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
                 className={`object-cover transition-opacity duration-200 ${
                   canFlip ? "group-hover:opacity-0" : ""
                 }`}
@@ -43,7 +44,7 @@ export function CoinCard({ coin }: { coin: CoinCardData }) {
                 src={coin.reverseImageUrl!}
                 alt={coin.name}
                 fill
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
+                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
                 className={`object-cover transition-opacity duration-200 ${
                   canFlip ? "opacity-0 group-hover:opacity-100" : ""
                 } ${!canFlip && hasObverse ? "hidden" : ""}`}

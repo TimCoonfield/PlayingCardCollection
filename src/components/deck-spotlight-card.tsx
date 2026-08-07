@@ -37,7 +37,13 @@ export function DeckSpotlightCard({ deck }: { deck: DeckSpotlightDatum }) {
           <div className="grid grid-cols-2 grid-rows-2 gap-1">
             {secondary.map((img, i) => (
               <div key={i} className="relative overflow-hidden rounded-sm bg-felt-surface">
-                <Image src={img.url} alt="" fill sizes="10vw" className="object-cover" />
+                <Image
+                  src={img.url}
+                  alt=""
+                  fill
+                  sizes="(max-width: 640px) 20vw, (max-width: 1024px) 10vw, 7vw"
+                  className="object-cover"
+                />
               </div>
             ))}
           </div>

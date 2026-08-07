@@ -17,7 +17,17 @@ const COMPRESS_MAX_DIMENSION = 2000;
 const COMPRESS_QUALITY = 0.85;
 const COMPRESS_SKIP_UNDER_BYTES = 1.5 * 1024 * 1024;
 const COMPRESS_TIMEOUT_MS = 8_000;
-const TOKEN_PROBE_TIMEOUT_MS = 15_000;
+
+export function requestBlobCleanup(url: string): void {
+  void fetch("/api/upload", {
+    method: "DELETE",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ url }),
+    keepalive: true,
+  }).catch(() => {
+    // Cleanup is best-effort; the save action gets another chance for persisted images.
+  });
+}
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -85,36 +95,6 @@ export async function compressImage(file: File): Promise<File> {
   }
 }
 
-// Diagnostic-only probe: replicates the SDK's own token request (the very first network call
-// upload() makes) so a hang can be pinned to "our server never responded" vs. "the actual file
-// transfer stalled" — the SDK's real token fetch happens again right after via upload() itself.
-export async function probeUploadPermission(pathname: string): Promise<void> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), TOKEN_PROBE_TIMEOUT_MS);
-  try {
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        type: "blob.generate-client-token",
-        payload: { pathname, clientPayload: null, multipart: false },
-      }),
-      signal: controller.signal,
-    });
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      throw new Error(`Server responded ${res.status} requesting upload permission: ${body.slice(0, 400)}`);
-    }
-  } catch (err) {
-    if (controller.signal.aborted) {
-      throw new Error("Server did not respond requesting upload permission (not a data-transfer issue)");
-    }
-    throw err;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
 export function ImageUploader({
   initialImages = [],
   onImagesChange,
@@ -160,8 +140,6 @@ export function ImageUploader({
         let uploadFileSize = file.size;
 
         try {
-          await probeUploadPermission(`${pathPrefix}/${Date.now()}-${file.name}`);
-
           const uploadFile = await compressImage(file);
           uploadFileSize = uploadFile.size;
           setImages((prev) => {
@@ -205,7 +183,9 @@ export function ImageUploader({
   }
 
   function removeImage(index: number) {
+    const url = images[index]?.url;
     setImages((prev) => prev.filter((_, i) => i !== index));
+    if (url) requestBlobCleanup(url);
   }
 
   return (
