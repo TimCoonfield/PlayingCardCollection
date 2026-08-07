@@ -1,7 +1,7 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
-import { StatTile } from "@/components/stat-tile";
 import { DeckCard } from "@/components/deck-card";
 import type { CreatorRandomDeck } from "@/components/creator-card";
 import { CreatorSpotlightCard } from "@/components/creator-spotlight-card";
@@ -17,11 +17,6 @@ import {
 import { HOMEPAGE_CREATORS } from "@/lib/featured-creators";
 
 const SPECIALTY_TAGS = ["Mini", "Tarot"] as const;
-
-// A faint tiled suit pattern behind the hero, echoing the poster-style creator cards below —
-// generated inline so the effect doesn't need a hosted image asset.
-const HERO_WATERMARK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><text x="4" y="42" font-size="38" fill="#f3ead1">♠</text><text x="50" y="88" font-size="34" fill="#f3ead1">♦</text></svg>`;
-const HERO_WATERMARK_URL = `url("data:image/svg+xml,${encodeURIComponent(HERO_WATERMARK_SVG)}")`;
 
 export default async function HomePage() {
   const [
@@ -121,24 +116,33 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col gap-10">
-      <div className="relative overflow-hidden rounded-lg border border-felt-line bg-felt-surface">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.07]"
-          style={{ backgroundImage: HERO_WATERMARK_URL, backgroundRepeat: "repeat" }}
-        />
-        <div className="relative flex flex-col gap-6 p-6 lg:flex-row">
-          <div className="flex flex-1 flex-col gap-4">
-            <h1 className="font-display text-2xl font-semibold text-felt-ink sm:text-3xl">
-              Welcome to the Card Guy Archive
+      <section className="archive-hero overflow-hidden rounded-xl border border-brass/35 bg-felt-header shadow-2xl shadow-black/25">
+        <div className="archive-hero-art relative isolate flex min-h-[42rem] items-start overflow-hidden sm:min-h-[43rem] lg:min-h-[36rem] lg:items-center">
+          <div className="archive-hero-shade pointer-events-none absolute inset-0 -z-10" />
+          <div className="archive-hero-frame pointer-events-none absolute inset-4 z-10 sm:inset-6" />
+
+          <div className="relative z-20 flex w-full max-w-[43rem] flex-col items-center px-8 pb-10 pt-16 text-center sm:px-12 lg:items-start lg:px-14 lg:py-16 lg:text-left xl:px-16">
+            <div className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.42em] text-brass sm:text-xs">
+              <span className="hidden h-px w-10 bg-brass/65 sm:block" />
+              <span>Welcome to</span>
+              <span aria-hidden="true" className="tracking-[0.3em]">♠ ♥ ♦ ♣</span>
+              <span className="hidden h-px w-10 bg-brass/65 sm:block" />
+            </div>
+
+            <h1 className="mt-6 max-w-[10ch] font-display text-5xl font-semibold leading-[0.96] tracking-[-0.035em] text-felt-ink sm:text-6xl lg:text-7xl xl:text-[5.2rem]">
+              The Card Guy Archive
             </h1>
-            <p className="max-w-2xl text-sm text-felt-sub">
+
+            <div className="archive-hero-divider my-7 h-px w-full max-w-[34rem] bg-brass/70" />
+
+            <p className="max-w-[35rem] text-sm leading-7 text-felt-ink/90 sm:text-base sm:leading-8 lg:text-[1.05rem]">
               I&rsquo;ve been collecting playing cards since 2018, and spent several years running
               a YouTube channel (
               <a
                 href="https://www.youtube.com/@TheCardGuyReviews"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-brass hover:text-brass-deep"
+                className="text-brass transition-colors hover:text-brass-deep"
               >
                 The Card Guy Reviews
               </a>
@@ -146,42 +150,41 @@ export default async function HomePage() {
               Kickstarter, Rattler Gorge. This is where I catalog and share the collection as it
               keeps growing.
             </p>
+
             <Link
               href="/collection"
-              className="self-start rounded-md bg-brass px-4 py-2 text-sm font-semibold text-felt-bg hover:bg-brass-deep"
+              className="archive-hero-cta mt-8 inline-flex items-center gap-4 bg-brass px-7 py-3.5 text-xs font-bold uppercase tracking-[0.16em] text-felt-header transition hover:bg-brass-deep sm:text-sm"
             >
-              Enter the archives →
+              Enter the archives <span aria-hidden="true">→</span>
             </Link>
           </div>
-
-          <div className="flex flex-col gap-3 lg:w-72 lg:shrink-0">
-            <div className="grid grid-cols-2 gap-3">
-              <StatTile
-                icon={<CardsIcon className="h-6 w-6" />}
-                label="Unique decks"
-                value={totalDecks}
-                href="/collection?type=deck"
-              />
-              <StatTile
-                icon={<PaletteIcon className="h-6 w-6" />}
-                label="Designers"
-                value={designerGroups.length}
-              />
-              <StatTile
-                icon={<CoinIcon className="h-6 w-6" />}
-                label="Coins"
-                value={coinCount}
-                href="/collection?type=coin"
-              />
-              <StatTile
-                icon={<LayersIcon className="h-6 w-6" />}
-                label="Series"
-                value={seriesGroups.length}
-              />
-            </div>
-          </div>
         </div>
-      </div>
+
+        <div className="grid grid-cols-2 border-t border-brass/45 sm:grid-cols-4">
+          <HeroStat
+            icon={<CardsIcon className="h-7 w-7" />}
+            label="Unique decks"
+            value={totalDecks}
+            href="/collection?type=deck"
+          />
+          <HeroStat
+            icon={<PaletteIcon className="h-7 w-7" />}
+            label="Designers"
+            value={designerGroups.length}
+          />
+          <HeroStat
+            icon={<CoinIcon className="h-7 w-7" />}
+            label="Coins"
+            value={coinCount}
+            href="/collection?type=coin"
+          />
+          <HeroStat
+            icon={<LayersIcon className="h-7 w-7" />}
+            label="Series"
+            value={seriesGroups.length}
+          />
+        </div>
+      </section>
 
       <div className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between gap-3">
@@ -257,5 +260,40 @@ export default async function HomePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function HeroStat({
+  icon,
+  label,
+  value,
+  href,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: number;
+  href?: string;
+}) {
+  const content = (
+    <>
+      <span className="text-brass">{icon}</span>
+      <span className="font-display text-4xl font-semibold tabular-nums leading-none text-felt-ink sm:text-5xl">
+        {value.toLocaleString()}
+      </span>
+      <span className="text-[10px] uppercase tracking-[0.16em] text-felt-ink/80 sm:text-xs">
+        {label}
+      </span>
+    </>
+  );
+
+  const classes =
+    "archive-hero-stat relative flex min-h-36 flex-col items-center justify-center gap-3 bg-felt-header/80 px-3 py-6 text-center transition-colors hover:bg-felt-surface/55 sm:min-h-44";
+
+  return href ? (
+    <Link href={href} className={classes}>
+      {content}
+    </Link>
+  ) : (
+    <div className={classes}>{content}</div>
   );
 }

@@ -33,6 +33,90 @@
   border: 0;
 }
 
+.archive-hero-art {
+  background-image: url("/images/home/archive-hero-mobile.webp");
+  background-position: center;
+  background-size: cover;
+}
+
+.archive-hero-shade {
+  background:
+    linear-gradient(to bottom, rgb(4 20 14 / 0.28) 0%, rgb(4 20 14 / 0.78) 56%, rgb(4 20 14 / 0.98) 100%),
+    linear-gradient(to right, rgb(3 17 12 / 0.9) 0%, rgb(3 17 12 / 0.62) 68%, rgb(3 17 12 / 0.14) 100%);
+}
+
+.archive-hero-frame {
+  border: 1px solid color-mix(in srgb, var(--brass) 45%, transparent);
+  background:
+    linear-gradient(var(--brass), var(--brass)) left top / 1.5rem 1px no-repeat,
+    linear-gradient(var(--brass), var(--brass)) left top / 1px 1.5rem no-repeat,
+    linear-gradient(var(--brass), var(--brass)) right top / 1.5rem 1px no-repeat,
+    linear-gradient(var(--brass), var(--brass)) right top / 1px 1.5rem no-repeat,
+    linear-gradient(var(--brass), var(--brass)) left bottom / 1.5rem 1px no-repeat,
+    linear-gradient(var(--brass), var(--brass)) left bottom / 1px 1.5rem no-repeat,
+    linear-gradient(var(--brass), var(--brass)) right bottom / 1.5rem 1px no-repeat,
+    linear-gradient(var(--brass), var(--brass)) right bottom / 1px 1.5rem no-repeat;
+  opacity: 0.72;
+}
+
+.archive-hero-divider {
+  position: relative;
+}
+
+.archive-hero-divider::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 1px solid var(--brass);
+  background: var(--felt-header);
+  content: "";
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.archive-hero-cta {
+  border: 1px solid var(--felt-header);
+  outline: 1px solid var(--brass);
+  outline-offset: 3px;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.28);
+}
+
+.archive-hero-stat:nth-child(odd) {
+  border-right: 1px solid color-mix(in srgb, var(--brass) 42%, transparent);
+}
+
+.archive-hero-stat:nth-child(-n + 2) {
+  border-bottom: 1px solid color-mix(in srgb, var(--brass) 42%, transparent);
+}
+
+@media (min-width: 640px) {
+  .archive-hero-stat:not(:last-child) {
+    border-right: 1px solid color-mix(in srgb, var(--brass) 42%, transparent);
+  }
+
+  .archive-hero-stat:nth-child(-n + 2) {
+    border-bottom: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .archive-hero-art {
+    background-image: url("/images/home/archive-hero-desktop.webp");
+    background-position: center;
+  }
+
+  .archive-hero-shade {
+    background: linear-gradient(
+      to right,
+      rgb(3 17 12 / 0.98) 0%,
+      rgb(3 17 12 / 0.92) 35%,
+      rgb(3 17 12 / 0.54) 52%,
+      rgb(3 17 12 / 0.04) 74%
+    );
+  }
+}
+
 :root {
   --felt-bg: #1c4632;
   --felt-header: #12291d;
