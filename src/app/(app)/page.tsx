@@ -122,10 +122,10 @@ export default async function HomePage() {
           <div className="archive-hero-frame pointer-events-none absolute inset-4 z-10 sm:inset-6" />
 
           <div className="relative z-20 flex w-full max-w-[43rem] flex-col items-center px-8 pb-10 pt-16 text-center sm:px-12 lg:items-start lg:px-14 lg:py-16 lg:text-left xl:px-16">
-            <div className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.42em] text-brass sm:text-xs">
-              <span className="hidden h-px w-10 bg-brass/65 sm:block" />
+            <div className="flex w-full max-w-[34rem] items-center gap-4 text-[10px] font-semibold uppercase tracking-[0.42em] text-brass sm:text-xs">
+              <span className="h-px flex-1 bg-brass/65" />
               <span aria-hidden="true" className="tracking-[0.3em]">♠ ♥ ♦ ♣</span>
-              <span className="hidden h-px w-10 bg-brass/65 sm:block" />
+              <span className="h-px flex-1 bg-brass/65" />
             </div>
 
             <h1 className="mt-6 max-w-[10ch] font-display text-5xl font-semibold leading-[0.96] tracking-[-0.035em] text-felt-ink sm:text-6xl lg:text-7xl xl:text-[5.2rem]">
