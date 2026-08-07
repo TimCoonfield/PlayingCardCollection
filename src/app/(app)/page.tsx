@@ -124,7 +124,6 @@ export default async function HomePage() {
           <div className="relative z-20 flex w-full max-w-[43rem] flex-col items-center px-8 pb-10 pt-16 text-center sm:px-12 lg:items-start lg:px-14 lg:py-16 lg:text-left xl:px-16">
             <div className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.42em] text-brass sm:text-xs">
               <span className="hidden h-px w-10 bg-brass/65 sm:block" />
-              <span>Welcome to</span>
               <span aria-hidden="true" className="tracking-[0.3em]">♠ ♥ ♦ ♣</span>
               <span className="hidden h-px w-10 bg-brass/65 sm:block" />
             </div>
@@ -155,7 +154,7 @@ export default async function HomePage() {
               href="/collection"
               className="archive-hero-cta mt-8 inline-flex items-center gap-4 bg-brass px-7 py-3.5 text-xs font-bold uppercase tracking-[0.16em] text-felt-header transition hover:bg-brass-deep sm:text-sm"
             >
-              Enter the archives <span aria-hidden="true">→</span>
+              Browse the archives <span aria-hidden="true">→</span>
             </Link>
           </div>
         </div>
