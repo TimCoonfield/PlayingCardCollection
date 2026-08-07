@@ -1,5 +1,8 @@
 export type CreatorAccent = "plum" | "brass" | "sage" | "brick" | "felt-ink";
 
+export const JACK_BRUTUS_PENNY_IMAGE_URL =
+  "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/jack-brutus-penny-1V07WnSuMlNgtRWWqDE5limgzeoU3y.jpeg";
+
 export interface CreatorProfile {
   designer: string;
   producer: string;
@@ -133,6 +136,8 @@ export const CREATORS: CreatorProfile[] = [
     accent: "plum",
     initials: "JBP",
     tagline: "Master of the Marvelously Absurd",
+    spotlightImageUrl: JACK_BRUTUS_PENNY_IMAGE_URL,
+    spotlightImageAlt: "Gold-foiled Culturae Animalis deck boxes with Jack Brutus Penny's logo",
   },
 ];
 

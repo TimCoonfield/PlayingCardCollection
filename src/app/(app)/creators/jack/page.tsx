@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { DecksLandingPage } from "@/components/decks-landing-page";
+import { JACK_BRUTUS_PENNY_IMAGE_URL } from "@/lib/featured-creators";
 
 export default async function JackBrutusPennyLandingPage() {
   const decks = await prisma.deck.findMany({
@@ -7,13 +8,12 @@ export default async function JackBrutusPennyLandingPage() {
     include: { images: { orderBy: { sortOrder: "asc" } } },
     orderBy: { name: "asc" },
   });
-  const heroImageUrl = decks.find((deck) => deck.images.length > 0)?.images[0]?.url;
-
   return (
     <DecksLandingPage
       title="Jack Brutus Penny"
       tagline="Master of the Marvelously Absurd"
-      heroImageUrl={heroImageUrl}
+      heroImageUrl={JACK_BRUTUS_PENNY_IMAGE_URL}
+      heroObjectRight
       blurb={
         <>
           Some creators make beautiful decks. Some tell compelling stories. Jack Brutus Penny
