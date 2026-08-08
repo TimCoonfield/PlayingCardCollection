@@ -109,8 +109,10 @@ export function ImageUploader({
     initialImages.map((i) => ({ url: i.url }))
   );
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
   const [reorderMessage, setReorderMessage] = useState("");
   const dragIndexRef = useRef<number | null>(null);
+  const dropIndexRef = useRef<number | null>(null);
   const completedImageCount = images.filter((image) => image.url).length;
   const canReorder = completedImageCount > 1 && !images.some((image) => image.uploading);
 
@@ -210,7 +212,9 @@ export function ImageUploader({
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     dragIndexRef.current = index;
+    dropIndexRef.current = index;
     setDragIndex(index);
+    setDropIndex(index);
     setReorderMessage("");
   }
 
@@ -223,24 +227,34 @@ export function ImageUploader({
       .elementFromPoint(event.clientX, event.clientY)
       ?.closest<HTMLElement>("[data-photo-index]");
     const toIndex = Number(target?.dataset.photoIndex);
-    if (!Number.isInteger(toIndex) || toIndex === fromIndex) return;
+    if (!Number.isInteger(toIndex) || toIndex === dropIndexRef.current) return;
 
-    moveImage(fromIndex, toIndex);
-    dragIndexRef.current = toIndex;
-    setDragIndex(toIndex);
+    dropIndexRef.current = toIndex;
+    setDropIndex(toIndex);
   }
 
   function finishDrag() {
-    const finalIndex = dragIndexRef.current;
-    if (finalIndex !== null) {
+    const fromIndex = dragIndexRef.current;
+    const toIndex = dropIndexRef.current;
+    if (fromIndex !== null && toIndex !== null && fromIndex !== toIndex) {
+      moveImage(fromIndex, toIndex);
       setReorderMessage(
-        finalIndex === 0
+        toIndex === 0
           ? "Photo moved to the main position."
-          : `Photo moved to position ${finalIndex + 1}.`
+          : `Photo moved to position ${toIndex + 1}.`
       );
     }
     dragIndexRef.current = null;
+    dropIndexRef.current = null;
     setDragIndex(null);
+    setDropIndex(null);
+  }
+
+  function cancelDrag() {
+    dragIndexRef.current = null;
+    dropIndexRef.current = null;
+    setDragIndex(null);
+    setDropIndex(null);
   }
 
   function handleReorderKey(event: KeyboardEvent<HTMLButtonElement>, index: number) {
@@ -277,6 +291,8 @@ export function ImageUploader({
             className={`relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-md border bg-felt-surface transition-[border-color,transform,box-shadow] ${
               dragIndex === i
                 ? "z-10 scale-[1.04] border-brass shadow-lg shadow-black/35"
+                : dropIndex === i
+                  ? "border-brass ring-2 ring-brass/55 ring-offset-2 ring-offset-felt-bg"
                 : "border-felt-line"
             }`}
           >
@@ -303,7 +319,7 @@ export function ImageUploader({
                     onPointerDown={(event) => startDrag(event, i)}
                     onPointerMove={continueDrag}
                     onPointerUp={finishDrag}
-                    onPointerCancel={finishDrag}
+                    onPointerCancel={cancelDrag}
                     onKeyDown={(event) => handleReorderKey(event, i)}
                     className="absolute bottom-1 left-1 flex h-7 min-w-7 touch-none cursor-grab items-center justify-center rounded bg-black/75 px-1.5 text-base leading-none text-felt-ink shadow-sm active:cursor-grabbing"
                     aria-label={`Reorder photo ${i + 1}. Use arrow keys to move it.`}
