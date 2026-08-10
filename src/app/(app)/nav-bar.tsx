@@ -1,12 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
 import { usePathname } from "next/navigation";
-import {
-  ArchiveSpotlightTrigger,
-  openArchiveSpotlight,
-} from "@/components/archive-spotlight";
+import { ArchiveSpotlightTrigger } from "@/components/archive-spotlight";
 import { AddMenu } from "@/components/add-menu";
 import { SpecialtyCollectionsMenu } from "@/components/specialty-collections-menu";
 import { CollectionIcon, StatsIcon } from "@/components/icons";
@@ -25,8 +21,6 @@ export function NavBar({
   creatorNavItems: { name: string; href: string }[];
 }) {
   const pathname = usePathname();
-  const logoLongPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const suppressLogoNavigation = useRef(false);
   const specialtyIsActive =
     pathname === "/creators" ||
     pathname.startsWith("/creators/") ||
@@ -35,44 +29,11 @@ export function NavBar({
     pathname === "/tarot" ||
     pathname === "/souvenir";
 
-  function cancelLogoLongPress() {
-    if (logoLongPressTimer.current) {
-      clearTimeout(logoLongPressTimer.current);
-      logoLongPressTimer.current = null;
-    }
-  }
-
-  function startLogoLongPress() {
-    cancelLogoLongPress();
-    suppressLogoNavigation.current = false;
-    logoLongPressTimer.current = setTimeout(() => {
-      suppressLogoNavigation.current = true;
-      openArchiveSpotlight();
-    }, 550);
-  }
-
   return (
     <header className="sticky top-0 z-10 border-b border-felt-line bg-felt-header/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-3 sm:gap-4 sm:px-6">
-        <Link
-          href="/"
-          onClick={(event) => {
-            if (suppressLogoNavigation.current) {
-              event.preventDefault();
-              suppressLogoNavigation.current = false;
-            }
-          }}
-          className="flex shrink-0 items-center gap-2.5"
-        >
-          <span
-            onPointerDown={startLogoLongPress}
-            onPointerUp={cancelLogoLongPress}
-            onPointerCancel={cancelLogoLongPress}
-            onPointerLeave={cancelLogoLongPress}
-            onContextMenu={(event) => event.preventDefault()}
-            className="relative flex h-9 w-9 shrink-0 select-none items-center justify-center rounded-full border-2 border-brass text-lg text-brass sm:h-10 sm:w-10"
-            title="Press and hold to search"
-          >
+        <Link href="/" className="flex shrink-0 items-center gap-2.5">
+          <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-brass text-lg text-brass sm:h-10 sm:w-10">
             <span className="pointer-events-none absolute inset-[3px] rounded-full border border-brass/40" />
             ♠
           </span>
