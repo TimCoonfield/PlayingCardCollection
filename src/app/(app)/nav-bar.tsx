@@ -24,6 +24,7 @@ export function NavBar({
   const specialtyIsActive =
     pathname === "/creators" ||
     pathname.startsWith("/creators/") ||
+    pathname === "/white-whales" ||
     pathname === "/mini" ||
     pathname === "/tarot" ||
     pathname === "/souvenir";

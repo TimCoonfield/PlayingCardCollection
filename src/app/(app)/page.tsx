@@ -13,6 +13,7 @@ import {
   CoinIcon,
   CameraIcon,
   SearchIcon,
+  WhaleIcon,
 } from "@/components/icons";
 import { HOMEPAGE_CREATORS } from "@/lib/featured-creators";
 
@@ -28,6 +29,7 @@ export default async function HomePage() {
     specialtyCounts,
     coinCount,
     souvenirCount,
+    whiteWhaleCount,
   ] = await Promise.all([
     prisma.deck.count(),
     prisma.deck.groupBy({ by: ["designer"], where: { designer: { not: null } } }),
@@ -78,9 +80,18 @@ export default async function HomePage() {
     ),
     prisma.coin.count(),
     prisma.deck.count({ where: { series: "Souvenir Decks" } }),
+    prisma.deck.count({ where: { whiteWhale: true } }),
   ]);
 
   const specialtyCollections = [
+    {
+      title: "White Whales",
+      description: "The rarest of the rare.",
+      count: whiteWhaleCount,
+      href: "/white-whales",
+      icon: <WhaleIcon />,
+      accent: "sage" as const,
+    },
     {
       title: "Mini decks",
       description: "Small scale. Full character.",

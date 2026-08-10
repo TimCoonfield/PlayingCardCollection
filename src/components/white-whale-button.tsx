@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toggleWhiteWhale } from "@/app/(app)/decks/actions";
+import { WhaleIcon } from "./icons";
 
 export function WhiteWhaleButton({
   deckId,
@@ -30,13 +31,13 @@ export function WhiteWhaleButton({
       aria-pressed={whiteWhale}
       aria-label={label}
       title={label}
-      className={`flex h-9 w-9 items-center justify-center rounded-full border text-base transition-colors disabled:opacity-60 ${
+      className={`flex h-9 w-9 items-center justify-center rounded-full border transition-colors disabled:opacity-60 ${
         whiteWhale
-          ? "border-sage/70 bg-sage/10 hover:bg-sage/20"
-          : "border-brass/50 grayscale hover:bg-brass/10 hover:grayscale-0"
+          ? "border-sage/70 bg-sage/10 text-sage hover:bg-sage/20"
+          : "border-brass/50 text-brass hover:bg-brass/10"
       }`}
     >
-      <span aria-hidden="true">🐋</span>
+      <WhaleIcon className="h-[18px] w-[18px]" />
     </button>
   );
 }

@@ -5,7 +5,7 @@ import { DeckGallery } from "@/components/deck-gallery";
 import { BackLink } from "@/components/back-link";
 import { StatTile } from "@/components/stat-tile";
 import { TagChip } from "@/components/tag-chip";
-import { PencilIcon, TrashIcon, HeartIcon } from "@/components/icons";
+import { PencilIcon, TrashIcon, HeartIcon, WhaleIcon } from "@/components/icons";
 import { FavoriteButton } from "@/components/favorite-button";
 import { WhiteWhaleButton } from "@/components/white-whale-button";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
@@ -93,8 +93,8 @@ export default async function DeckDetailPage({
                 <HeartIcon filled className="h-5 w-5 shrink-0 text-brick" aria-label="Favorite" />
               )}
               {deck.whiteWhale && (
-                <span className="shrink-0 text-lg" aria-label="White Whale" title="White Whale">
-                  🐋
+                <span className="shrink-0 text-sage" aria-label="White Whale" title="White Whale">
+                  <WhaleIcon className="h-5 w-5" />
                 </span>
               )}
             </div>

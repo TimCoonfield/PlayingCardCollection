@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { DeckPlaceholder, AccentBar } from "./deck-placeholder";
-import { HeartIcon } from "./icons";
+import { HeartIcon, WhaleIcon } from "./icons";
 
 export interface DeckCardData {
   id: string;
@@ -61,13 +61,13 @@ export function DeckCard({
         )}
         {deck.whiteWhale && (
           <span
-            className={`absolute top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-felt-bg/80 text-sm ${
+            className={`absolute top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-felt-bg/80 text-sage ${
               deck.favorite ? "left-8" : "left-1.5"
             }`}
             aria-label="White Whale"
             title="White Whale"
           >
-            🐋
+            <WhaleIcon className="h-4 w-4" />
           </span>
         )}
       </div>

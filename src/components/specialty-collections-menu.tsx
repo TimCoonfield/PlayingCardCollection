@@ -10,6 +10,7 @@ interface CreatorNavItem {
 }
 
 const COLLECTION_LINKS = [
+  { label: "White Whales", href: "/white-whales" },
   { label: "Mini Decks", href: "/mini" },
   { label: "Tarot", href: "/tarot" },
   { label: "Souvenir Decks", href: "/souvenir" },

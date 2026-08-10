@@ -8,7 +8,7 @@ const HERO_FADE_GRADIENT =
 
 /**
  * Shared layout for the dedicated "specialty collection" / creator landing pages
- * (Souvenir, Mini, Tarot, and each featured creator). Every one of these pages is a hero
+ * (White Whales, Souvenir, Mini, Tarot, and each featured creator). Every one of these pages is a hero
  * (photo or inline SVG art + blurb) followed by an optional "Featured Decks" spotlight row
  * and "The Collection" grid — only the hero content and the deck query differ per page.
  */
