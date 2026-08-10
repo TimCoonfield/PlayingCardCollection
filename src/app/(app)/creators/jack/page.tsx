@@ -3,11 +3,17 @@ import { DecksLandingPage } from "@/components/decks-landing-page";
 import { JACK_BRUTUS_PENNY_IMAGE_URL } from "@/lib/featured-creators";
 
 export default async function JackBrutusPennyLandingPage() {
-  const decks = await prisma.deck.findMany({
-    where: { designer: "Jack Brutus Penny" },
-    include: { images: { orderBy: { sortOrder: "asc" } } },
-    orderBy: { name: "asc" },
-  });
+  const [decks, coins] = await Promise.all([
+    prisma.deck.findMany({
+      where: { designer: "Jack Brutus Penny" },
+      include: { images: { orderBy: { sortOrder: "asc" } } },
+      orderBy: { name: "asc" },
+    }),
+    prisma.coin.findMany({
+      where: { designer: "Jack Brutus Penny" },
+      orderBy: { name: "asc" },
+    }),
+  ]);
   return (
     <DecksLandingPage
       title="Jack Brutus Penny"
@@ -27,6 +33,8 @@ export default async function JackBrutusPennyLandingPage() {
         </>
       }
       decks={decks}
+      coins={coins}
+      showFilters
       emptyMessage="No Jack Brutus Penny decks yet."
     />
   );

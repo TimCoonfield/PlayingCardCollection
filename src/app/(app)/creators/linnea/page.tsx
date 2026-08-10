@@ -5,11 +5,17 @@ const LINNEA_HERO_IMAGE_URL =
   "/images/creators/linnea-gits.webp";
 
 export default async function LinneaLandingPage() {
-  const decks = await prisma.deck.findMany({
-    where: { designer: "Linnea Gits" },
-    include: { images: { orderBy: { sortOrder: "asc" } } },
-    orderBy: { name: "asc" },
-  });
+  const [decks, coins] = await Promise.all([
+    prisma.deck.findMany({
+      where: { designer: "Linnea Gits" },
+      include: { images: { orderBy: { sortOrder: "asc" } } },
+      orderBy: { name: "asc" },
+    }),
+    prisma.coin.findMany({
+      where: { designer: "Linnea Gits" },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   return (
     <DecksLandingPage
@@ -29,6 +35,8 @@ export default async function LinneaLandingPage() {
         </>
       }
       decks={decks}
+      coins={coins}
+      showFilters
     />
   );
 }
