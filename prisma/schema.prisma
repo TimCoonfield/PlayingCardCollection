@@ -24,6 +24,7 @@ model Deck {
   notes           String?
   catalogNumber   String?
   favorite        Boolean       @default(false)
+  whiteWhale      Boolean       @default(false)
   images          DeckImage[]
   editions        DeckEdition[]
   createdAt       DateTime      @default(now())

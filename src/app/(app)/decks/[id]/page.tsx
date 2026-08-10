@@ -7,6 +7,7 @@ import { StatTile } from "@/components/stat-tile";
 import { TagChip } from "@/components/tag-chip";
 import { PencilIcon, TrashIcon, HeartIcon } from "@/components/icons";
 import { FavoriteButton } from "@/components/favorite-button";
+import { WhiteWhaleButton } from "@/components/white-whale-button";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { getSession } from "@/lib/auth";
 import { deleteDeck } from "../actions";
@@ -40,6 +41,7 @@ export default async function DeckDetailPage({
         {isAuthenticated && (
           <div className="flex gap-2">
             <FavoriteButton deckId={deck.id} initialFavorite={deck.favorite} />
+            <WhiteWhaleButton deckId={deck.id} initialWhiteWhale={deck.whiteWhale} />
             <Link
               href={`/decks/${deck.id}/edit`}
               aria-label="Edit deck"
@@ -89,6 +91,11 @@ export default async function DeckDetailPage({
               )}
               {deck.favorite && (
                 <HeartIcon filled className="h-5 w-5 shrink-0 text-brick" aria-label="Favorite" />
+              )}
+              {deck.whiteWhale && (
+                <span className="shrink-0 text-lg" aria-label="White Whale" title="White Whale">
+                  🐋
+                </span>
               )}
             </div>
           </div>

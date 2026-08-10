@@ -12,6 +12,7 @@ export interface DeckCardData {
   qty: number;
   tags: string[];
   favorite: boolean;
+  whiteWhale: boolean;
   images: { url: string }[];
 }
 
@@ -56,6 +57,17 @@ export function DeckCard({
         {deck.favorite && (
           <span className="absolute left-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-felt-bg/80 text-brick">
             <HeartIcon filled className="h-3.5 w-3.5" />
+          </span>
+        )}
+        {deck.whiteWhale && (
+          <span
+            className={`absolute top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-felt-bg/80 text-sm ${
+              deck.favorite ? "left-8" : "left-1.5"
+            }`}
+            aria-label="White Whale"
+            title="White Whale"
+          >
+            🐋
           </span>
         )}
       </div>

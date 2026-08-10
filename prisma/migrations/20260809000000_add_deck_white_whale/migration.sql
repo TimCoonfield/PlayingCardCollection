@@ -1,0 +1,1 @@
+ALTER TABLE "Deck" ADD COLUMN "whiteWhale" BOOLEAN NOT NULL DEFAULT false;

@@ -139,6 +139,22 @@ export async function toggleFavorite(deckId: string) {
   revalidatePath("/", "layout");
 }
 
+export async function toggleWhiteWhale(deckId: string) {
+  if (!(await isAuthenticated())) return;
+
+  const deck = await prisma.deck.findUnique({
+    where: { id: deckId },
+    select: { whiteWhale: true },
+  });
+  if (!deck) return;
+
+  await prisma.deck.update({
+    where: { id: deckId },
+    data: { whiteWhale: !deck.whiteWhale },
+  });
+  revalidatePath("/", "layout");
+}
+
 function flatten(error: ZodError) {
   const out: Record<string, string> = {};
   for (const issue of error.issues) {

@@ -76,6 +76,7 @@ export default async function StatsPage() {
         qty: true,
         tags: true,
         favorite: true,
+        whiteWhale: true,
         images: { orderBy: { sortOrder: "asc" }, select: { url: true } },
       },
     }),
