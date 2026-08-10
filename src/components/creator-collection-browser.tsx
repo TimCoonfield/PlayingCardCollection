@@ -6,6 +6,7 @@ import { DeckCard, type DeckCardData } from "./deck-card";
 import { DeckSpotlightCard } from "./deck-spotlight-card";
 import { ChevronDownIcon, SearchIcon } from "./icons";
 import { getTagStyle } from "@/lib/placeholders";
+import { SurpriseMeButton } from "./surprise-me-button";
 
 const CREATOR_TAGS = ["Gilded", "Signed", "Mini", "Prototype", "Edge Painted"] as const;
 
@@ -122,29 +123,41 @@ export function CreatorCollectionBrowser({
   return (
     <div className="flex flex-col gap-6">
       <div className="overflow-hidden rounded-lg border border-felt-line bg-felt-surface">
-        <button
-          type="button"
-          onClick={() => setExpanded((current) => !current)}
-          aria-expanded={expanded}
-          className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-felt-surface-2"
-        >
-          <span className="flex items-center gap-2">
-            <span className="font-display text-sm font-semibold uppercase tracking-[0.16em] text-brass">
-              Filter collection
-            </span>
-            {activeFilterCount > 0 && (
-              <span className="rounded-full bg-brass px-1.5 py-0.5 text-[10px] font-semibold text-felt-bg">
-                {activeFilterCount}
+        <div className="flex items-center">
+          <button
+            type="button"
+            onClick={() => setExpanded((current) => !current)}
+            aria-expanded={expanded}
+            className="flex min-w-0 flex-1 items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-felt-surface-2"
+          >
+            <span className="flex items-center gap-2">
+              <span className="font-display text-sm font-semibold uppercase tracking-[0.16em] text-brass">
+                Filter collection
               </span>
-            )}
-          </span>
-          <span className="flex items-center gap-3 text-xs text-felt-sub">
-            {filteredItems.length} {filteredItems.length === 1 ? "item" : "items"}
-            <ChevronDownIcon
-              className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`}
+              {activeFilterCount > 0 && (
+                <span className="rounded-full bg-brass px-1.5 py-0.5 text-[10px] font-semibold text-felt-bg">
+                  {activeFilterCount}
+                </span>
+              )}
+            </span>
+            <span className="flex items-center gap-3 text-xs text-felt-sub">
+              <span className="hidden sm:inline">
+                {filteredItems.length} {filteredItems.length === 1 ? "item" : "items"}
+              </span>
+              <ChevronDownIcon
+                className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`}
+              />
+            </span>
+          </button>
+          <div className="shrink-0 pr-3">
+            <SurpriseMeButton
+              preferredDeckIds={filteredDecks
+                .filter((deck) => deck.images.length > 0)
+                .map((deck) => deck.id)}
+              fallbackDeckIds={filteredDecks.map((deck) => deck.id)}
             />
-          </span>
-        </button>
+          </div>
+        </div>
 
         {expanded && (
           <div className="flex flex-col gap-4 border-t border-felt-line p-4">

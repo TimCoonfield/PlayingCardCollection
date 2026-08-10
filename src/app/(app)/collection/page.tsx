@@ -249,6 +249,10 @@ export default async function CollectionPage({
           seriesList={seriesList}
           availableMinYear={availableMinYear}
           availableMaxYear={availableMaxYear}
+          surpriseDeckIds={deckRows.map((deck) => deck.id)}
+          surpriseDeckIdsWithImages={deckRows
+            .filter((deck) => deck.images.length > 0)
+            .map((deck) => deck.id)}
         />
       </Suspense>
 

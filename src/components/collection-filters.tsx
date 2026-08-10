@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDownIcon } from "./icons";
 import { getTagStyle } from "@/lib/placeholders";
+import { SurpriseMeButton } from "./surprise-me-button";
 
 const ALL_TAGS = [
   "Modern",
@@ -48,12 +49,16 @@ export function CollectionFilters({
   seriesList,
   availableMinYear,
   availableMaxYear,
+  surpriseDeckIds,
+  surpriseDeckIdsWithImages,
 }: {
   designers: string[];
   producers: string[];
   seriesList: string[];
   availableMinYear: number;
   availableMaxYear: number;
+  surpriseDeckIds: string[];
+  surpriseDeckIdsWithImages: string[];
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -181,19 +186,25 @@ export function CollectionFilters({
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-felt-line bg-felt-surface p-4">
-      <div className="flex w-fit rounded-md border border-felt-line p-0.5">
-        {(["all", "deck", "coin"] as const).map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => handleTypeChange(option)}
-            className={`rounded px-3 py-1 text-sm transition-colors ${
-              type === option ? "bg-brass text-felt-bg" : "text-felt-sub hover:text-felt-ink"
-            }`}
-          >
-            {option === "all" ? "All" : option === "deck" ? "Decks" : "Coins"}
-          </button>
-        ))}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex rounded-md border border-felt-line p-0.5">
+          {(["all", "deck", "coin"] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => handleTypeChange(option)}
+              className={`rounded px-3 py-1 text-sm transition-colors ${
+                type === option ? "bg-brass text-felt-bg" : "text-felt-sub hover:text-felt-ink"
+              }`}
+            >
+              {option === "all" ? "All" : option === "deck" ? "Decks" : "Coins"}
+            </button>
+          ))}
+        </div>
+        <SurpriseMeButton
+          preferredDeckIds={surpriseDeckIdsWithImages}
+          fallbackDeckIds={surpriseDeckIds}
+        />
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">
