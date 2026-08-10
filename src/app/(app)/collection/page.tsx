@@ -7,10 +7,13 @@ import { DeckCard, type DeckCardData } from "@/components/deck-card";
 import { CoinCard, type CoinCardData } from "@/components/coin-card";
 import { CollectionFilters } from "@/components/collection-filters";
 import { Pagination } from "@/components/pagination";
+import { isCollectionSort, sortCollectionItems, type CollectionSort } from "@/lib/collection-sort";
 
 const PAGE_SIZE = 60;
 
-type CollectionItem = ({ kind: "deck" } & DeckCardData) | ({ kind: "coin" } & CoinCardData);
+type CollectionItem =
+  | ({ kind: "deck" } & DeckCardData & { releaseYear: number | null; createdAt: Date })
+  | ({ kind: "coin" } & CoinCardData & { releaseYear: number | null; createdAt: Date });
 
 function toParam(value: string | string[] | undefined): string {
   if (Array.isArray(value)) return value[0] ?? "";
@@ -49,6 +52,9 @@ export default async function CollectionPage({
   const page = Math.max(1, Number(toParam(params.page)) || 1);
   const typeParam = toParam(params.type);
   const type: "all" | "deck" | "coin" = typeParam === "deck" || typeParam === "coin" ? typeParam : "all";
+  const rawSort = toParam(params.sort);
+  const sort: CollectionSort = isCollectionSort(rawSort) ? rawSort : "featured";
+  const randomSeed = toOptionalNumberParam(params.randomSeed) ?? 0;
 
   const [deckYearRange, coinYearRange] = await Promise.all([
     prisma.deck.aggregate({ _min: { releaseYear: true }, _max: { releaseYear: true } }),
@@ -170,15 +176,10 @@ export default async function CollectionPage({
     getSession(),
   ]);
 
-  const merged: CollectionItem[] = [
+  const merged = sortCollectionItems<CollectionItem>([
     ...deckRows.map((d) => ({ kind: "deck" as const, ...d })),
     ...coinRows.map((c) => ({ kind: "coin" as const, ...c })),
-  ].sort((a, b) => {
-    const aFav = a.kind === "deck" && a.favorite;
-    const bFav = b.kind === "deck" && b.favorite;
-    if (aFav !== bFav) return aFav ? -1 : 1;
-    return a.name.localeCompare(b.name);
-  });
+  ], sort, randomSeed);
 
   const total = merged.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -212,6 +213,8 @@ export default async function CollectionPage({
   if (creator) currentSearchParams.set("creator", creator);
   if (series) currentSearchParams.set("series", series);
   if (type !== "all") currentSearchParams.set("type", type);
+  if (sort !== "featured") currentSearchParams.set("sort", sort);
+  if (sort === "random") currentSearchParams.set("randomSeed", String(randomSeed));
   for (const tag of tags) currentSearchParams.append("tag", tag);
   if (hasYearFilter) {
     currentSearchParams.set("minYear", String(minYear));

@@ -4,8 +4,10 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDownIcon } from "./icons";
 import { SurpriseMeButton } from "./surprise-me-button";
+import { isCollectionSort, type CollectionSort } from "@/lib/collection-sort";
 import {
   CollectionTagPills,
+  CollectionSortSelector,
   CollectionTypeSelector,
   CollectionYearRange,
   ALL_COLLECTION_TAGS,
@@ -42,6 +44,8 @@ export function CollectionFilters({
   const series = searchParams.get("series") ?? "";
   const tags = searchParams.getAll("tag");
   const type = searchParams.get("type") ?? "all";
+  const rawSort = searchParams.get("sort") ?? "";
+  const sort: CollectionSort = isCollectionSort(rawSort) ? rawSort : "featured";
   const rawMinYear = searchParams.get("minYear");
   const rawMaxYear = searchParams.get("maxYear");
   const urlMinYear = rawMinYear ? Number(rawMinYear) : null;
@@ -122,6 +126,18 @@ export function CollectionFilters({
     });
   }
 
+  function handleSortChange(value: CollectionSort) {
+    pushParams((params) => {
+      if (value === "featured") params.delete("sort");
+      else params.set("sort", value);
+      if (value === "random") {
+        params.set("randomSeed", String(crypto.getRandomValues(new Uint32Array(1))[0]));
+      } else {
+        params.delete("randomSeed");
+      }
+    });
+  }
+
   function handleSelectChange(key: "designer" | "producer" | "series", value: string) {
     pushParams((params) => {
       if (value) params.set(key, value);
@@ -157,12 +173,19 @@ export function CollectionFilters({
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-felt-line bg-felt-surface p-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <CollectionTypeSelector value={type as CollectionItemType} onChange={handleTypeChange} />
-        <SurpriseMeButton
-          preferredDeckIds={surpriseDeckIdsWithImages}
-          fallbackDeckIds={surpriseDeckIds}
-        />
+        <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
+          <CollectionSortSelector
+            value={sort}
+            onChange={handleSortChange}
+            includeFeatured
+          />
+          <SurpriseMeButton
+            preferredDeckIds={surpriseDeckIdsWithImages}
+            fallbackDeckIds={surpriseDeckIds}
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">

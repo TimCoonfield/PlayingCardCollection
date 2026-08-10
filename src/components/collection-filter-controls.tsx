@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getTagStyle } from "@/lib/placeholders";
+import type { CollectionSort } from "@/lib/collection-sort";
 
 export type CollectionItemType = "all" | "deck" | "coin";
 
@@ -70,6 +71,36 @@ export function CollectionTypeSelector({
         </button>
       ))}
     </div>
+  );
+}
+
+export function CollectionSortSelector({
+  value,
+  onChange,
+  includeFeatured = false,
+}: {
+  value: CollectionSort;
+  onChange: (value: CollectionSort) => void;
+  includeFeatured?: boolean;
+}) {
+  return (
+    <label className="flex items-center gap-2 text-sm text-felt-sub">
+      <span className="sr-only">Sort by</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value as CollectionSort)}
+        aria-label="Sort collection"
+        className="w-full rounded-md border border-felt-line bg-felt-bg px-3 py-2 text-sm text-felt-ink outline-none focus:border-brass"
+      >
+        {includeFeatured && <option value="featured">Featured first</option>}
+        <option value="alpha-asc">Alphabetical: A–Z</option>
+        <option value="alpha-desc">Alphabetical: Z–A</option>
+        <option value="year-asc">Release year: oldest first</option>
+        <option value="year-desc">Release year: newest first</option>
+        <option value="recent">Recently added</option>
+        <option value="random">Random</option>
+      </select>
+    </label>
   );
 }
 

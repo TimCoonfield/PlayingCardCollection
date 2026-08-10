@@ -6,10 +6,12 @@ import { DeckCard, type DeckCardData } from "./deck-card";
 import { DeckSpotlightCard } from "./deck-spotlight-card";
 import { ChevronDownIcon, SearchIcon } from "./icons";
 import { SurpriseMeButton } from "./surprise-me-button";
+import { sortCollectionItems, type CollectionSort } from "@/lib/collection-sort";
 import {
   ALL_COLLECTION_TAGS,
   CURATED_COLLECTION_TAGS,
   CollectionTagPills,
+  CollectionSortSelector,
   CollectionTypeSelector,
   CollectionYearRange,
   type CollectionItemType,
@@ -18,11 +20,13 @@ import {
 export type FilterableScopedDeck = DeckCardData & {
   releaseYear: number | null;
   notes: string | null;
+  createdAt: Date | string;
 };
 
 export type FilterableScopedCoin = CoinCardData & {
   releaseYear: number | null;
   notes: string | null;
+  createdAt: Date | string;
 };
 
 export function ScopedCollectionBrowser({
@@ -40,6 +44,8 @@ export function ScopedCollectionBrowser({
   const [query, setQuery] = useState("");
   const [type, setType] = useState<CollectionItemType>("all");
   const [tags, setTags] = useState<string[]>([]);
+  const [sort, setSort] = useState<CollectionSort>("alpha-asc");
+  const [randomSeed, setRandomSeed] = useState(0);
 
   const yearValues = useMemo(
     () =>
@@ -76,10 +82,14 @@ export function ScopedCollectionBrowser({
 
   const filteredDecks = type === "coin" ? [] : decks.filter(matchesCommonFields);
   const filteredCoins = type === "deck" ? [] : coins.filter(matchesCommonFields);
-  const filteredItems = [
-    ...filteredDecks.map((deck) => ({ kind: "deck" as const, item: deck })),
-    ...filteredCoins.map((coin) => ({ kind: "coin" as const, item: coin })),
-  ].sort((a, b) => a.item.name.localeCompare(b.item.name));
+  const filteredItems = sortCollectionItems(
+    [
+      ...filteredDecks.map((deck) => ({ kind: "deck" as const, item: deck, ...deck })),
+      ...filteredCoins.map((coin) => ({ kind: "coin" as const, item: coin, ...coin })),
+    ],
+    sort,
+    randomSeed
+  );
   const featuredDecks = showFeaturedDecks
     ? filteredDecks.filter((deck) => deck.favorite).slice(0, 3)
     : [];
@@ -101,6 +111,11 @@ export function ScopedCollectionBrowser({
     setType("all");
     setTags([]);
     setYearRange([availableMinYear, availableMaxYear]);
+  }
+
+  function changeSort(value: CollectionSort) {
+    setSort(value);
+    if (value === "random") setRandomSeed(crypto.getRandomValues(new Uint32Array(1))[0]);
   }
 
   return (
@@ -144,7 +159,7 @@ export function ScopedCollectionBrowser({
 
         {expanded && (
           <div className="flex flex-col gap-4 border-t border-felt-line p-4">
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col gap-3 lg:flex-row">
               <div className="relative flex-1">
                 <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-felt-sub" />
                 <input
@@ -156,6 +171,7 @@ export function ScopedCollectionBrowser({
                 />
               </div>
               <CollectionTypeSelector value={type} onChange={setType} />
+              <CollectionSortSelector value={sort} onChange={changeSort} />
             </div>
 
             <CollectionTagPills
