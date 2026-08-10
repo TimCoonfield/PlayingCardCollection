@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { createPortal, flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import { SearchIcon } from "./icons";
 import {
@@ -35,11 +35,15 @@ const EMPTY_RESULTS: SearchResponse = {
 
 const OPEN_SPOTLIGHT_EVENT = "open-archive-spotlight";
 
+export function openArchiveSpotlight() {
+  window.dispatchEvent(new Event(OPEN_SPOTLIGHT_EVENT));
+}
+
 export function ArchiveSpotlightTrigger() {
   return (
     <button
       type="button"
-      onClick={() => window.dispatchEvent(new Event(OPEN_SPOTLIGHT_EVENT))}
+      onClick={openArchiveSpotlight}
       aria-label="Search archive"
       className="flex h-8 items-center gap-2 rounded-md px-2 text-felt-sub transition-colors hover:bg-felt-surface hover:text-felt-ink lg:border lg:border-felt-line lg:bg-felt-surface lg:px-2.5"
     >
@@ -76,6 +80,12 @@ export function ArchiveSpotlight() {
   const actions = useMemo(() => groups.flatMap((group) => group.items), [groups]);
 
   useEffect(() => {
+    function openAndFocus() {
+      // Mobile browsers only raise the software keyboard when focus happens synchronously
+      // inside the originating tap/press event. Waiting for the normal focus effect is too late.
+      flushSync(() => setOpen(true));
+      inputRef.current?.focus({ preventScroll: true });
+    }
     function handleGlobalKey(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
       const isTyping =
@@ -85,11 +95,11 @@ export function ArchiveSpotlight() {
         target?.isContentEditable;
       if (event.key === "/" && !isTyping) {
         event.preventDefault();
-        setOpen(true);
+        openAndFocus();
       }
     }
     function handleOpenRequest() {
-      setOpen(true);
+      openAndFocus();
     }
     document.addEventListener("keydown", handleGlobalKey);
     window.addEventListener(OPEN_SPOTLIGHT_EVENT, handleOpenRequest);
