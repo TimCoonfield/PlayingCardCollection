@@ -14,11 +14,17 @@ const MINI_HERO_SVG = (
 );
 
 export default async function MiniDecksPage() {
-  const decks = await prisma.deck.findMany({
-    where: { tags: { has: "Mini" } },
-    include: { images: { orderBy: { sortOrder: "asc" } } },
-    orderBy: { name: "asc" },
-  });
+  const [decks, coins] = await Promise.all([
+    prisma.deck.findMany({
+      where: { tags: { has: "Mini" } },
+      include: { images: { orderBy: { sortOrder: "asc" } } },
+      orderBy: { name: "asc" },
+    }),
+    prisma.coin.findMany({
+      where: { tags: { has: "Mini" } },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   return (
     <DecksLandingPage
@@ -26,6 +32,9 @@ export default async function MiniDecksPage() {
       heroSvg={MINI_HERO_SVG}
       blurb="There’s something irresistible about a deck of cards you can barely believe is full-size. Mini decks compress every design decision—typography, line weight, color—into a fraction of the space, and somehow the best ones still read perfectly at a glance. I love hunting these down as a kind of bonus format: the same artists and studios I already follow, reimagined in miniature, often as limited extras rather than the main release. They take up almost no shelf space and pack an outsized amount of craft into a few square inches. This is where I’m keeping track of them."
       decks={decks}
+      coins={coins}
+      showFilters
+      filterTagSet="all"
       emptyMessage="No mini decks yet."
     />
   );

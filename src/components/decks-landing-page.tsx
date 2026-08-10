@@ -4,10 +4,10 @@ import { DeckCard, type DeckCardData } from "./deck-card";
 import { DeckSpotlightCard } from "./deck-spotlight-card";
 import type { CoinCardData } from "./coin-card";
 import {
-  CreatorCollectionBrowser,
-  type FilterableCreatorCoin,
-  type FilterableCreatorDeck,
-} from "./creator-collection-browser";
+  ScopedCollectionBrowser,
+  type FilterableScopedCoin,
+  type FilterableScopedDeck,
+} from "./scoped-collection-browser";
 
 const HERO_FADE_GRADIENT =
   "linear-gradient(to right, color-mix(in srgb, var(--felt-bg) 90%, transparent) 0%, color-mix(in srgb, var(--felt-bg) 90%, transparent) 44%, transparent 58%)";
@@ -29,6 +29,7 @@ export function DecksLandingPage({
   showFeaturedDecks = true,
   coins = [],
   showFilters = false,
+  filterTagSet = "curated",
   decks,
   emptyMessage = "No decks yet.",
 }: {
@@ -40,9 +41,10 @@ export function DecksLandingPage({
   heroSvg?: ReactNode;
   heroTextMaxWidth?: "lg" | "xl";
   showFeaturedDecks?: boolean;
-  decks: DeckCardData[] | FilterableCreatorDeck[];
-  coins?: CoinCardData[] | FilterableCreatorCoin[];
+  decks: DeckCardData[] | FilterableScopedDeck[];
+  coins?: CoinCardData[] | FilterableScopedCoin[];
   showFilters?: boolean;
+  filterTagSet?: "curated" | "all";
   emptyMessage?: string;
 }) {
   const favoriteDecks = decks.filter((d) => d.favorite).slice(0, 3);
@@ -98,10 +100,11 @@ export function DecksLandingPage({
       </div>
 
       {showFilters ? (
-        <CreatorCollectionBrowser
-          decks={decks as FilterableCreatorDeck[]}
-          coins={coins as FilterableCreatorCoin[]}
+        <ScopedCollectionBrowser
+          decks={decks as FilterableScopedDeck[]}
+          coins={coins as FilterableScopedCoin[]}
           showFeaturedDecks={showFeaturedDecks}
+          tagSet={filterTagSet}
         />
       ) : decks.length === 0 ? (
         <p className="py-16 text-center text-felt-sub">{emptyMessage}</p>

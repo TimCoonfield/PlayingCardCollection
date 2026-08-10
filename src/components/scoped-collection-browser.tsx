@@ -5,58 +5,40 @@ import { CoinCard, type CoinCardData } from "./coin-card";
 import { DeckCard, type DeckCardData } from "./deck-card";
 import { DeckSpotlightCard } from "./deck-spotlight-card";
 import { ChevronDownIcon, SearchIcon } from "./icons";
-import { getTagStyle } from "@/lib/placeholders";
 import { SurpriseMeButton } from "./surprise-me-button";
+import {
+  ALL_COLLECTION_TAGS,
+  CURATED_COLLECTION_TAGS,
+  CollectionTagPills,
+  CollectionTypeSelector,
+  CollectionYearRange,
+  type CollectionItemType,
+} from "./collection-filter-controls";
 
-const CREATOR_TAGS = ["Gilded", "Signed", "Mini", "Prototype", "Edge Painted"] as const;
-
-const TAG_PILL_CLASSES: Record<string, { idle: string; selected: string }> = {
-  plum: {
-    idle: "hover:border-plum/70 hover:text-plum",
-    selected: "border-plum bg-plum/20 text-felt-ink shadow-sm",
-  },
-  brass: {
-    idle: "hover:border-brass/70 hover:text-brass",
-    selected: "border-brass bg-brass/20 text-felt-ink shadow-sm",
-  },
-  sage: {
-    idle: "hover:border-sage/70 hover:text-sage",
-    selected: "border-sage bg-sage/20 text-felt-ink shadow-sm",
-  },
-  brick: {
-    idle: "hover:border-brick/70 hover:text-brick",
-    selected: "border-brick bg-brick/20 text-felt-ink shadow-sm",
-  },
-  "felt-ink": {
-    idle: "hover:border-felt-ink/60 hover:text-felt-ink",
-    selected: "border-felt-ink/70 bg-felt-ink/15 text-felt-ink shadow-sm",
-  },
-};
-
-export type FilterableCreatorDeck = DeckCardData & {
+export type FilterableScopedDeck = DeckCardData & {
   releaseYear: number | null;
   notes: string | null;
 };
 
-export type FilterableCreatorCoin = CoinCardData & {
+export type FilterableScopedCoin = CoinCardData & {
   releaseYear: number | null;
   notes: string | null;
 };
 
-type ItemType = "all" | "deck" | "coin";
-
-export function CreatorCollectionBrowser({
+export function ScopedCollectionBrowser({
   decks,
   coins,
   showFeaturedDecks,
+  tagSet = "curated",
 }: {
-  decks: FilterableCreatorDeck[];
-  coins: FilterableCreatorCoin[];
+  decks: FilterableScopedDeck[];
+  coins: FilterableScopedCoin[];
   showFeaturedDecks: boolean;
+  tagSet?: "curated" | "all";
 }) {
   const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState("");
-  const [type, setType] = useState<ItemType>("all");
+  const [type, setType] = useState<CollectionItemType>("all");
   const [tags, setTags] = useState<string[]>([]);
 
   const yearValues = useMemo(
@@ -77,7 +59,7 @@ export function CreatorCollectionBrowser({
 
   const normalizedQuery = query.trim().toLocaleLowerCase();
 
-  function matchesCommonFields(item: FilterableCreatorDeck | FilterableCreatorCoin) {
+  function matchesCommonFields(item: FilterableScopedDeck | FilterableScopedCoin) {
     const matchesQuery =
       !normalizedQuery ||
       [item.name, item.series, item.designer, item.producer, item.notes]
@@ -106,6 +88,7 @@ export function CreatorCollectionBrowser({
     (type === "all" ? 0 : 1) +
     tags.length +
     (isFullYearRange ? 0 : 1);
+  const availableTags = tagSet === "all" ? ALL_COLLECTION_TAGS : CURATED_COLLECTION_TAGS;
 
   function toggleTag(tag: string) {
     setTags((current) =>
@@ -168,60 +151,26 @@ export function CreatorCollectionBrowser({
                   type="search"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search this creator’s collection..."
+                  placeholder="Search this collection..."
                   className="w-full rounded-md border border-felt-line bg-felt-bg py-2 pl-9 pr-3 text-sm text-felt-ink placeholder:text-felt-sub/60 outline-none focus:border-brass"
                 />
               </div>
-              <div className="flex rounded-md border border-felt-line p-0.5">
-                {(["all", "deck", "coin"] as const).map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => setType(option)}
-                    className={`flex-1 rounded px-3 py-1.5 text-sm transition-colors ${
-                      type === option
-                        ? "bg-brass text-felt-bg"
-                        : "text-felt-sub hover:text-felt-ink"
-                    }`}
-                  >
-                    {option === "all" ? "All" : option === "deck" ? "Decks" : "Coins"}
-                  </button>
-                ))}
-              </div>
+              <CollectionTypeSelector value={type} onChange={setType} />
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {CREATOR_TAGS.map((tag) => {
-                const selected = tags.includes(tag);
-                const style = getTagStyle(tag);
-                const colorClasses = TAG_PILL_CLASSES[style.accent] ?? TAG_PILL_CLASSES.brass;
-                return (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => toggleTag(tag)}
-                    aria-pressed={selected}
-                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${
-                      selected
-                        ? colorClasses.selected
-                        : `border-felt-line bg-felt-bg/40 text-felt-sub ${colorClasses.idle}`
-                    }`}
-                  >
-                    <span aria-hidden="true" className="text-sm leading-none">
-                      {style.icon ?? "♠"}
-                    </span>
-                    {tag}
-                    {selected && <span aria-hidden="true">✓</span>}
-                  </button>
-                );
-              })}
-            </div>
+            <CollectionTagPills
+              availableTags={availableTags}
+              selectedTags={tags}
+              onToggle={(tag) => toggleTag(tag)}
+            />
 
-            <CreatorYearRange
+            <CollectionYearRange
+              key={`${yearRange[0]}-${yearRange[1]}`}
               availableMinYear={availableMinYear}
               availableMaxYear={availableMaxYear}
-              yearRange={yearRange}
-              setYearRange={setYearRange}
+              selectedMinYear={yearRange[0]}
+              selectedMaxYear={yearRange[1]}
+              onCommit={(minYear, maxYear) => setYearRange([minYear, maxYear])}
             />
 
             {activeFilterCount > 0 && (
@@ -263,71 +212,6 @@ export function CreatorCollectionBrowser({
         ) : (
           <p className="py-12 text-center text-felt-sub">No items match these filters.</p>
         )}
-      </div>
-    </div>
-  );
-}
-
-function CreatorYearRange({
-  availableMinYear,
-  availableMaxYear,
-  yearRange,
-  setYearRange,
-}: {
-  availableMinYear: number;
-  availableMaxYear: number;
-  yearRange: [number, number];
-  setYearRange: React.Dispatch<React.SetStateAction<[number, number]>>;
-}) {
-  const isFullRange = yearRange[0] === availableMinYear && yearRange[1] === availableMaxYear;
-  const yearSpan = Math.max(1, availableMaxYear - availableMinYear);
-
-  function moveHandle(handle: "lower" | "upper", value: number) {
-    setYearRange((current) => {
-      const otherValue = handle === "lower" ? current[1] : current[0];
-      return value <= otherValue ? [value, otherValue] : [otherValue, value];
-    });
-  }
-
-  return (
-    <div>
-      <div className="mb-2 flex items-baseline justify-between gap-3">
-        <span className="text-sm text-felt-sub">Release year</span>
-        <span className="text-sm font-medium tabular-nums text-felt-ink">
-          {isFullRange ? "All years (including unknown)" : `${yearRange[0]}–${yearRange[1]}`}
-        </span>
-      </div>
-      <div className="relative h-6" aria-label="Release year range">
-        <div className="absolute left-0 right-0 top-2.5 h-1 rounded-full bg-felt-line" />
-        <div
-          className="absolute top-2.5 h-1 rounded-full bg-brass"
-          style={{
-            left: `${((yearRange[0] - availableMinYear) / yearSpan) * 100}%`,
-            right: `${100 - ((yearRange[1] - availableMinYear) / yearSpan) * 100}%`,
-          }}
-        />
-        <input
-          type="range"
-          min={availableMinYear}
-          max={availableMaxYear}
-          value={yearRange[0]}
-          aria-label="Earliest release year"
-          onChange={(event) => moveHandle("lower", Number(event.target.value))}
-          className="collection-year-range absolute inset-x-0 top-0 z-10 w-full"
-        />
-        <input
-          type="range"
-          min={availableMinYear}
-          max={availableMaxYear}
-          value={yearRange[1]}
-          aria-label="Latest release year"
-          onChange={(event) => moveHandle("upper", Number(event.target.value))}
-          className="collection-year-range absolute inset-x-0 top-0 z-10 w-full"
-        />
-      </div>
-      <div className="flex justify-between text-xs tabular-nums text-felt-sub">
-        <span>{availableMinYear}</span>
-        <span>{availableMaxYear}</span>
       </div>
     </div>
   );

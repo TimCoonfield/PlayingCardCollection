@@ -3,45 +3,16 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDownIcon } from "./icons";
-import { getTagStyle } from "@/lib/placeholders";
 import { SurpriseMeButton } from "./surprise-me-button";
-
-const ALL_TAGS = [
-  "Modern",
-  "Vintage",
-  "Antique",
-  "Gilded",
-  "Signed",
-  "Mini",
-  "Tarot",
-  "Prototype",
-  "Edge Painted",
-];
+import {
+  CollectionTagPills,
+  CollectionTypeSelector,
+  CollectionYearRange,
+  ALL_COLLECTION_TAGS,
+  type CollectionItemType,
+} from "./collection-filter-controls";
 
 const DEBOUNCE_MS = 1000;
-
-const TAG_PILL_CLASSES: Record<string, { idle: string; selected: string }> = {
-  plum: {
-    idle: "hover:border-plum/70 hover:text-plum",
-    selected: "border-plum bg-plum/20 text-felt-ink shadow-sm",
-  },
-  brass: {
-    idle: "hover:border-brass/70 hover:text-brass",
-    selected: "border-brass bg-brass/20 text-felt-ink shadow-sm",
-  },
-  sage: {
-    idle: "hover:border-sage/70 hover:text-sage",
-    selected: "border-sage bg-sage/20 text-felt-ink shadow-sm",
-  },
-  brick: {
-    idle: "hover:border-brick/70 hover:text-brick",
-    selected: "border-brick bg-brick/20 text-felt-ink shadow-sm",
-  },
-  "felt-ink": {
-    idle: "hover:border-felt-ink/60 hover:text-felt-ink",
-    selected: "border-felt-ink/70 bg-felt-ink/15 text-felt-ink shadow-sm",
-  },
-};
 
 export function CollectionFilters({
   designers,
@@ -144,7 +115,7 @@ export function CollectionFilters({
     }
   }
 
-  function handleTypeChange(value: "all" | "deck" | "coin") {
+  function handleTypeChange(value: CollectionItemType) {
     pushParams((params) => {
       if (value === "all") params.delete("type");
       else params.set("type", value);
@@ -187,20 +158,7 @@ export function CollectionFilters({
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-felt-line bg-felt-surface p-4">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex rounded-md border border-felt-line p-0.5">
-          {(["all", "deck", "coin"] as const).map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => handleTypeChange(option)}
-              className={`rounded px-3 py-1 text-sm transition-colors ${
-                type === option ? "bg-brass text-felt-bg" : "text-felt-sub hover:text-felt-ink"
-              }`}
-            >
-              {option === "all" ? "All" : option === "deck" ? "Decks" : "Coins"}
-            </button>
-          ))}
-        </div>
+        <CollectionTypeSelector value={type as CollectionItemType} onChange={handleTypeChange} />
         <SurpriseMeButton
           preferredDeckIds={surpriseDeckIdsWithImages}
           fallbackDeckIds={surpriseDeckIds}
@@ -280,42 +238,17 @@ export function CollectionFilters({
         </select>
       </div>
 
-      <div className={`${expanded ? "flex" : "hidden"} flex-wrap items-center gap-2 sm:flex`}>
-        {ALL_TAGS.map((tag) => {
-          const checked = tags.includes(tag);
-          const style = getTagStyle(tag);
-          const colorClasses = TAG_PILL_CLASSES[style.accent] ?? TAG_PILL_CLASSES.brass;
-
-          return (
-            <label
-              key={tag}
-              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all focus-within:ring-2 focus-within:ring-brass/60 focus-within:ring-offset-2 focus-within:ring-offset-felt-surface ${
-                checked
-                  ? colorClasses.selected
-                  : `border-felt-line bg-felt-bg/40 text-felt-sub ${colorClasses.idle}`
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={checked}
-                onChange={(e) => handleTagToggle(tag, e.target.checked)}
-                className="sr-only"
-              />
-              <span
-                aria-hidden="true"
-                className={style.icon ? "text-sm leading-none" : "font-display text-sm leading-none"}
-              >
-                {style.icon ?? "♠"}
-              </span>
-              {tag}
-              {checked && <span aria-hidden="true" className="ml-0.5 text-brass">✓</span>}
-            </label>
-          );
-        })}
+      <div className={`${expanded ? "block" : "hidden"} sm:block`}>
+        <CollectionTagPills
+          availableTags={ALL_COLLECTION_TAGS}
+          selectedTags={tags}
+          onToggle={handleTagToggle}
+          useCheckboxes
+        />
       </div>
 
       <div className={`${expanded ? "block" : "hidden"} sm:block`}>
-        <YearRangeFilter
+        <CollectionYearRange
           key={`${selectedMinYear}-${selectedMaxYear}`}
           availableMinYear={availableMinYear}
           availableMaxYear={availableMaxYear}
@@ -337,81 +270,5 @@ export function CollectionFilters({
         </div>
       )}
     </div>
-  );
-}
-
-function YearRangeFilter({
-  availableMinYear,
-  availableMaxYear,
-  selectedMinYear,
-  selectedMaxYear,
-  onCommit,
-}: {
-  availableMinYear: number;
-  availableMaxYear: number;
-  selectedMinYear: number;
-  selectedMaxYear: number;
-  onCommit: (minYear: number, maxYear: number) => void;
-}) {
-  const [yearRange, setYearRange] = useState<[number, number]>([
-    selectedMinYear,
-    selectedMaxYear,
-  ]);
-  const isFullRange =
-    yearRange[0] === availableMinYear && yearRange[1] === availableMaxYear;
-  const yearSpan = Math.max(1, availableMaxYear - availableMinYear);
-
-  function moveRangeHandle(handle: "lower" | "upper", value: number) {
-    setYearRange((current) => {
-      const otherValue = handle === "lower" ? current[1] : current[0];
-      return value <= otherValue ? [value, otherValue] : [otherValue, value];
-    });
-  }
-
-  return (
-    <>
-      <div className="mb-2 flex items-baseline justify-between gap-3">
-        <span className="text-sm text-felt-sub">Release year</span>
-        <span className="text-sm font-medium tabular-nums text-felt-ink">
-          {isFullRange ? "All years (including unknown)" : `${yearRange[0]}–${yearRange[1]}`}
-        </span>
-      </div>
-      <div className="relative h-6" aria-label="Release year range">
-        <div className="absolute left-0 right-0 top-2.5 h-1 rounded-full bg-felt-line" />
-        <div
-          className="absolute top-2.5 h-1 rounded-full bg-brass"
-          style={{
-            left: `${((yearRange[0] - availableMinYear) / yearSpan) * 100}%`,
-            right: `${100 - ((yearRange[1] - availableMinYear) / yearSpan) * 100}%`,
-          }}
-        />
-        <input
-          type="range"
-          min={availableMinYear}
-          max={availableMaxYear}
-          value={yearRange[0]}
-          aria-label="Earliest release year"
-          onChange={(e) => moveRangeHandle("lower", Number(e.target.value))}
-          onPointerUp={() => onCommit(yearRange[0], yearRange[1])}
-          onKeyUp={() => onCommit(yearRange[0], yearRange[1])}
-          className="collection-year-range absolute inset-x-0 top-0 z-10 w-full"
-        />
-        <input
-          type="range"
-          min={availableMinYear}
-          max={availableMaxYear}
-          value={yearRange[1]}
-          aria-label="Latest release year"
-          onChange={(e) => moveRangeHandle("upper", Number(e.target.value))}
-          onPointerUp={() => onCommit(yearRange[0], yearRange[1])}
-          onKeyUp={() => onCommit(yearRange[0], yearRange[1])}
-          className="collection-year-range absolute inset-x-0 top-0 z-10 w-full"
-        />
-      </div>
-      <div className="flex justify-between text-xs tabular-nums text-felt-sub">
-        <span>{availableMinYear}</span>
-        <span>{availableMaxYear}</span>
-      </div>
-    </>
   );
 }
