@@ -39,13 +39,13 @@ export default async function CollectionPage({
 }) {
   const params = await searchParams;
   const q = toParam(params.q).trim();
-  const designer = toParam(params.designer);
-  const producer = toParam(params.producer);
+  const designers = toArrayParam(params.designer);
+  const producers = toArrayParam(params.producer);
   // Matches decks/coins where this name is credited as EITHER designer or producer — used by
   // the homepage's featured-creator links for creators who sometimes only produced a deck
   // someone else drew (or vice versa). Not exposed in the filter UI itself, just a link target.
   const creator = toParam(params.creator);
-  const series = toParam(params.series);
+  const selectedSeries = toArrayParam(params.series);
   const tags = toArrayParam(params.tag);
   const requestedMinYear = toOptionalNumberParam(params.minYear);
   const requestedMaxYear = toOptionalNumberParam(params.maxYear);
@@ -88,10 +88,10 @@ export default async function CollectionPage({
       ],
     });
   }
-  if (designer) deckAnd.push({ designer });
-  if (producer) deckAnd.push({ producer });
+  if (designers.length > 0) deckAnd.push({ designer: { in: designers } });
+  if (producers.length > 0) deckAnd.push({ producer: { in: producers } });
   if (creator) deckAnd.push({ OR: [{ designer: creator }, { producer: creator }] });
-  if (series) deckAnd.push({ series });
+  if (selectedSeries.length > 0) deckAnd.push({ series: { in: selectedSeries } });
   if (tags.length > 0) deckAnd.push({ tags: { hasEvery: tags } });
   if (hasYearFilter) deckAnd.push({ releaseYear: { gte: minYear, lte: maxYear } });
   const deckWhere: Prisma.DeckWhereInput = deckAnd.length > 0 ? { AND: deckAnd } : {};
@@ -108,10 +108,10 @@ export default async function CollectionPage({
       ],
     });
   }
-  if (designer) coinAnd.push({ designer });
-  if (producer) coinAnd.push({ producer });
+  if (designers.length > 0) coinAnd.push({ designer: { in: designers } });
+  if (producers.length > 0) coinAnd.push({ producer: { in: producers } });
   if (creator) coinAnd.push({ OR: [{ designer: creator }, { producer: creator }] });
-  if (series) coinAnd.push({ series });
+  if (selectedSeries.length > 0) coinAnd.push({ series: { in: selectedSeries } });
   if (tags.length > 0) coinAnd.push({ tags: { hasEvery: tags } });
   if (hasYearFilter) coinAnd.push({ releaseYear: { gte: minYear, lte: maxYear } });
   const coinWhere: Prisma.CoinWhereInput = coinAnd.length > 0 ? { AND: coinAnd } : {};
@@ -185,13 +185,13 @@ export default async function CollectionPage({
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const pageItems = merged.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const designers = Array.from(
+  const designerOptions = Array.from(
     new Set([
       ...deckDesigners.map((d) => d.designer!).filter(Boolean),
       ...coinDesigners.map((d) => d.designer!).filter(Boolean),
     ])
   ).sort();
-  const producers = Array.from(
+  const producerOptions = Array.from(
     new Set([
       ...deckProducers.map((p) => p.producer!).filter(Boolean),
       ...coinProducers.map((p) => p.producer!).filter(Boolean),
@@ -208,10 +208,10 @@ export default async function CollectionPage({
 
   const currentSearchParams = new URLSearchParams();
   if (q) currentSearchParams.set("q", q);
-  if (designer) currentSearchParams.set("designer", designer);
-  if (producer) currentSearchParams.set("producer", producer);
+  for (const designer of designers) currentSearchParams.append("designer", designer);
+  for (const producer of producers) currentSearchParams.append("producer", producer);
   if (creator) currentSearchParams.set("creator", creator);
-  if (series) currentSearchParams.set("series", series);
+  for (const series of selectedSeries) currentSearchParams.append("series", series);
   if (type !== "all") currentSearchParams.set("type", type);
   if (sort !== "featured") currentSearchParams.set("sort", sort);
   if (sort === "random") currentSearchParams.set("randomSeed", String(randomSeed));
@@ -247,8 +247,8 @@ export default async function CollectionPage({
 
       <Suspense fallback={null}>
         <CollectionFilters
-          designers={designers}
-          producers={producers}
+          designers={designerOptions}
+          producers={producerOptions}
           seriesList={seriesList}
           availableMinYear={availableMinYear}
           availableMaxYear={availableMaxYear}
@@ -256,6 +256,10 @@ export default async function CollectionPage({
           surpriseDeckIdsWithImages={deckRows
             .filter((deck) => deck.images.length > 0)
             .map((deck) => deck.id)}
+          surpriseCoinIds={coinRows.map((coin) => coin.id)}
+          surpriseCoinIdsWithImages={coinRows
+            .filter((coin) => coin.obverseImageUrl || coin.reverseImageUrl)
+            .map((coin) => coin.id)}
         />
       </Suspense>
 

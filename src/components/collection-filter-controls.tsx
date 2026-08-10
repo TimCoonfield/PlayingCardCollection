@@ -104,6 +104,93 @@ export function CollectionSortSelector({
   );
 }
 
+export function CollectionFacetPicker({
+  label,
+  options,
+  selected,
+  onAdd,
+}: {
+  label: string;
+  options: string[];
+  selected: string[];
+  onAdd: (value: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const matches = query.trim()
+    ? options
+        .filter(
+          (option) =>
+            !selected.includes(option) &&
+            option.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())
+        )
+        .slice(0, 8)
+    : [];
+
+  function choose(value: string) {
+    onAdd(value);
+    setQuery("");
+  }
+
+  return (
+    <div className="relative">
+      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-felt-sub">
+        {label}
+      </label>
+      <input
+        type="search"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && matches[0]) {
+            event.preventDefault();
+            choose(matches[0]);
+          }
+        }}
+        placeholder={`Search ${label.toLocaleLowerCase()}…`}
+        className="w-full rounded-md border border-felt-line bg-felt-bg px-3 py-2 text-sm text-felt-ink placeholder:text-felt-sub/60 outline-none focus:border-brass"
+      />
+      {query.trim() && (
+        <div className="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-md border border-felt-line bg-felt-surface shadow-xl">
+          {matches.length > 0 ? (
+            matches.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => choose(option)}
+                className="block w-full px-3 py-2 text-left text-sm text-felt-ink hover:bg-felt-surface-2 hover:text-brass"
+              >
+                {option}
+              </button>
+            ))
+          ) : (
+            <p className="px-3 py-2 text-sm text-felt-sub">No matches</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function CollectionActiveFilter({
+  label,
+  onRemove,
+}: {
+  label: string;
+  onRemove: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onRemove}
+      title={`Remove ${label} filter`}
+      className="inline-flex items-center gap-1.5 rounded-full border border-brass/40 bg-brass/10 px-2.5 py-1 text-xs text-felt-ink hover:border-brass"
+    >
+      <span className="max-w-56 truncate">{label}</span>
+      <span aria-hidden="true" className="text-brass">×</span>
+    </button>
+  );
+}
+
 export function CollectionTagPills({
   availableTags,
   selectedTags,

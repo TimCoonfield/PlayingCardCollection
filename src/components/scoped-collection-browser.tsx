@@ -10,6 +10,8 @@ import { sortCollectionItems, type CollectionSort } from "@/lib/collection-sort"
 import {
   ALL_COLLECTION_TAGS,
   CURATED_COLLECTION_TAGS,
+  CollectionActiveFilter,
+  CollectionFacetPicker,
   CollectionTagPills,
   CollectionSortSelector,
   CollectionTypeSelector,
@@ -44,6 +46,10 @@ export function ScopedCollectionBrowser({
   const [query, setQuery] = useState("");
   const [type, setType] = useState<CollectionItemType>("all");
   const [tags, setTags] = useState<string[]>([]);
+  const [designers, setDesigners] = useState<string[]>([]);
+  const [producers, setProducers] = useState<string[]>([]);
+  const [series, setSeries] = useState<string[]>([]);
+  const [advancedExpanded, setAdvancedExpanded] = useState(false);
   const [sort, setSort] = useState<CollectionSort>("alpha-asc");
   const [randomSeed, setRandomSeed] = useState(0);
 
@@ -64,6 +70,40 @@ export function ScopedCollectionBrowser({
     yearRange[0] === availableMinYear && yearRange[1] === availableMaxYear;
 
   const normalizedQuery = query.trim().toLocaleLowerCase();
+  const allItems = useMemo(() => [...decks, ...coins], [coins, decks]);
+  const designerOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          allItems
+            .map((item) => item.designer)
+            .filter((value): value is string => Boolean(value))
+        )
+      ).sort(),
+    [allItems]
+  );
+  const producerOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          allItems
+            .map((item) => item.producer)
+            .filter((value): value is string => Boolean(value))
+        )
+      ).sort(),
+    [allItems]
+  );
+  const seriesOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          allItems
+            .map((item) => item.series)
+            .filter((value): value is string => Boolean(value))
+        )
+      ).sort(),
+    [allItems]
+  );
 
   function matchesCommonFields(item: FilterableScopedDeck | FilterableScopedCoin) {
     const matchesQuery =
@@ -72,12 +112,27 @@ export function ScopedCollectionBrowser({
         .filter(Boolean)
         .some((value) => value!.toLocaleLowerCase().includes(normalizedQuery));
     const matchesTags = tags.every((tag) => item.tags.includes(tag));
+    const matchesDesigner =
+      designers.length === 0 ||
+      (item.designer !== null && designers.includes(item.designer));
+    const matchesProducer =
+      producers.length === 0 ||
+      (item.producer !== null && producers.includes(item.producer));
+    const matchesSeries =
+      series.length === 0 || (item.series !== null && series.includes(item.series));
     const matchesYear =
       isFullYearRange ||
       (item.releaseYear !== null &&
         item.releaseYear >= yearRange[0] &&
         item.releaseYear <= yearRange[1]);
-    return matchesQuery && matchesTags && matchesYear;
+    return (
+      matchesQuery &&
+      matchesTags &&
+      matchesDesigner &&
+      matchesProducer &&
+      matchesSeries &&
+      matchesYear
+    );
   }
 
   const filteredDecks = type === "coin" ? [] : decks.filter(matchesCommonFields);
@@ -97,6 +152,9 @@ export function ScopedCollectionBrowser({
     (normalizedQuery ? 1 : 0) +
     (type === "all" ? 0 : 1) +
     tags.length +
+    designers.length +
+    producers.length +
+    series.length +
     (isFullYearRange ? 0 : 1);
   const availableTags = tagSet === "all" ? ALL_COLLECTION_TAGS : CURATED_COLLECTION_TAGS;
 
@@ -110,6 +168,9 @@ export function ScopedCollectionBrowser({
     setQuery("");
     setType("all");
     setTags([]);
+    setDesigners([]);
+    setProducers([]);
+    setSeries([]);
     setYearRange([availableMinYear, availableMaxYear]);
   }
 
@@ -153,6 +214,10 @@ export function ScopedCollectionBrowser({
                 .filter((deck) => deck.images.length > 0)
                 .map((deck) => deck.id)}
               fallbackDeckIds={filteredDecks.map((deck) => deck.id)}
+              preferredCoinIds={filteredCoins
+                .filter((coin) => coin.obverseImageUrl || coin.reverseImageUrl)
+                .map((coin) => coin.id)}
+              fallbackCoinIds={filteredCoins.map((coin) => coin.id)}
             />
           </div>
         </div>
@@ -180,24 +245,114 @@ export function ScopedCollectionBrowser({
               onToggle={(tag) => toggleTag(tag)}
             />
 
-            <CollectionYearRange
-              key={`${yearRange[0]}-${yearRange[1]}`}
-              availableMinYear={availableMinYear}
-              availableMaxYear={availableMaxYear}
-              selectedMinYear={yearRange[0]}
-              selectedMaxYear={yearRange[1]}
-              onCommit={(minYear, maxYear) => setYearRange([minYear, maxYear])}
-            />
-
-            {activeFilterCount > 0 && (
+            <div className="border-t border-felt-line pt-3">
               <button
                 type="button"
-                onClick={clearFilters}
-                className="w-fit text-sm text-felt-sub hover:text-felt-ink"
+                onClick={() => setAdvancedExpanded((current) => !current)}
+                aria-expanded={advancedExpanded}
+                className="flex w-full items-center justify-between gap-3 text-left"
               >
-                Clear all
+                <span className="font-display text-sm font-semibold uppercase tracking-[0.14em] text-brass">
+                  Advanced filters
+                </span>
+                <ChevronDownIcon
+                  className={`h-4 w-4 text-felt-sub transition-transform ${advancedExpanded ? "rotate-180" : ""}`}
+                />
               </button>
+              {advancedExpanded && (
+                <div className="mt-4 flex flex-col gap-4 border-t border-felt-line/70 pt-4">
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <CollectionFacetPicker
+                      label="Creators / designers"
+                      options={designerOptions}
+                      selected={designers}
+                      onAdd={(value) => setDesigners((current) => [...current, value])}
+                    />
+                    <CollectionFacetPicker
+                      label="Producers / publishers"
+                      options={producerOptions}
+                      selected={producers}
+                      onAdd={(value) => setProducers((current) => [...current, value])}
+                    />
+                    <CollectionFacetPicker
+                      label={type === "coin" ? "Associated decks" : "Series"}
+                      options={seriesOptions}
+                      selected={series}
+                      onAdd={(value) => setSeries((current) => [...current, value])}
+                    />
+                  </div>
+                  <CollectionYearRange
+                    key={`${yearRange[0]}-${yearRange[1]}`}
+                    availableMinYear={availableMinYear}
+                    availableMaxYear={availableMaxYear}
+                    selectedMinYear={yearRange[0]}
+                    selectedMaxYear={yearRange[1]}
+                    onCommit={(minYear, maxYear) => setYearRange([minYear, maxYear])}
+                  />
+                </div>
+              )}
+            </div>
+
+            {activeFilterCount > 0 && (
+              <div className="flex flex-wrap items-center gap-2 border-t border-felt-line pt-3">
+                {normalizedQuery && (
+                  <CollectionActiveFilter
+                    label={`Search: ${query.trim()}`}
+                    onRemove={() => setQuery("")}
+                  />
+                )}
+                {type !== "all" && (
+                  <CollectionActiveFilter
+                    label={type === "deck" ? "Decks" : "Coins"}
+                    onRemove={() => setType("all")}
+                  />
+                )}
+                {designers.map((value) => (
+                  <CollectionActiveFilter
+                    key={`designer-${value}`}
+                    label={value}
+                    onRemove={() =>
+                      setDesigners((current) => current.filter((item) => item !== value))
+                    }
+                  />
+                ))}
+                {producers.map((value) => (
+                  <CollectionActiveFilter
+                    key={`producer-${value}`}
+                    label={value}
+                    onRemove={() =>
+                      setProducers((current) => current.filter((item) => item !== value))
+                    }
+                  />
+                ))}
+                {series.map((value) => (
+                  <CollectionActiveFilter
+                    key={`series-${value}`}
+                    label={value}
+                    onRemove={() =>
+                      setSeries((current) => current.filter((item) => item !== value))
+                    }
+                  />
+                ))}
+                {tags.map((value) => (
+                  <CollectionActiveFilter key={`tag-${value}`} label={value} onRemove={() => toggleTag(value)} />
+                ))}
+                {!isFullYearRange && (
+                  <CollectionActiveFilter
+                    label={`${yearRange[0]}–${yearRange[1]}`}
+                    onRemove={() => setYearRange([availableMinYear, availableMaxYear])}
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="text-sm text-felt-sub hover:text-felt-ink"
+                >
+                  Clear all
+                </button>
+              </div>
             )}
+
           </div>
         )}
       </div>

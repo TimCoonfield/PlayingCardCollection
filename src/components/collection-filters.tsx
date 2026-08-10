@@ -7,6 +7,8 @@ import { SurpriseMeButton } from "./surprise-me-button";
 import { isCollectionSort, type CollectionSort } from "@/lib/collection-sort";
 import {
   CollectionTagPills,
+  CollectionFacetPicker,
+  CollectionActiveFilter,
   CollectionSortSelector,
   CollectionTypeSelector,
   CollectionYearRange,
@@ -24,6 +26,8 @@ export function CollectionFilters({
   availableMaxYear,
   surpriseDeckIds,
   surpriseDeckIdsWithImages,
+  surpriseCoinIds,
+  surpriseCoinIdsWithImages,
 }: {
   designers: string[];
   producers: string[];
@@ -32,6 +36,8 @@ export function CollectionFilters({
   availableMaxYear: number;
   surpriseDeckIds: string[];
   surpriseDeckIdsWithImages: string[];
+  surpriseCoinIds: string[];
+  surpriseCoinIdsWithImages: string[];
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -39,9 +45,9 @@ export function CollectionFilters({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const q = searchParams.get("q") ?? "";
-  const designer = searchParams.get("designer") ?? "";
-  const producer = searchParams.get("producer") ?? "";
-  const series = searchParams.get("series") ?? "";
+  const selectedDesigners = searchParams.getAll("designer");
+  const selectedProducers = searchParams.getAll("producer");
+  const selectedSeries = searchParams.getAll("series");
   const tags = searchParams.getAll("tag");
   const type = searchParams.get("type") ?? "all";
   const rawSort = searchParams.get("sort") ?? "";
@@ -62,13 +68,18 @@ export function CollectionFilters({
   // param from the homepage's featured-creator cards — but it still needs to count here so
   // "Clear all" appears and the extra filters start expanded when arriving via that link.
   const creator = searchParams.get("creator") ?? "";
+  const advancedFilterCount =
+    selectedDesigners.length +
+    selectedProducers.length +
+    selectedSeries.length +
+    (hasYearFilter ? 1 : 0);
   const nonSearchFilterCount =
-    [designer, producer, series, creator].filter(Boolean).length + tags.length + (hasYearFilter ? 1 : 0);
+    advancedFilterCount + (creator ? 1 : 0) + tags.length;
   const hasFilters = Boolean(q) || nonSearchFilterCount > 0 || type !== "all";
 
   // On mobile the extra filters start collapsed to save space, unless some are already
   // applied (e.g. arriving from a Stats page link) — then show them open so nothing's hidden.
-  const [expanded, setExpanded] = useState(() => nonSearchFilterCount > 0);
+  const [expanded, setExpanded] = useState(() => advancedFilterCount > 0 || Boolean(creator));
 
   // Tracks the last value *this component* pushed to the URL, so the sync effect below
   // can tell "the URL changed because of our own debounce/Enter" apart from "the URL
@@ -138,10 +149,22 @@ export function CollectionFilters({
     });
   }
 
-  function handleSelectChange(key: "designer" | "producer" | "series", value: string) {
+  function addFacet(key: "designer" | "producer" | "series", value: string) {
     pushParams((params) => {
-      if (value) params.set(key, value);
-      else params.delete(key);
+      const current = params.getAll(key);
+      if (!current.includes(value)) params.append(key, value);
+    });
+  }
+
+  function removeParam(key: string, value?: string) {
+    pushParams((params) => {
+      if (value === undefined) {
+        params.delete(key);
+        return;
+      }
+      const remaining = params.getAll(key).filter((item) => item !== value);
+      params.delete(key);
+      for (const item of remaining) params.append(key, item);
     });
   }
 
@@ -184,6 +207,8 @@ export function CollectionFilters({
           <SurpriseMeButton
             preferredDeckIds={surpriseDeckIdsWithImages}
             fallbackDeckIds={surpriseDeckIds}
+            preferredCoinIds={surpriseCoinIdsWithImages}
+            fallbackCoinIds={surpriseCoinIds}
           />
         </div>
       </div>
@@ -205,63 +230,9 @@ export function CollectionFilters({
             </span>
           )}
         </div>
-
-        <button
-          type="button"
-          onClick={() => setExpanded((e) => !e)}
-          aria-expanded={expanded}
-          className="flex items-center justify-center gap-1.5 rounded-md border border-felt-line px-3 py-2 text-sm text-felt-sub hover:border-brass hover:text-felt-ink sm:hidden"
-        >
-          Filters
-          {nonSearchFilterCount > 0 && (
-            <span className="rounded-full bg-brass px-1.5 text-xs font-medium text-felt-bg">
-              {nonSearchFilterCount}
-            </span>
-          )}
-          <ChevronDownIcon
-            className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`}
-          />
-        </button>
-
-        <select
-          value={designer}
-          onChange={(e) => handleSelectChange("designer", e.target.value)}
-          className={`${expanded ? "flex" : "hidden"} rounded-md border border-felt-line bg-felt-bg px-3 py-2 text-sm text-felt-ink outline-none focus:border-brass sm:flex sm:w-52`}
-        >
-          <option value="">All designers</option>
-          {designers.map((d) => (
-            <option key={d} value={d}>
-              {d}
-            </option>
-          ))}
-        </select>
-        <select
-          value={producer}
-          onChange={(e) => handleSelectChange("producer", e.target.value)}
-          className={`${expanded ? "flex" : "hidden"} rounded-md border border-felt-line bg-felt-bg px-3 py-2 text-sm text-felt-ink outline-none focus:border-brass sm:flex sm:w-52`}
-        >
-          <option value="">All producers</option>
-          {producers.map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
-          ))}
-        </select>
-        <select
-          value={series}
-          onChange={(e) => handleSelectChange("series", e.target.value)}
-          className={`${expanded ? "flex" : "hidden"} rounded-md border border-felt-line bg-felt-bg px-3 py-2 text-sm text-felt-ink outline-none focus:border-brass sm:flex sm:w-52`}
-        >
-          <option value="">{type === "coin" ? "All associated decks" : "All series"}</option>
-          {seriesList.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
       </div>
 
-      <div className={`${expanded ? "block" : "hidden"} sm:block`}>
+      <div>
         <CollectionTagPills
           availableTags={ALL_COLLECTION_TAGS}
           selectedTags={tags}
@@ -270,19 +241,105 @@ export function CollectionFilters({
         />
       </div>
 
-      <div className={`${expanded ? "block" : "hidden"} sm:block`}>
-        <CollectionYearRange
-          key={`${selectedMinYear}-${selectedMaxYear}`}
-          availableMinYear={availableMinYear}
-          availableMaxYear={availableMaxYear}
-          selectedMinYear={selectedMinYear}
-          selectedMaxYear={selectedMaxYear}
-          onCommit={commitYearRange}
-        />
+      <div className="border-t border-felt-line pt-3">
+        <button
+          type="button"
+          onClick={() => setExpanded((current) => !current)}
+          aria-expanded={expanded}
+          className="flex w-full items-center justify-between gap-3 text-left"
+        >
+          <span className="flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-[0.14em] text-brass">
+            Advanced filters
+            {advancedFilterCount > 0 && (
+              <span className="rounded-full bg-brass px-1.5 py-0.5 font-sans text-[10px] tracking-normal text-felt-bg">
+                {advancedFilterCount}
+              </span>
+            )}
+          </span>
+          <ChevronDownIcon
+            className={`h-4 w-4 text-felt-sub transition-transform ${expanded ? "rotate-180" : ""}`}
+          />
+        </button>
+
+        {expanded && (
+          <div className="mt-4 flex flex-col gap-4 border-t border-felt-line/70 pt-4">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <CollectionFacetPicker
+                label="Creators / designers"
+                options={designers}
+                selected={selectedDesigners}
+                onAdd={(value) => addFacet("designer", value)}
+              />
+              <CollectionFacetPicker
+                label="Producers / publishers"
+                options={producers}
+                selected={selectedProducers}
+                onAdd={(value) => addFacet("producer", value)}
+              />
+              <CollectionFacetPicker
+                label={type === "coin" ? "Associated decks" : "Series"}
+                options={seriesList}
+                selected={selectedSeries}
+                onAdd={(value) => addFacet("series", value)}
+              />
+            </div>
+            <CollectionYearRange
+              key={`${selectedMinYear}-${selectedMaxYear}`}
+              availableMinYear={availableMinYear}
+              availableMaxYear={availableMaxYear}
+              selectedMinYear={selectedMinYear}
+              selectedMaxYear={selectedMaxYear}
+              onCommit={commitYearRange}
+            />
+          </div>
+        )}
       </div>
 
       {hasFilters && (
-        <div>
+        <div className="flex flex-wrap items-center gap-2 border-t border-felt-line pt-3">
+          {q && <CollectionActiveFilter label={`Search: ${q}`} onRemove={() => removeParam("q")} />}
+          {type !== "all" && (
+            <CollectionActiveFilter
+              label={type === "deck" ? "Decks" : "Coins"}
+              onRemove={() => removeParam("type")}
+            />
+          )}
+          {creator && <CollectionActiveFilter label={creator} onRemove={() => removeParam("creator")} />}
+          {selectedDesigners.map((value) => (
+            <CollectionActiveFilter
+              key={`designer-${value}`}
+              label={value}
+              onRemove={() => removeParam("designer", value)}
+            />
+          ))}
+          {selectedProducers.map((value) => (
+            <CollectionActiveFilter
+              key={`producer-${value}`}
+              label={value}
+              onRemove={() => removeParam("producer", value)}
+            />
+          ))}
+          {selectedSeries.map((value) => (
+            <CollectionActiveFilter
+              key={`series-${value}`}
+              label={value}
+              onRemove={() => removeParam("series", value)}
+            />
+          ))}
+          {tags.map((value) => (
+            <CollectionActiveFilter key={`tag-${value}`} label={value} onRemove={() => removeParam("tag", value)} />
+          ))}
+          {hasYearFilter && (
+            <CollectionActiveFilter
+              label={`${selectedMinYear}–${selectedMaxYear}`}
+              onRemove={() => {
+                pushParams((params) => {
+                  params.delete("minYear");
+                  params.delete("maxYear");
+                });
+              }}
+            />
+          )}
           <button
             type="button"
             onClick={clearAll}
