@@ -20,6 +20,7 @@ export function DecksLandingPage({
   heroObjectRight = false,
   heroSvg,
   heroTextMaxWidth = "lg",
+  showFeaturedDecks = true,
   decks,
   emptyMessage = "No decks yet.",
 }: {
@@ -30,6 +31,7 @@ export function DecksLandingPage({
   heroObjectRight?: boolean;
   heroSvg?: ReactNode;
   heroTextMaxWidth?: "lg" | "xl";
+  showFeaturedDecks?: boolean;
   decks: DeckCardData[];
   emptyMessage?: string;
 }) {
@@ -89,7 +91,7 @@ export function DecksLandingPage({
         <p className="py-16 text-center text-felt-sub">{emptyMessage}</p>
       ) : (
         <>
-          {favoriteDecks.length > 0 && (
+          {showFeaturedDecks && favoriteDecks.length > 0 && (
             <div className="flex flex-col gap-4">
               <SectionLabel>Featured Decks</SectionLabel>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
