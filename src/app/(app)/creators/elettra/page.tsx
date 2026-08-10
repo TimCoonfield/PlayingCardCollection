@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 
 const ELETTRA_HERO_IMAGE_URL =
-  "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/elettra-deganello-portrait-LAuLHMIeFL4FGnsTg8UhArnXa521Nc.webp";
+  "/images/creators/elettra-deganello.webp";
 
 export default async function ElettraLandingPage() {
   const decks = await prisma.deck.findMany({

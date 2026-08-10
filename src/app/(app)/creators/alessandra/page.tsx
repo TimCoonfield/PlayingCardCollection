@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 
 const ALESSANDRA_HERO_IMAGE_URL =
-  "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/alessandra-gagliano-2uvyjYhOQt3rT21EyxThGqBvmyHM6s.webp";
+  "/images/creators/alessandra-gagliano.webp";
 
 export default async function AlessandraLandingPage() {
   const decks = await prisma.deck.findMany({

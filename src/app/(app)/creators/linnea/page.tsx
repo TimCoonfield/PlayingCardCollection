@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 
 const LINNEA_HERO_IMAGE_URL =
-  "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/linnea-gits-n1daqfnRv94mpDmbyuUdU4Ix6pRg5x.webp";
+  "/images/creators/linnea-gits.webp";
 
 export default async function LinneaLandingPage() {
   const decks = await prisma.deck.findMany({

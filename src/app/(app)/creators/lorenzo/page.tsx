@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 
 const LORENZO_HERO_IMAGE_URL =
-  "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/pages/lorenzo-hero-2.webp";
+  "/images/creators/lorenzo-gaggiotti-hero.webp";
 
 export default async function LorenzoLandingPage() {
   const decks = await prisma.deck.findMany({

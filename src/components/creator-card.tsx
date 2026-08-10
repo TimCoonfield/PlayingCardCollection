@@ -51,6 +51,7 @@ export function CreatorCard({
               alt={logoAlt ?? `${producer} logo`}
               width={56}
               height={56}
+              unoptimized={logoUrl.startsWith("/")}
               className="h-full w-full object-contain"
             />
           </div>

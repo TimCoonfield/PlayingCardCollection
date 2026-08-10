@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 
 const KARL_HERO_IMAGE_URL =
-  "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/karl-gerich-joker.jpg";
+  "/images/creators/karl-gerich-joker.webp";
 
 export default async function KarlLandingPage() {
   const decks = await prisma.deck.findMany({

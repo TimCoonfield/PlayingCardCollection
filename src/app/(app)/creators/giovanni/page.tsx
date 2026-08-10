@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 
 const GIOVANNI_HERO_IMAGE_URL =
-  "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/creators/giovanni-meroni-noRU3HevoEaag8w1MAVrWe1TkPjfIY.png";
+  "/images/creators/giovanni-meroni.webp";
 
 export default async function GiovanniLandingPage() {
   const decks = await prisma.deck.findMany({
