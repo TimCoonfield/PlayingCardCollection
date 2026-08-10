@@ -116,7 +116,13 @@ export default async function DeckDetailPage({
                   href={`/collection?producer=${encodeURIComponent(deck.producer)}`}
                 />
               )}
-              {deck.releaseYear && <CreditRow label="Release year" value={String(deck.releaseYear)} />}
+              {deck.releaseYear !== null && (
+                <CreditRow
+                  label="Release year"
+                  value={String(deck.releaseYear)}
+                  href={`/collection?minYear=${deck.releaseYear}&maxYear=${deck.releaseYear}`}
+                />
+              )}
             </div>
           )}
 
