@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HeaderSearch } from "@/components/header-search";
+import { ArchiveSpotlightTrigger } from "@/components/archive-spotlight";
 import { AddMenu } from "@/components/add-menu";
 import { SpecialtyCollectionsMenu } from "@/components/specialty-collections-menu";
-import { CollectionIcon, StatsIcon, SearchIcon } from "@/components/icons";
+import { CollectionIcon, StatsIcon } from "@/components/icons";
 import { logout } from "./logout-action";
 
 const navLinks = [
@@ -65,22 +65,7 @@ export function NavBar({
           })}
           <SpecialtyCollectionsMenu creators={creatorNavItems} isActive={specialtyIsActive} />
           {isAuthenticated && <AddMenu />}
-          <form
-            action="/collection"
-            method="GET"
-            className="hidden items-center gap-2 rounded-md border border-felt-line bg-felt-surface px-2.5 py-1.5 lg:flex"
-          >
-            <SearchIcon className="h-4 w-4 shrink-0 text-felt-sub" />
-            <input
-              type="search"
-              name="q"
-              placeholder="Search decks, designers, series..."
-              className="w-48 bg-transparent text-sm text-felt-ink outline-none placeholder:text-felt-sub/60 xl:w-64"
-            />
-          </form>
-          <div className="lg:hidden">
-            <HeaderSearch />
-          </div>
+          <ArchiveSpotlightTrigger />
           {isAuthenticated && (
             <form action={logout}>
               <button

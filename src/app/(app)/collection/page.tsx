@@ -8,6 +8,7 @@ import { CoinCard, type CoinCardData } from "@/components/coin-card";
 import { CollectionFilters } from "@/components/collection-filters";
 import { Pagination } from "@/components/pagination";
 import { isCollectionSort, sortCollectionItems, type CollectionSort } from "@/lib/collection-sort";
+import { isArchiveSearchScope, type ArchiveSearchScope } from "@/lib/archive-search";
 
 const PAGE_SIZE = 60;
 
@@ -39,6 +40,8 @@ export default async function CollectionPage({
 }) {
   const params = await searchParams;
   const q = toParam(params.q).trim();
+  const rawScope = toParam(params.scope);
+  const scope: ArchiveSearchScope = isArchiveSearchScope(rawScope) ? rawScope : "all";
   const designers = toArrayParam(params.designer);
   const producers = toArrayParam(params.producer);
   // Matches decks/coins where this name is credited as EITHER designer or producer — used by
@@ -78,15 +81,7 @@ export default async function CollectionPage({
 
   const deckAnd: Prisma.DeckWhereInput[] = [];
   if (q) {
-    deckAnd.push({
-      OR: [
-        { name: { contains: q, mode: "insensitive" } },
-        { series: { contains: q, mode: "insensitive" } },
-        { designer: { contains: q, mode: "insensitive" } },
-        { producer: { contains: q, mode: "insensitive" } },
-        { notes: { contains: q, mode: "insensitive" } },
-      ],
-    });
+    deckAnd.push(collectionSearchWhere(q, scope));
   }
   if (designers.length > 0) deckAnd.push({ designer: { in: designers } });
   if (producers.length > 0) deckAnd.push({ producer: { in: producers } });
@@ -98,15 +93,7 @@ export default async function CollectionPage({
 
   const coinAnd: Prisma.CoinWhereInput[] = [];
   if (q) {
-    coinAnd.push({
-      OR: [
-        { name: { contains: q, mode: "insensitive" } },
-        { series: { contains: q, mode: "insensitive" } },
-        { designer: { contains: q, mode: "insensitive" } },
-        { producer: { contains: q, mode: "insensitive" } },
-        { notes: { contains: q, mode: "insensitive" } },
-      ],
-    });
+    coinAnd.push(collectionSearchWhere(q, scope));
   }
   if (designers.length > 0) coinAnd.push({ designer: { in: designers } });
   if (producers.length > 0) coinAnd.push({ producer: { in: producers } });
@@ -208,6 +195,7 @@ export default async function CollectionPage({
 
   const currentSearchParams = new URLSearchParams();
   if (q) currentSearchParams.set("q", q);
+  if (q && scope !== "all") currentSearchParams.set("scope", scope);
   for (const designer of designers) currentSearchParams.append("designer", designer);
   for (const producer of producers) currentSearchParams.append("producer", producer);
   if (creator) currentSearchParams.set("creator", creator);
@@ -280,4 +268,22 @@ export default async function CollectionPage({
       <Pagination page={page} totalPages={totalPages} searchParams={currentSearchParams} />
     </div>
   );
+}
+
+function collectionSearchWhere(query: string, scope: ArchiveSearchScope) {
+  const contains = { contains: query, mode: "insensitive" as const };
+  if (scope === "name") return { name: contains };
+  if (scope === "series") return { series: contains };
+  if (scope === "producer") return { producer: contains };
+  if (scope === "notes") return { notes: contains };
+  if (scope === "creator") return { OR: [{ designer: contains }, { producer: contains }] };
+  return {
+    OR: [
+      { name: contains },
+      { series: contains },
+      { designer: contains },
+      { producer: contains },
+      { notes: contains },
+    ],
+  };
 }

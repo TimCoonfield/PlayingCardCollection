@@ -6,6 +6,11 @@ import { ChevronDownIcon } from "./icons";
 import { SurpriseMeButton } from "./surprise-me-button";
 import { isCollectionSort, type CollectionSort } from "@/lib/collection-sort";
 import {
+  ARCHIVE_SEARCH_SCOPE_LABELS,
+  isArchiveSearchScope,
+  type ArchiveSearchScope,
+} from "@/lib/archive-search";
+import {
   CollectionTagPills,
   CollectionFacetPicker,
   CollectionActiveFilter,
@@ -45,6 +50,8 @@ export function CollectionFilters({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const q = searchParams.get("q") ?? "";
+  const rawScope = searchParams.get("scope") ?? "all";
+  const scope: ArchiveSearchScope = isArchiveSearchScope(rawScope) ? rawScope : "all";
   const selectedDesigners = searchParams.getAll("designer");
   const selectedProducers = searchParams.getAll("producer");
   const selectedSeries = searchParams.getAll("series");
@@ -113,7 +120,10 @@ export function CollectionFilters({
     lastPushedQRef.current = value;
     pushParams((params) => {
       if (value.trim()) params.set("q", value);
-      else params.delete("q");
+      else {
+        params.delete("q");
+        params.delete("scope");
+      }
     });
   }
 
@@ -160,6 +170,7 @@ export function CollectionFilters({
     pushParams((params) => {
       if (value === undefined) {
         params.delete(key);
+        if (key === "q") params.delete("scope");
         return;
       }
       const remaining = params.getAll(key).filter((item) => item !== value);
@@ -297,7 +308,12 @@ export function CollectionFilters({
 
       {hasFilters && (
         <div className="flex flex-wrap items-center gap-2 border-t border-felt-line pt-3">
-          {q && <CollectionActiveFilter label={`Search: ${q}`} onRemove={() => removeParam("q")} />}
+          {q && (
+            <CollectionActiveFilter
+              label={`${scope === "all" ? "Search" : ARCHIVE_SEARCH_SCOPE_LABELS[scope]}: ${q}`}
+              onRemove={() => removeParam("q")}
+            />
+          )}
           {type !== "all" && (
             <CollectionActiveFilter
               label={type === "deck" ? "Decks" : "Coins"}
