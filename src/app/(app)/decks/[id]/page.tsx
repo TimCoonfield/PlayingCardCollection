@@ -9,27 +9,15 @@ import { PencilIcon, TrashIcon, HeartIcon, WhaleIcon } from "@/components/icons"
 import { FavoriteButton } from "@/components/favorite-button";
 import { WhiteWhaleButton } from "@/components/white-whale-button";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
-import { DeckCard } from "@/components/deck-card";
-import { SurpriseMeButton } from "@/components/surprise-me-button";
 import { getSession } from "@/lib/auth";
-import {
-  buildDeckBrowseWhere,
-  getBrowseRandomSeed,
-  getBrowseSort,
-} from "@/lib/deck-browse-context";
-import { sortCollectionItems } from "@/lib/collection-sort";
-import { Prisma } from "@/generated/prisma/client";
 import { deleteDeck } from "../actions";
 
 export default async function DeckDetailPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
-  const detailParams = await searchParams;
   const [deck, session] = await Promise.all([
     prisma.deck.findUnique({
       where: { id },
@@ -43,73 +31,13 @@ export default async function DeckDetailPage({
 
   if (!deck) notFound();
 
-  const rawContext = toParam(detailParams.context);
-  const hasBrowseContext = toParam(detailParams.from) === "collection" && rawContext.length <= 2000;
-  const contextParams = new URLSearchParams(hasBrowseContext ? rawContext : "");
-  const relatedOr: Prisma.DeckWhereInput[] = [];
-  if (deck.series) relatedOr.push({ series: deck.series });
-  if (deck.designer) relatedOr.push({ designer: deck.designer });
-  if (deck.producer) relatedOr.push({ producer: deck.producer });
-  if (deck.tags.length > 0) relatedOr.push({ tags: { hasSome: deck.tags } });
-  if (deck.releaseYear !== null) {
-    relatedOr.push({ releaseYear: { gte: deck.releaseYear - 7, lte: deck.releaseYear + 7 } });
-  }
-
-  const [browseRows, relatedCandidates, globalSurpriseRows] = await Promise.all([
-    hasBrowseContext
-      ? prisma.deck.findMany({
-          where: buildDeckBrowseWhere(contextParams),
-          select: {
-            id: true,
-            name: true,
-            releaseYear: true,
-            createdAt: true,
-            favorite: true,
-            images: { take: 1, orderBy: { sortOrder: "asc" } },
-          },
-        })
-      : Promise.resolve([]),
-    relatedOr.length > 0
-      ? prisma.deck.findMany({
-          where: { id: { not: deck.id }, OR: relatedOr },
-          include: { images: { orderBy: { sortOrder: "asc" } } },
-          orderBy: { name: "asc" },
-          take: 80,
-        })
-      : Promise.resolve([]),
-    hasBrowseContext
-      ? Promise.resolve([])
-      : prisma.deck.findMany({
-          select: { id: true, images: { take: 1 } },
-        }),
-  ]);
-
-  const browseDecks = hasBrowseContext
-    ? sortCollectionItems(browseRows, getBrowseSort(contextParams), getBrowseRandomSeed(contextParams))
-    : [];
-  const browseIndex = browseDecks.findIndex((item) => item.id === deck.id);
-  const previousDeck = browseIndex > 0 ? browseDecks[browseIndex - 1] : null;
-  const nextDeck = browseIndex >= 0 && browseIndex < browseDecks.length - 1
-    ? browseDecks[browseIndex + 1]
-    : null;
-  const contextSuffix = hasBrowseContext
-    ? `?from=collection&context=${encodeURIComponent(rawContext)}`
-    : "";
-  const collectionHref = hasBrowseContext
-    ? `/collection${rawContext ? `?${rawContext}` : ""}`
-    : "/collection";
-  const relatedDecks = rankRelatedDecks(deck, relatedCandidates).slice(0, 4);
-  const surpriseRows = hasBrowseContext ? browseDecks : globalSurpriseRows;
-
   const isAuthenticated = Boolean(session.authenticated);
   const deleteDeckWithId = deleteDeck.bind(null, deck.id);
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <BackLink fallbackHref={collectionHref}>
-          {hasBrowseContext ? `← Back to ${browseDecks.length} decks` : "← Back to collection"}
-        </BackLink>
+        <BackLink fallbackHref="/collection">← Back to collection</BackLink>
         {isAuthenticated && (
           <div className="flex gap-2">
             <FavoriteButton deckId={deck.id} initialFavorite={deck.favorite} />
@@ -245,106 +173,8 @@ export default async function DeckDetailPage({
           )}
         </div>
       </div>
-
-      <section className="flex flex-col gap-4 border-t border-felt-line pt-6">
-        <div className="flex items-center gap-3">
-          <h2 className="whitespace-nowrap font-display text-sm font-bold uppercase tracking-[0.2em] text-brass">
-            Keep Exploring
-          </h2>
-          <div className="h-px flex-1 bg-brass/30" />
-        </div>
-        <div className="flex flex-col gap-3 rounded-lg border border-felt-line bg-felt-surface p-4 sm:flex-row sm:items-center sm:justify-between">
-          {hasBrowseContext && browseIndex >= 0 ? (
-            <>
-              <div className="flex items-center justify-between gap-3 sm:min-w-56">
-                {previousDeck ? (
-                  <Link
-                    href={`/decks/${previousDeck.id}${contextSuffix}`}
-                    className="text-sm text-felt-sub hover:text-brass"
-                  >
-                    ← Previous
-                  </Link>
-                ) : (
-                  <span className="text-sm text-felt-sub/35">← Previous</span>
-                )}
-                <span className="text-xs tabular-nums text-felt-sub">
-                  {browseIndex + 1} of {browseDecks.length}
-                </span>
-                {nextDeck ? (
-                  <Link
-                    href={`/decks/${nextDeck.id}${contextSuffix}`}
-                    className="text-sm text-felt-sub hover:text-brass"
-                  >
-                    Next →
-                  </Link>
-                ) : (
-                  <span className="text-sm text-felt-sub/35">Next →</span>
-                )}
-              </div>
-              <Link href={collectionHref} className="text-center text-xs text-felt-sub hover:text-felt-ink">
-                Back to {browseDecks.length} decks
-              </Link>
-            </>
-          ) : (
-            <p className="text-sm text-felt-sub">Discover another deck from the archive.</p>
-          )}
-          <SurpriseMeButton
-            preferredDeckIds={surpriseRows
-              .filter((item) => item.images.length > 0)
-              .map((item) => item.id)}
-            fallbackDeckIds={surpriseRows.map((item) => item.id)}
-            excludeDeckId={deck.id}
-            deckHrefSuffix={contextSuffix}
-          />
-        </div>
-      </section>
-
-      {relatedDecks.length > 0 && (
-        <section className="flex flex-col gap-4">
-          <div className="flex items-center gap-3">
-            <h2 className="whitespace-nowrap font-display text-sm font-bold uppercase tracking-[0.2em] text-brass">
-              Related Decks
-            </h2>
-            <div className="h-px flex-1 bg-brass/30" />
-          </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {relatedDecks.map((related) => (
-              <DeckCard key={related.id} deck={related} sizes="(max-width: 640px) 50vw, 25vw" />
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
-}
-
-function toParam(value: string | string[] | undefined): string {
-  return Array.isArray(value) ? value[0] ?? "" : value ?? "";
-}
-
-type RelatedDeck = Prisma.DeckGetPayload<{
-  include: { images: { orderBy: { sortOrder: "asc" } } };
-}>;
-
-function rankRelatedDecks(current: RelatedDeck, candidates: RelatedDeck[]) {
-  return [...candidates].sort((a, b) => {
-    const score = (candidate: RelatedDeck) => {
-      let value = 0;
-      if (current.series && candidate.series === current.series) value += 100;
-      if (current.designer && candidate.designer === current.designer) value += 60;
-      if (current.producer && candidate.producer === current.producer) value += 35;
-      value += current.tags.filter((tag) => candidate.tags.includes(tag)).length * 6;
-      if (current.releaseYear !== null && candidate.releaseYear !== null) {
-        const difference = Math.abs(current.releaseYear - candidate.releaseYear);
-        if (difference === 0) value += 15;
-        else if (difference <= 3) value += 10;
-        else if (difference <= 7) value += 5;
-      }
-      if (candidate.images.length > 0) value += 3;
-      return value;
-    };
-    return score(b) - score(a) || a.name.localeCompare(b.name);
-  });
 }
 
 function CreditRow({ label, value, href }: { label: string; value: string; href?: string }) {

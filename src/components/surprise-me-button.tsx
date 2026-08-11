@@ -7,41 +7,28 @@ export function SurpriseMeButton({
   fallbackDeckIds,
   preferredCoinIds = [],
   fallbackCoinIds = [],
-  excludeDeckId,
-  deckHrefSuffix = "",
 }: {
   preferredDeckIds: string[];
   fallbackDeckIds: string[];
   preferredCoinIds?: string[];
   fallbackCoinIds?: string[];
-  excludeDeckId?: string;
-  deckHrefSuffix?: string;
 }) {
   const router = useRouter();
-  const hasItems =
-    fallbackDeckIds.some((id) => id !== excludeDeckId) || fallbackCoinIds.length > 0;
+  const hasItems = fallbackDeckIds.length + fallbackCoinIds.length > 0;
 
   function chooseItem() {
     const preferred = [
-      ...preferredDeckIds
-        .filter((id) => id !== excludeDeckId)
-        .map((id) => ({ kind: "deck" as const, id })),
+      ...preferredDeckIds.map((id) => ({ kind: "deck" as const, id })),
       ...preferredCoinIds.map((id) => ({ kind: "coin" as const, id })),
     ];
     const fallback = [
-      ...fallbackDeckIds
-        .filter((id) => id !== excludeDeckId)
-        .map((id) => ({ kind: "deck" as const, id })),
+      ...fallbackDeckIds.map((id) => ({ kind: "deck" as const, id })),
       ...fallbackCoinIds.map((id) => ({ kind: "coin" as const, id })),
     ];
     const pool = preferred.length > 0 ? preferred : fallback;
     if (pool.length === 0) return;
     const item = pool[Math.floor(Math.random() * pool.length)];
-    router.push(
-      `/${item.kind === "deck" ? "decks" : "coins"}/${item.id}${
-        item.kind === "deck" ? deckHrefSuffix : ""
-      }`
-    );
+    router.push(`/${item.kind === "deck" ? "decks" : "coins"}/${item.id}`);
   }
 
   return (

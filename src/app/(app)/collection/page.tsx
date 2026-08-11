@@ -208,11 +208,6 @@ export default async function CollectionPage({
     currentSearchParams.set("minYear", String(minYear));
     currentSearchParams.set("maxYear", String(maxYear));
   }
-  const browseContextParams = new URLSearchParams(currentSearchParams);
-  if (page > 1) browseContextParams.set("page", String(page));
-  const deckBrowseSuffix = `?from=collection&context=${encodeURIComponent(
-    browseContextParams.toString()
-  )}`;
 
   return (
     <div className="flex flex-col gap-6">
@@ -264,11 +259,7 @@ export default async function CollectionPage({
             item.kind === "coin" ? (
               <CoinCard key={item.id} coin={item} />
             ) : (
-              <DeckCard
-                key={item.id}
-                deck={item}
-                href={`/decks/${item.id}${deckBrowseSuffix}`}
-              />
+              <DeckCard key={item.id} deck={item} />
             )
           )}
         </div>
