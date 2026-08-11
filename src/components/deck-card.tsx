@@ -22,15 +22,17 @@ const DEFAULT_CARD_SIZES =
 export function DeckCard({
   deck,
   sizes = DEFAULT_CARD_SIZES,
+  href,
 }: {
   deck: DeckCardData;
   sizes?: string;
+  href?: string;
 }) {
   const hasImages = deck.images.length > 0;
 
   return (
     <Link
-      href={`/decks/${deck.id}`}
+      href={href ?? `/decks/${deck.id}`}
       prefetch={false}
       className="group flex flex-col overflow-hidden rounded-lg border border-felt-line bg-felt-surface transition-colors hover:border-brass"
     >
