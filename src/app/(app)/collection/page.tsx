@@ -120,13 +120,43 @@ export default async function CollectionPage({
     wantDecks
       ? prisma.deck.findMany({
           where: deckWhere,
-          include: { images: { orderBy: { sortOrder: "asc" } } },
+          select: {
+            id: true,
+            name: true,
+            series: true,
+            designer: true,
+            producer: true,
+            qty: true,
+            tags: true,
+            favorite: true,
+            whiteWhale: true,
+            releaseYear: true,
+            createdAt: true,
+            images: {
+              orderBy: { sortOrder: "asc" },
+              take: 1,
+              select: { url: true },
+            },
+          },
           orderBy: { name: "asc" },
         })
       : Promise.resolve([]),
     wantCoins
       ? prisma.coin.findMany({
           where: coinWhere,
+          select: {
+            id: true,
+            name: true,
+            series: true,
+            designer: true,
+            producer: true,
+            qty: true,
+            tags: true,
+            obverseImageUrl: true,
+            reverseImageUrl: true,
+            releaseYear: true,
+            createdAt: true,
+          },
           orderBy: { name: "asc" },
         })
       : Promise.resolve([]),
