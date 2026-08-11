@@ -13,8 +13,17 @@ import { isArchiveSearchScope, type ArchiveSearchScope } from "@/lib/archive-sea
 const PAGE_SIZE = 60;
 
 type CollectionItem =
-  | ({ kind: "deck" } & DeckCardData & { releaseYear: number | null; createdAt: Date })
-  | ({ kind: "coin" } & CoinCardData & { releaseYear: number | null; createdAt: Date });
+  | ({ kind: "deck" } & DeckCardData)
+  | ({ kind: "coin" } & CoinCardData);
+
+type CollectionIndexItem = {
+  kind: "deck" | "coin";
+  id: string;
+  name: string;
+  releaseYear: number | null;
+  createdAt: Date;
+  favorite?: boolean;
+};
 
 function toParam(value: string | string[] | undefined): string {
   if (Array.isArray(value)) return value[0] ?? "";
@@ -107,8 +116,8 @@ export default async function CollectionPage({
   const wantCoins = type !== "deck";
 
   const [
-    deckRows,
-    coinRows,
+    deckIndexRows,
+    coinIndexRows,
     deckDesigners,
     coinDesigners,
     deckProducers,
@@ -123,22 +132,11 @@ export default async function CollectionPage({
           select: {
             id: true,
             name: true,
-            series: true,
-            designer: true,
-            producer: true,
-            qty: true,
-            tags: true,
             favorite: true,
-            whiteWhale: true,
             releaseYear: true,
             createdAt: true,
-            images: {
-              orderBy: { sortOrder: "asc" },
-              take: 1,
-              select: { url: true },
-            },
+            _count: { select: { images: true } },
           },
-          orderBy: { name: "asc" },
         })
       : Promise.resolve([]),
     wantCoins
@@ -147,17 +145,11 @@ export default async function CollectionPage({
           select: {
             id: true,
             name: true,
-            series: true,
-            designer: true,
-            producer: true,
-            qty: true,
-            tags: true,
             obverseImageUrl: true,
             reverseImageUrl: true,
             releaseYear: true,
             createdAt: true,
           },
-          orderBy: { name: "asc" },
         })
       : Promise.resolve([]),
     prisma.deck.findMany({
@@ -193,14 +185,83 @@ export default async function CollectionPage({
     getSession(),
   ]);
 
-  const merged = sortCollectionItems<CollectionItem>([
-    ...deckRows.map((d) => ({ kind: "deck" as const, ...d })),
-    ...coinRows.map((c) => ({ kind: "coin" as const, ...c })),
+  const mergedIndex = sortCollectionItems<CollectionIndexItem>([
+    ...deckIndexRows.map((deck) => ({
+      kind: "deck" as const,
+      id: deck.id,
+      name: deck.name,
+      favorite: deck.favorite,
+      releaseYear: deck.releaseYear,
+      createdAt: deck.createdAt,
+    })),
+    ...coinIndexRows.map((coin) => ({
+      kind: "coin" as const,
+      id: coin.id,
+      name: coin.name,
+      releaseYear: coin.releaseYear,
+      createdAt: coin.createdAt,
+    })),
   ], sort, randomSeed);
 
-  const total = merged.length;
+  const total = mergedIndex.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const pageItems = merged.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const pageIndexItems = mergedIndex.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const pageDeckIds = pageIndexItems
+    .filter((item) => item.kind === "deck")
+    .map((item) => item.id);
+  const pageCoinIds = pageIndexItems
+    .filter((item) => item.kind === "coin")
+    .map((item) => item.id);
+
+  const [pageDeckRows, pageCoinRows] = await Promise.all([
+    pageDeckIds.length > 0
+      ? prisma.deck.findMany({
+          where: { id: { in: pageDeckIds } },
+          select: {
+            id: true,
+            name: true,
+            series: true,
+            designer: true,
+            producer: true,
+            qty: true,
+            tags: true,
+            favorite: true,
+            whiteWhale: true,
+            images: {
+              orderBy: { sortOrder: "asc" },
+              take: 1,
+              select: { url: true },
+            },
+          },
+        })
+      : Promise.resolve([]),
+    pageCoinIds.length > 0
+      ? prisma.coin.findMany({
+          where: { id: { in: pageCoinIds } },
+          select: {
+            id: true,
+            name: true,
+            series: true,
+            designer: true,
+            producer: true,
+            qty: true,
+            tags: true,
+            obverseImageUrl: true,
+            reverseImageUrl: true,
+          },
+        })
+      : Promise.resolve([]),
+  ]);
+  const pageDecksById = new Map(pageDeckRows.map((deck) => [deck.id, deck]));
+  const pageCoinsById = new Map(pageCoinRows.map((coin) => [coin.id, coin]));
+  const pageItems = pageIndexItems.flatMap<CollectionItem>((item) => {
+    if (item.kind === "deck") {
+      const deck = pageDecksById.get(item.id);
+      return deck ? [{ kind: "deck", ...deck }] : [];
+    }
+    const coin = pageCoinsById.get(item.id);
+    return coin ? [{ kind: "coin", ...coin }] : [];
+  });
 
   const designerOptions = Array.from(
     new Set([
@@ -270,12 +331,12 @@ export default async function CollectionPage({
           seriesList={seriesList}
           availableMinYear={availableMinYear}
           availableMaxYear={availableMaxYear}
-          surpriseDeckIds={deckRows.map((deck) => deck.id)}
-          surpriseDeckIdsWithImages={deckRows
-            .filter((deck) => deck.images.length > 0)
+          surpriseDeckIds={deckIndexRows.map((deck) => deck.id)}
+          surpriseDeckIdsWithImages={deckIndexRows
+            .filter((deck) => deck._count.images > 0)
             .map((deck) => deck.id)}
-          surpriseCoinIds={coinRows.map((coin) => coin.id)}
-          surpriseCoinIdsWithImages={coinRows
+          surpriseCoinIds={coinIndexRows.map((coin) => coin.id)}
+          surpriseCoinIdsWithImages={coinIndexRows
             .filter((coin) => coin.obverseImageUrl || coin.reverseImageUrl)
             .map((coin) => coin.id)}
         />
