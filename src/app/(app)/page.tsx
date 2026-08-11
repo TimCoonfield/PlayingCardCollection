@@ -14,34 +14,17 @@ import {
   WhaleIcon,
 } from "@/components/icons";
 import { HOMEPAGE_CREATORS } from "@/lib/featured-creators";
-
-const SPECIALTY_TAGS = ["Mini", "Tarot"] as const;
+import {
+  getCoreCatalogMetadata,
+  getCreatorCounts,
+  getHomePageMetadata,
+} from "@/lib/catalog-metadata";
 
 export default async function HomePage() {
-  const [
-    totalDecks,
-    designerGroups,
-    seriesGroups,
-    creatorsData,
-    recentDecks,
-    specialtyCounts,
-    coinCount,
-    souvenirCount,
-    whiteWhaleCount,
-  ] = await Promise.all([
-    prisma.deck.count(),
-    prisma.deck.groupBy({ by: ["designer"], where: { designer: { not: null } } }),
-    prisma.deck.groupBy({ by: ["series"], where: { series: { not: null } } }),
-    Promise.all(
-      HOMEPAGE_CREATORS.map(async (creator) => {
-        const deckCount = await prisma.deck.count({
-          where: creator.matchProducerToo
-            ? { OR: [{ designer: creator.designer }, { producer: creator.designer }] }
-            : { designer: creator.designer },
-        });
-        return { ...creator, deckCount };
-      })
-    ),
+  const [metadata, homeMetadata, creatorCounts, recentDecks] = await Promise.all([
+    getCoreCatalogMetadata(),
+    getHomePageMetadata(),
+    getCreatorCounts(),
     prisma.deck.findMany({
       orderBy: { createdAt: "desc" },
       take: 10,
@@ -58,19 +41,17 @@ export default async function HomePage() {
         images: { orderBy: { sortOrder: "asc" }, select: { url: true } },
       },
     }),
-    Promise.all(
-      SPECIALTY_TAGS.map((tag) => prisma.deck.count({ where: { tags: { has: tag } } }))
-    ),
-    prisma.coin.count(),
-    prisma.deck.count({ where: { series: "Souvenir Decks" } }),
-    prisma.deck.count({ where: { whiteWhale: true } }),
   ]);
+  const creatorsData = HOMEPAGE_CREATORS.map((creator) => ({
+    ...creator,
+    deckCount: creatorCounts[creator.designer] ?? 0,
+  }));
 
   const specialtyCollections = [
     {
       title: "White Whales",
       description: "The rarest of the rare.",
-      count: whiteWhaleCount,
+      count: homeMetadata.whiteWhaleCount,
       href: "/white-whales",
       icon: <WhaleIcon />,
       accent: "sage" as const,
@@ -78,7 +59,7 @@ export default async function HomePage() {
     {
       title: "Mini decks",
       description: "Small scale. Full character.",
-      count: specialtyCounts[0],
+      count: homeMetadata.miniCount,
       href: "/mini",
       icon: <SearchIcon />,
       accent: "brass" as const,
@@ -86,7 +67,7 @@ export default async function HomePage() {
     {
       title: "Tarot decks",
       description: "Illustrated worlds & arcana.",
-      count: specialtyCounts[1],
+      count: homeMetadata.tarotCount,
       href: "/tarot",
       icon: <span>☾</span>,
       accent: "plum" as const,
@@ -94,7 +75,7 @@ export default async function HomePage() {
     {
       title: "Coins",
       description: "Pocket-sized artifacts.",
-      count: coinCount,
+      count: metadata.coinCount,
       href: "/collection?type=coin",
       icon: <CoinIcon />,
       accent: "brass" as const,
@@ -102,7 +83,7 @@ export default async function HomePage() {
     {
       title: "Souvenir decks",
       description: "Places, journeys & histories.",
-      count: souvenirCount,
+      count: homeMetadata.souvenirCount,
       href: "/souvenir",
       icon: <CameraIcon />,
       accent: "brick" as const,
@@ -158,24 +139,24 @@ export default async function HomePage() {
           <HeroStat
             icon={<CardsIcon className="h-7 w-7" />}
             label="Unique decks"
-            value={totalDecks}
+            value={metadata.totalDecks}
             href="/collection?type=deck"
           />
           <HeroStat
             icon={<PaletteIcon className="h-7 w-7" />}
             label="Designers"
-            value={designerGroups.length}
+            value={metadata.designerCount}
           />
           <HeroStat
             icon={<CoinIcon className="h-7 w-7" />}
             label="Coins"
-            value={coinCount}
+            value={metadata.coinCount}
             href="/collection?type=coin"
           />
           <HeroStat
             icon={<LayersIcon className="h-7 w-7" />}
             label="Series"
-            value={seriesGroups.length}
+            value={metadata.seriesCount}
           />
         </div>
       </section>

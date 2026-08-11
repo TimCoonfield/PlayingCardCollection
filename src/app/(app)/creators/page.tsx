@@ -1,31 +1,32 @@
 import { prisma } from "@/lib/prisma";
 import { CREATORS } from "@/lib/featured-creators";
+import { getCreatorCounts } from "@/lib/catalog-metadata";
 import { CreatorSpotlightCard } from "@/components/creator-spotlight-card";
 
 export default async function CreatorsPage() {
-  const creators = await Promise.all(
-    CREATORS.map(async (creator) => {
-      const where = creator.matchProducerToo
-        ? { OR: [{ designer: creator.designer }, { producer: creator.designer }] }
-        : { designer: creator.designer };
-      const [deckCount, representativeDeck] = await Promise.all([
-        prisma.deck.count({ where }),
-        prisma.deck.findFirst({
+  const [creatorCounts, representativeDecks] = await Promise.all([
+    getCreatorCounts(),
+    Promise.all(
+      CREATORS.map(async (creator) => {
+        const where = creator.matchProducerToo
+          ? { OR: [{ designer: creator.designer }, { producer: creator.designer }] }
+          : { designer: creator.designer };
+        return prisma.deck.findFirst({
           where: { AND: [where, { images: { some: {} } }] },
           orderBy: { name: "asc" },
           select: { images: { orderBy: { sortOrder: "asc" }, take: 1, select: { url: true } } },
-        }),
-      ]);
-
-      return {
-        ...creator,
-        deckCount,
-        directoryImageUrl: creator.spotlightImageUrl ?? representativeDeck?.images[0]?.url,
-        directoryImageAlt:
-          creator.spotlightImageAlt ?? `Artwork from a deck by ${creator.designer}`,
-      };
-    })
-  );
+        });
+      })
+    ),
+  ]);
+  const creators = CREATORS.map((creator, index) => ({
+    ...creator,
+    deckCount: creatorCounts[creator.designer] ?? 0,
+    directoryImageUrl:
+      creator.spotlightImageUrl ?? representativeDecks[index]?.images[0]?.url,
+    directoryImageAlt:
+      creator.spotlightImageAlt ?? `Artwork from a deck by ${creator.designer}`,
+  }));
 
   return (
     <div className="flex flex-col gap-6">

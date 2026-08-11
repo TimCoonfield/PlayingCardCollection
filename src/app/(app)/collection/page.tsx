@@ -9,6 +9,7 @@ import { CollectionFilters } from "@/components/collection-filters";
 import { Pagination } from "@/components/pagination";
 import { isCollectionSort, sortCollectionItems, type CollectionSort } from "@/lib/collection-sort";
 import { isArchiveSearchScope, type ArchiveSearchScope } from "@/lib/archive-search";
+import { getCollectionMetadata } from "@/lib/catalog-metadata";
 
 const PAGE_SIZE = 60;
 
@@ -68,18 +69,8 @@ export default async function CollectionPage({
   const sort: CollectionSort = isCollectionSort(rawSort) ? rawSort : "featured";
   const randomSeed = toOptionalNumberParam(params.randomSeed) ?? 0;
 
-  const [deckYearRange, coinYearRange] = await Promise.all([
-    prisma.deck.aggregate({ _min: { releaseYear: true }, _max: { releaseYear: true } }),
-    prisma.coin.aggregate({ _min: { releaseYear: true }, _max: { releaseYear: true } }),
-  ]);
-  const yearValues = [
-    deckYearRange._min.releaseYear,
-    deckYearRange._max.releaseYear,
-    coinYearRange._min.releaseYear,
-    coinYearRange._max.releaseYear,
-  ].filter((year): year is number => year !== null);
-  const availableMinYear = yearValues.length > 0 ? Math.min(...yearValues) : new Date().getFullYear();
-  const availableMaxYear = yearValues.length > 0 ? Math.max(...yearValues) : availableMinYear;
+  const collectionMetadata = await getCollectionMetadata();
+  const { availableMinYear, availableMaxYear } = collectionMetadata;
   const minYear = requestedMinYear !== null
     ? Math.max(availableMinYear, Math.min(requestedMinYear, availableMaxYear))
     : availableMinYear;
@@ -118,12 +109,6 @@ export default async function CollectionPage({
   const [
     deckIndexRows,
     coinIndexRows,
-    deckDesigners,
-    coinDesigners,
-    deckProducers,
-    coinProducers,
-    deckSeriesList,
-    coinSeriesList,
     session,
   ] = await Promise.all([
     wantDecks
@@ -152,36 +137,6 @@ export default async function CollectionPage({
           },
         })
       : Promise.resolve([]),
-    prisma.deck.findMany({
-      distinct: ["designer"],
-      where: { designer: { not: null } },
-      select: { designer: true },
-    }),
-    prisma.coin.findMany({
-      distinct: ["designer"],
-      where: { designer: { not: null } },
-      select: { designer: true },
-    }),
-    prisma.deck.findMany({
-      distinct: ["producer"],
-      where: { producer: { not: null } },
-      select: { producer: true },
-    }),
-    prisma.coin.findMany({
-      distinct: ["producer"],
-      where: { producer: { not: null } },
-      select: { producer: true },
-    }),
-    prisma.deck.findMany({
-      distinct: ["series"],
-      where: { series: { not: null } },
-      select: { series: true },
-    }),
-    prisma.coin.findMany({
-      distinct: ["series"],
-      where: { series: { not: null } },
-      select: { series: true },
-    }),
     getSession(),
   ]);
 
@@ -263,25 +218,6 @@ export default async function CollectionPage({
     return coin ? [{ kind: "coin", ...coin }] : [];
   });
 
-  const designerOptions = Array.from(
-    new Set([
-      ...deckDesigners.map((d) => d.designer!).filter(Boolean),
-      ...coinDesigners.map((d) => d.designer!).filter(Boolean),
-    ])
-  ).sort();
-  const producerOptions = Array.from(
-    new Set([
-      ...deckProducers.map((p) => p.producer!).filter(Boolean),
-      ...coinProducers.map((p) => p.producer!).filter(Boolean),
-    ])
-  ).sort();
-  const seriesList = Array.from(
-    new Set([
-      ...deckSeriesList.map((s) => s.series!).filter(Boolean),
-      ...coinSeriesList.map((s) => s.series!).filter(Boolean),
-    ])
-  ).sort();
-
   const isAuthenticated = Boolean(session.authenticated);
 
   const currentSearchParams = new URLSearchParams();
@@ -326,9 +262,9 @@ export default async function CollectionPage({
 
       <Suspense fallback={null}>
         <CollectionFilters
-          designers={designerOptions}
-          producers={producerOptions}
-          seriesList={seriesList}
+          designers={collectionMetadata.designers}
+          producers={collectionMetadata.producers}
+          seriesList={collectionMetadata.series}
           availableMinYear={availableMinYear}
           availableMaxYear={availableMaxYear}
           surpriseDeckIds={deckIndexRows.map((deck) => deck.id)}

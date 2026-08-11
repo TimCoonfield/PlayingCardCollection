@@ -4,6 +4,11 @@ import { HorizontalRankedChart, PieBreakdownChart, YearHistogramChart } from "@/
 import { SeriesShowcase, type SeriesSpotlightDatum } from "@/components/series-showcase";
 import { DeckCard } from "@/components/deck-card";
 import { CardsIcon, PaletteIcon, CoinIcon, LayersIcon, CameraIcon } from "@/components/icons";
+import {
+  getCoreCatalogMetadata,
+  getStatsChartMetadata,
+  getStatsSummaryMetadata,
+} from "@/lib/catalog-metadata";
 
 const CHART_COLORS = {
   designer: "#b58a35",
@@ -24,46 +29,10 @@ function bucketReleaseYear(year: number): { label: string; sortKey: number } {
 const ERA_COLORS = ["#b58a35", "#8266b3", "#b1473f"];
 
 export default async function StatsPage() {
-  const [
-    totalDecks,
-    qtySum,
-    designerGroups,
-    seriesGroups,
-    allDesigners,
-    coinCount,
-    modernCount,
-    vintageCount,
-    antiqueCount,
-    topSeriesGroups,
-    recentDecks,
-    releaseYearGroups,
-    decksWithPhoto,
-  ] = await Promise.all([
-    prisma.deck.count(),
-    prisma.deck.aggregate({ _sum: { qty: true } }),
-    prisma.deck.groupBy({
-      by: ["designer"],
-      where: { designer: { not: null } },
-      _count: { _all: true },
-      orderBy: { _count: { designer: "desc" } },
-      take: 10,
-    }),
-    prisma.deck.groupBy({
-      by: ["series"],
-      where: { series: { not: null } },
-    }),
-    prisma.deck.groupBy({ by: ["designer"], where: { designer: { not: null } } }),
-    prisma.coin.count(),
-    prisma.deck.count({ where: { tags: { has: "Modern" } } }),
-    prisma.deck.count({ where: { tags: { has: "Vintage" } } }),
-    prisma.deck.count({ where: { tags: { has: "Antique" } } }),
-    prisma.deck.groupBy({
-      by: ["series"],
-      where: { series: { not: null } },
-      _count: { _all: true },
-      orderBy: { _count: { series: "desc" } },
-      take: 5,
-    }),
+  const [metadata, summaryMetadata, chartMetadata, recentDecks] = await Promise.all([
+    getCoreCatalogMetadata(),
+    getStatsSummaryMetadata(),
+    getStatsChartMetadata(),
     prisma.deck.findMany({
       orderBy: { createdAt: "desc" },
       take: 10,
@@ -80,15 +49,12 @@ export default async function StatsPage() {
         images: { orderBy: { sortOrder: "asc" }, select: { url: true } },
       },
     }),
-    prisma.deck.groupBy({
-      by: ["releaseYear"],
-      where: { releaseYear: { not: null } },
-      _count: { _all: true },
-    }),
-    prisma.deck.count({ where: { images: { some: {} } } }),
   ]);
+  const { designerGroups, topSeriesGroups, releaseYearGroups } = chartMetadata;
 
-  const photoPct = totalDecks > 0 ? Math.round((decksWithPhoto / totalDecks) * 100) : 0;
+  const photoPct = metadata.totalDecks > 0
+    ? Math.round((summaryMetadata.decksWithPhoto / metadata.totalDecks) * 100)
+    : 0;
 
   const designerData = designerGroups.map((g) => ({
     label: g.designer!,
@@ -96,9 +62,9 @@ export default async function StatsPage() {
   }));
 
   const eraData = [
-    { label: "Modern", count: modernCount },
-    { label: "Vintage", count: vintageCount },
-    { label: "Antique", count: antiqueCount },
+    { label: "Modern", count: summaryMetadata.modernCount },
+    { label: "Vintage", count: summaryMetadata.vintageCount },
+    { label: "Antique", count: summaryMetadata.antiqueCount },
   ];
 
   const yearBuckets = new Map<string, { count: number; sortKey: number }>();
@@ -121,14 +87,14 @@ export default async function StatsPage() {
       <h1 className="font-display text-xl font-semibold text-felt-ink">Collection Stats</h1>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        <StatTile icon={<CardsIcon className="h-6 w-6" />} label="Total unique decks" value={totalDecks} />
-        <StatTile icon={<CardsIcon className="h-6 w-6" />} label="Total decks" value={qtySum._sum.qty ?? 0} />
-        <StatTile icon={<PaletteIcon className="h-6 w-6" />} label="Designers" value={allDesigners.length} />
-        <StatTile icon={<CoinIcon className="h-6 w-6" />} label="Coins" value={coinCount} />
-        <StatTile icon={<LayersIcon className="h-6 w-6" />} label="Series" value={seriesGroups.length} />
+        <StatTile icon={<CardsIcon className="h-6 w-6" />} label="Total unique decks" value={metadata.totalDecks} />
+        <StatTile icon={<CardsIcon className="h-6 w-6" />} label="Total decks" value={summaryMetadata.totalQuantity} />
+        <StatTile icon={<PaletteIcon className="h-6 w-6" />} label="Designers" value={metadata.designerCount} />
+        <StatTile icon={<CoinIcon className="h-6 w-6" />} label="Coins" value={metadata.coinCount} />
+        <StatTile icon={<LayersIcon className="h-6 w-6" />} label="Series" value={metadata.seriesCount} />
         <StatTile
           icon={<CameraIcon className="h-6 w-6" />}
-          label={`${decksWithPhoto}/${totalDecks} have a photo`}
+          label={`${summaryMetadata.decksWithPhoto}/${metadata.totalDecks} have a photo`}
           value={`${photoPct}%`}
         />
       </div>

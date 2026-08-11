@@ -6,6 +6,7 @@ import type { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { deleteUnreferencedBlobUrls } from "@/lib/blob-cleanup";
+import { invalidateCatalogMetadata } from "@/lib/catalog-metadata";
 import { parseDeckFormData, type DeckFormValues } from "@/lib/schemas";
 
 export interface DeckFormState {
@@ -62,6 +63,7 @@ export async function createDeck(
     },
   });
 
+  invalidateCatalogMetadata();
   revalidatePath("/collection");
   redirect(`/decks/${deck.id}`);
 }
@@ -107,6 +109,7 @@ export async function updateDeck(
     existingImages.map(({ url }) => url).filter((url) => !retainedUrls.has(url))
   );
 
+  invalidateCatalogMetadata();
   revalidatePath("/collection");
   revalidatePath(`/decks/${deckId}`);
   redirect(`/decks/${deckId}`);
@@ -123,6 +126,7 @@ export async function deleteDeck(deckId: string) {
   });
   await prisma.deck.delete({ where: { id: deckId } });
   await deleteUnreferencedBlobUrls(deck?.images.map(({ url }) => url) ?? []);
+  invalidateCatalogMetadata();
   revalidatePath("/collection");
   redirect("/collection");
 }
@@ -134,6 +138,7 @@ export async function toggleFavorite(deckId: string) {
   if (!deck) return;
 
   await prisma.deck.update({ where: { id: deckId }, data: { favorite: !deck.favorite } });
+  invalidateCatalogMetadata();
   // Favorites affect sort order/spotlights on the collection page and every landing page, so
   // just revalidate everything under the app layout rather than tracking each one individually.
   revalidatePath("/", "layout");
@@ -152,6 +157,7 @@ export async function toggleWhiteWhale(deckId: string) {
     where: { id: deckId },
     data: { whiteWhale: !deck.whiteWhale },
   });
+  invalidateCatalogMetadata();
   revalidatePath("/", "layout");
 }
 
