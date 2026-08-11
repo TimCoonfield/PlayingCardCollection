@@ -1,9 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@/generated/prisma/client";
 import { DeckCard } from "@/components/deck-card";
-import type { CreatorRandomDeck } from "@/components/creator-card";
 import { CreatorSpotlightCard } from "@/components/creator-spotlight-card";
 import { SpecialtyCollectionCard } from "@/components/specialty-collection-card";
 import {
@@ -36,27 +34,12 @@ export default async function HomePage() {
     prisma.deck.groupBy({ by: ["series"], where: { series: { not: null } } }),
     Promise.all(
       HOMEPAGE_CREATORS.map(async (creator) => {
-        const whereSql = creator.matchProducerToo
-          ? Prisma.sql`(d.designer = ${creator.designer} OR d.producer = ${creator.designer})`
-          : Prisma.sql`d.designer = ${creator.designer}`;
-        const [deckCount, randomDecks] = await Promise.all([
-          prisma.deck.count({
-            where: creator.matchProducerToo
-              ? { OR: [{ designer: creator.designer }, { producer: creator.designer }] }
-              : { designer: creator.designer },
-          }),
-          prisma.$queryRaw<CreatorRandomDeck[]>`
-            SELECT d.id, d.name, d.tags, img.url as "imageUrl"
-            FROM "Deck" d
-            LEFT JOIN LATERAL (
-              SELECT url FROM "DeckImage" WHERE "deckId" = d.id ORDER BY "sortOrder" ASC LIMIT 1
-            ) img ON true
-            WHERE ${whereSql}
-            ORDER BY RANDOM()
-            LIMIT 3
-          `,
-        ]);
-        return { ...creator, deckCount, randomDecks };
+        const deckCount = await prisma.deck.count({
+          where: creator.matchProducerToo
+            ? { OR: [{ designer: creator.designer }, { producer: creator.designer }] }
+            : { designer: creator.designer },
+        });
+        return { ...creator, deckCount };
       })
     ),
     prisma.deck.findMany({
