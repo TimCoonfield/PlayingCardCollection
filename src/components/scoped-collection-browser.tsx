@@ -16,6 +16,7 @@ import {
   CollectionSortSelector,
   CollectionTypeSelector,
   CollectionYearRange,
+  MissingPhotoFilter,
   type CollectionItemType,
 } from "./collection-filter-controls";
 
@@ -36,11 +37,13 @@ export function ScopedCollectionBrowser({
   coins,
   showFeaturedDecks,
   tagSet = "curated",
+  isAuthenticated = false,
 }: {
   decks: FilterableScopedDeck[];
   coins: FilterableScopedCoin[];
   showFeaturedDecks: boolean;
   tagSet?: "curated" | "all";
+  isAuthenticated?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState("");
@@ -52,6 +55,7 @@ export function ScopedCollectionBrowser({
   const [advancedExpanded, setAdvancedExpanded] = useState(false);
   const [sort, setSort] = useState<CollectionSort>("alpha-asc");
   const [randomSeed, setRandomSeed] = useState(0);
+  const [missingPhoto, setMissingPhoto] = useState(false);
 
   const yearValues = useMemo(
     () =>
@@ -125,13 +129,19 @@ export function ScopedCollectionBrowser({
       (item.releaseYear !== null &&
         item.releaseYear >= yearRange[0] &&
         item.releaseYear <= yearRange[1]);
+    const matchesPhoto =
+      !missingPhoto ||
+      ("images" in item
+        ? item.images.length === 0
+        : !item.obverseImageUrl && !item.reverseImageUrl);
     return (
       matchesQuery &&
       matchesTags &&
       matchesDesigner &&
       matchesProducer &&
       matchesSeries &&
-      matchesYear
+      matchesYear &&
+      matchesPhoto
     );
   }
 
@@ -155,7 +165,8 @@ export function ScopedCollectionBrowser({
     designers.length +
     producers.length +
     series.length +
-    (isFullYearRange ? 0 : 1);
+    (isFullYearRange ? 0 : 1) +
+    (missingPhoto ? 1 : 0);
   const availableTags = tagSet === "all" ? ALL_COLLECTION_TAGS : CURATED_COLLECTION_TAGS;
 
   function toggleTag(tag: string) {
@@ -172,6 +183,7 @@ export function ScopedCollectionBrowser({
     setProducers([]);
     setSeries([]);
     setYearRange([availableMinYear, availableMaxYear]);
+    setMissingPhoto(false);
   }
 
   function changeSort(value: CollectionSort) {
@@ -244,6 +256,9 @@ export function ScopedCollectionBrowser({
               selectedTags={tags}
               onToggle={(tag) => toggleTag(tag)}
             />
+            {isAuthenticated && (
+              <MissingPhotoFilter selected={missingPhoto} onChange={setMissingPhoto} />
+            )}
 
             <div className="border-t border-felt-line pt-3">
               <button
@@ -337,6 +352,12 @@ export function ScopedCollectionBrowser({
                 {tags.map((value) => (
                   <CollectionActiveFilter key={`tag-${value}`} label={value} onRemove={() => toggleTag(value)} />
                 ))}
+                {missingPhoto && (
+                  <CollectionActiveFilter
+                    label="Missing photo"
+                    onRemove={() => setMissingPhoto(false)}
+                  />
+                )}
                 {!isFullYearRange && (
                   <CollectionActiveFilter
                     label={`${yearRange[0]}–${yearRange[1]}`}

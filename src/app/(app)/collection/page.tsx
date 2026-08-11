@@ -55,6 +55,7 @@ export default async function CollectionPage({
   const page = Math.max(1, Number(toParam(params.page)) || 1);
   const typeParam = toParam(params.type);
   const type: "all" | "deck" | "coin" = typeParam === "deck" || typeParam === "coin" ? typeParam : "all";
+  const missingPhotoRequested = toParam(params.missingPhoto) === "1";
   const rawSort = toParam(params.sort);
   const sort: CollectionSort = isCollectionSort(rawSort) ? rawSort : "featured";
   const randomSeed = toOptionalNumberParam(params.randomSeed) ?? 0;
@@ -76,6 +77,8 @@ export default async function CollectionPage({
     getBrowseCatalogCards(),
     getSession(),
   ]);
+  const isAuthenticated = Boolean(session.authenticated);
+  const missingPhoto = isAuthenticated && missingPhotoRequested;
   const matchesFilters = (item: (typeof catalog.decks)[number] | (typeof catalog.coins)[number]) =>
     (!q || matchesSearch(item, q, scope)) &&
     (designers.length === 0 || (item.designer !== null && designers.includes(item.designer))) &&
@@ -83,6 +86,10 @@ export default async function CollectionPage({
     (!creator || item.designer === creator || item.producer === creator) &&
     (selectedSeries.length === 0 || (item.series !== null && selectedSeries.includes(item.series))) &&
     tags.every((tag) => item.tags.includes(tag)) &&
+    (!missingPhoto ||
+      ("images" in item
+        ? item.images.length === 0
+        : !item.obverseImageUrl && !item.reverseImageUrl)) &&
     (!hasYearFilter ||
       (item.releaseYear !== null && item.releaseYear >= minYear && item.releaseYear <= maxYear));
   const deckIndexRows = wantDecks ? catalog.decks.filter(matchesFilters) : [];
@@ -131,8 +138,6 @@ export default async function CollectionPage({
     return coin ? [{ kind: "coin", ...coin }] : [];
   });
 
-  const isAuthenticated = Boolean(session.authenticated);
-
   const currentSearchParams = new URLSearchParams();
   if (q) currentSearchParams.set("q", q);
   if (q && scope !== "all") currentSearchParams.set("scope", scope);
@@ -144,6 +149,7 @@ export default async function CollectionPage({
   if (sort !== "featured") currentSearchParams.set("sort", sort);
   if (sort === "random") currentSearchParams.set("randomSeed", String(randomSeed));
   for (const tag of tags) currentSearchParams.append("tag", tag);
+  if (missingPhoto) currentSearchParams.set("missingPhoto", "1");
   if (hasYearFilter) {
     currentSearchParams.set("minYear", String(minYear));
     currentSearchParams.set("maxYear", String(maxYear));
@@ -188,6 +194,7 @@ export default async function CollectionPage({
           surpriseCoinIdsWithImages={coinIndexRows
             .filter((coin) => coin.obverseImageUrl || coin.reverseImageUrl)
             .map((coin) => coin.id)}
+          isAuthenticated={isAuthenticated}
         />
       </Suspense>
 

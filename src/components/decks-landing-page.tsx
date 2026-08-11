@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
+import { getSession } from "@/lib/auth";
 import { DeckCard, type DeckCardData } from "./deck-card";
 import { DeckSpotlightCard } from "./deck-spotlight-card";
 import type { CoinCardData } from "./coin-card";
@@ -18,7 +19,7 @@ const HERO_FADE_GRADIENT =
  * (photo or inline SVG art + blurb) followed by an optional "Featured Decks" spotlight row
  * and "The Collection" grid — only the hero content and the deck query differ per page.
  */
-export function DecksLandingPage({
+export async function DecksLandingPage({
   title,
   tagline,
   blurb,
@@ -47,6 +48,7 @@ export function DecksLandingPage({
   filterTagSet?: "curated" | "all";
   emptyMessage?: string;
 }) {
+  const isAuthenticated = showFilters && Boolean((await getSession()).authenticated);
   const favoriteDecks = decks.filter((d) => d.favorite).slice(0, 3);
 
   return (
@@ -105,6 +107,7 @@ export function DecksLandingPage({
           coins={coins as FilterableScopedCoin[]}
           showFeaturedDecks={showFeaturedDecks}
           tagSet={filterTagSet}
+          isAuthenticated={isAuthenticated}
         />
       ) : decks.length === 0 ? (
         <p className="py-16 text-center text-felt-sub">{emptyMessage}</p>

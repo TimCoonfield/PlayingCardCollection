@@ -18,6 +18,7 @@ import {
   CollectionTypeSelector,
   CollectionYearRange,
   ALL_COLLECTION_TAGS,
+  MissingPhotoFilter,
   type CollectionItemType,
 } from "./collection-filter-controls";
 
@@ -33,6 +34,7 @@ export function CollectionFilters({
   surpriseDeckIdsWithImages,
   surpriseCoinIds,
   surpriseCoinIdsWithImages,
+  isAuthenticated,
 }: {
   designers: string[];
   producers: string[];
@@ -43,6 +45,7 @@ export function CollectionFilters({
   surpriseDeckIdsWithImages: string[];
   surpriseCoinIds: string[];
   surpriseCoinIdsWithImages: string[];
+  isAuthenticated: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -57,6 +60,7 @@ export function CollectionFilters({
   const selectedSeries = searchParams.getAll("series");
   const tags = searchParams.getAll("tag");
   const type = searchParams.get("type") ?? "all";
+  const missingPhoto = isAuthenticated && searchParams.get("missingPhoto") === "1";
   const rawSort = searchParams.get("sort") ?? "";
   const sort: CollectionSort = isCollectionSort(rawSort) ? rawSort : "featured";
   const rawMinYear = searchParams.get("minYear");
@@ -81,7 +85,7 @@ export function CollectionFilters({
     selectedSeries.length +
     (hasYearFilter ? 1 : 0);
   const nonSearchFilterCount =
-    advancedFilterCount + (creator ? 1 : 0) + tags.length;
+    advancedFilterCount + (creator ? 1 : 0) + tags.length + (missingPhoto ? 1 : 0);
   const hasFilters = Boolean(q) || nonSearchFilterCount > 0 || type !== "all";
 
   // On mobile the extra filters start collapsed to save space, unless some are already
@@ -244,12 +248,25 @@ export function CollectionFilters({
       </div>
 
       <div>
-        <CollectionTagPills
-          availableTags={ALL_COLLECTION_TAGS}
-          selectedTags={tags}
-          onToggle={handleTagToggle}
-          useCheckboxes
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <CollectionTagPills
+            availableTags={ALL_COLLECTION_TAGS}
+            selectedTags={tags}
+            onToggle={handleTagToggle}
+            useCheckboxes
+          />
+          {isAuthenticated && (
+            <MissingPhotoFilter
+              selected={missingPhoto}
+              onChange={(selected) =>
+                pushParams((params) => {
+                  if (selected) params.set("missingPhoto", "1");
+                  else params.delete("missingPhoto");
+                })
+              }
+            />
+          )}
+        </div>
       </div>
 
       <div className="border-t border-felt-line pt-3">
@@ -345,6 +362,12 @@ export function CollectionFilters({
           {tags.map((value) => (
             <CollectionActiveFilter key={`tag-${value}`} label={value} onRemove={() => removeParam("tag", value)} />
           ))}
+          {missingPhoto && (
+            <CollectionActiveFilter
+              label="Missing photo"
+              onRemove={() => removeParam("missingPhoto")}
+            />
+          )}
           {hasYearFilter && (
             <CollectionActiveFilter
               label={`${selectedMinYear}–${selectedMaxYear}`}
