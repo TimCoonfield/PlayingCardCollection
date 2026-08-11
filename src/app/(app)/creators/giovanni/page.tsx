@@ -1,21 +1,11 @@
-import { prisma } from "@/lib/prisma";
+import { getCreatorLandingCatalog } from "@/lib/catalog-browse";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 
 const GIOVANNI_HERO_IMAGE_URL =
   "/images/creators/giovanni-meroni.webp";
 
 export default async function GiovanniLandingPage() {
-  const [decks, coins] = await Promise.all([
-    prisma.deck.findMany({
-      where: { designer: "Giovanni Meroni" },
-      include: { images: { orderBy: { sortOrder: "asc" } } },
-      orderBy: { name: "asc" },
-    }),
-    prisma.coin.findMany({
-      where: { designer: "Giovanni Meroni" },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+  const { decks, coins } = await getCreatorLandingCatalog("Giovanni Meroni");
 
   return (
     <DecksLandingPage

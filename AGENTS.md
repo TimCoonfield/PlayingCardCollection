@@ -344,13 +344,12 @@ delete form submits — purely a UI courtesy, not enforced server-side.
 
 ## 9. Public browsing flows
 
-- **`/collection`**: the single unified search/browse page for **both** decks and coins. Prisma
-  queries them independently (`deckWhere`/`coinWhere`, same filter shape applied to both), then
-  the two result arrays are **merged and sorted in application code** (`collection/page.tsx`) —
-  favorited decks first, then alphabetical by name, coins interleaved in with decks by that same
-  sort. This merge-in-JS approach (rather than a raw SQL UNION) was a deliberate simplification
-  given the collection's modest size — don't "optimize" it into a UNION query without a real
-  performance reason.
+- **`/collection`**: the single unified search/browse page for **both** decks and coins. It reads
+  the shared, write-invalidated browse snapshots in `src/lib/catalog-browse.ts`, applies filters
+  server-side, then merges and sorts decks and coins in application code. Deck snapshots are
+  cached in 400-row pages to stay below Vercel's per-entry cache limit and include only the first
+  image; a separate favorite-image snapshot preserves the landing-page mosaics. Do not replace
+  this with per-request full-table Prisma queries or a raw SQL UNION without a measured reason.
 - **`/stats`**: aggregate dashboard — totals, top designers, Modern/Vintage/Antique era
   breakdown (era = tag membership, not a separate column), release-year histogram, "Biggest
   series" (top 5 by deck count, each showing one random photo from that series), a

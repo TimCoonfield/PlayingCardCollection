@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getTaggedLandingCatalog } from "@/lib/catalog-browse";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 
 // Placeholder hero art (magnifying glass over a few mini cards) until a real photo replaces it —
@@ -14,17 +14,7 @@ const MINI_HERO_SVG = (
 );
 
 export default async function MiniDecksPage() {
-  const [decks, coins] = await Promise.all([
-    prisma.deck.findMany({
-      where: { tags: { has: "Mini" } },
-      include: { images: { orderBy: { sortOrder: "asc" } } },
-      orderBy: { name: "asc" },
-    }),
-    prisma.coin.findMany({
-      where: { tags: { has: "Mini" } },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+  const { decks, coins } = await getTaggedLandingCatalog("Mini");
 
   return (
     <DecksLandingPage

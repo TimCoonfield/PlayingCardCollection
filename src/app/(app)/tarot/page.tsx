@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getTaggedLandingCatalog } from "@/lib/catalog-browse";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 
 // Placeholder hero art (crystal ball, crescent moon, stars) until a real photo replaces it —
@@ -25,17 +25,7 @@ const TAROT_HERO_SVG = (
 );
 
 export default async function TarotDecksPage() {
-  const [decks, coins] = await Promise.all([
-    prisma.deck.findMany({
-      where: { tags: { has: "Tarot" } },
-      include: { images: { orderBy: { sortOrder: "asc" } } },
-      orderBy: { name: "asc" },
-    }),
-    prisma.coin.findMany({
-      where: { tags: { has: "Tarot" } },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+  const { decks, coins } = await getTaggedLandingCatalog("Tarot");
 
   return (
     <DecksLandingPage

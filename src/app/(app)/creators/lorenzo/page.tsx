@@ -1,21 +1,11 @@
-import { prisma } from "@/lib/prisma";
+import { getCreatorLandingCatalog } from "@/lib/catalog-browse";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 
 const LORENZO_HERO_IMAGE_URL =
   "/images/creators/lorenzo-gaggiotti-hero.webp";
 
 export default async function LorenzoLandingPage() {
-  const creatorWhere = {
-    OR: [{ designer: "Lorenzo Gaggiotti" }, { producer: "Lorenzo Gaggiotti" }],
-  };
-  const [decks, coins] = await Promise.all([
-    prisma.deck.findMany({
-      where: creatorWhere,
-      include: { images: { orderBy: { sortOrder: "asc" } } },
-      orderBy: { name: "asc" },
-    }),
-    prisma.coin.findMany({ where: creatorWhere, orderBy: { name: "asc" } }),
-  ]);
+  const { decks, coins } = await getCreatorLandingCatalog("Lorenzo Gaggiotti", true);
 
   return (
     <DecksLandingPage

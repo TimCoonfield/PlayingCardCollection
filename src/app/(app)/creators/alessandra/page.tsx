@@ -1,21 +1,11 @@
-import { prisma } from "@/lib/prisma";
+import { getCreatorLandingCatalog } from "@/lib/catalog-browse";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 
 const ALESSANDRA_HERO_IMAGE_URL =
   "/images/creators/alessandra-gagliano.webp";
 
 export default async function AlessandraLandingPage() {
-  const [decks, coins] = await Promise.all([
-    prisma.deck.findMany({
-      where: { designer: "Alessandra Gagliano" },
-      include: { images: { orderBy: { sortOrder: "asc" } } },
-      orderBy: { name: "asc" },
-    }),
-    prisma.coin.findMany({
-      where: { designer: "Alessandra Gagliano" },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+  const { decks, coins } = await getCreatorLandingCatalog("Alessandra Gagliano");
 
   return (
     <DecksLandingPage

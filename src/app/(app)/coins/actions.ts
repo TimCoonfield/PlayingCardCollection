@@ -6,7 +6,7 @@ import type { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { deleteUnreferencedBlobUrls } from "@/lib/blob-cleanup";
-import { invalidateCatalogMetadata } from "@/lib/catalog-metadata";
+import { invalidateCatalogCaches } from "@/lib/catalog-cache";
 import { parseCoinFormData, type CoinFormValues } from "@/lib/coin-schemas";
 
 export interface CoinFormState {
@@ -58,7 +58,7 @@ export async function createCoin(
     data: toCoinData(parsed.data),
   });
 
-  invalidateCatalogMetadata();
+  invalidateCatalogCaches();
   revalidatePath("/coins");
   redirect(`/coins/${coin.id}`);
 }
@@ -99,7 +99,7 @@ export async function updateCoin(
     previousUrls.filter((url) => !retainedUrls.has(url))
   );
 
-  invalidateCatalogMetadata();
+  invalidateCatalogCaches();
   revalidatePath("/coins");
   revalidatePath(`/coins/${coinId}`);
   redirect(`/coins/${coinId}`);
@@ -120,7 +120,7 @@ export async function deleteCoin(coinId: string) {
       (url): url is string => Boolean(url)
     )
   );
-  invalidateCatalogMetadata();
+  invalidateCatalogCaches();
   revalidatePath("/coins");
   redirect("/coins");
 }

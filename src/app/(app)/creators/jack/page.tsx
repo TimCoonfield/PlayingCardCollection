@@ -1,19 +1,9 @@
-import { prisma } from "@/lib/prisma";
+import { getCreatorLandingCatalog } from "@/lib/catalog-browse";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 import { JACK_BRUTUS_PENNY_IMAGE_URL } from "@/lib/featured-creators";
 
 export default async function JackBrutusPennyLandingPage() {
-  const [decks, coins] = await Promise.all([
-    prisma.deck.findMany({
-      where: { designer: "Jack Brutus Penny" },
-      include: { images: { orderBy: { sortOrder: "asc" } } },
-      orderBy: { name: "asc" },
-    }),
-    prisma.coin.findMany({
-      where: { designer: "Jack Brutus Penny" },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+  const { decks, coins } = await getCreatorLandingCatalog("Jack Brutus Penny");
   return (
     <DecksLandingPage
       title="Jack Brutus Penny"

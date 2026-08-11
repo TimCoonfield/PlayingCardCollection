@@ -1,21 +1,11 @@
-import { prisma } from "@/lib/prisma";
+import { getCreatorLandingCatalog } from "@/lib/catalog-browse";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 
 const ELETTRA_HERO_IMAGE_URL =
   "/images/creators/elettra-deganello.webp";
 
 export default async function ElettraLandingPage() {
-  const [decks, coins] = await Promise.all([
-    prisma.deck.findMany({
-      where: { designer: "Elettra Deganello" },
-      include: { images: { orderBy: { sortOrder: "asc" } } },
-      orderBy: { name: "asc" },
-    }),
-    prisma.coin.findMany({
-      where: { designer: "Elettra Deganello" },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+  const { decks, coins } = await getCreatorLandingCatalog("Elettra Deganello");
 
   return (
     <DecksLandingPage

@@ -1,19 +1,11 @@
-import { prisma } from "@/lib/prisma";
+import { getCreatorLandingCatalog } from "@/lib/catalog-browse";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 
 const KARL_HERO_IMAGE_URL =
   "/images/creators/karl-gerich-joker.webp";
 
 export default async function KarlLandingPage() {
-  const creatorWhere = { OR: [{ designer: "Karl Gerich" }, { producer: "Karl Gerich" }] };
-  const [decks, coins] = await Promise.all([
-    prisma.deck.findMany({
-      where: creatorWhere,
-      include: { images: { orderBy: { sortOrder: "asc" } } },
-      orderBy: { name: "asc" },
-    }),
-    prisma.coin.findMany({ where: creatorWhere, orderBy: { name: "asc" } }),
-  ]);
+  const { decks, coins } = await getCreatorLandingCatalog("Karl Gerich", true);
 
   return (
     <DecksLandingPage

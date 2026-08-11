@@ -1,7 +1,5 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Prisma } from "@/generated/prisma/client";
-import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { DeckCard, type DeckCardData } from "@/components/deck-card";
 import { CoinCard, type CoinCardData } from "@/components/coin-card";
@@ -10,21 +8,13 @@ import { Pagination } from "@/components/pagination";
 import { isCollectionSort, sortCollectionItems, type CollectionSort } from "@/lib/collection-sort";
 import { isArchiveSearchScope, type ArchiveSearchScope } from "@/lib/archive-search";
 import { getCollectionMetadata } from "@/lib/catalog-metadata";
+import { getBrowseCatalogCards } from "@/lib/catalog-browse";
 
 const PAGE_SIZE = 60;
 
 type CollectionItem =
   | ({ kind: "deck" } & DeckCardData)
   | ({ kind: "coin" } & CoinCardData);
-
-type CollectionIndexItem = {
-  kind: "deck" | "coin";
-  id: string;
-  name: string;
-  releaseYear: number | null;
-  createdAt: Date;
-  favorite?: boolean;
-};
 
 function toParam(value: string | string[] | undefined): string {
   if (Array.isArray(value)) return value[0] ?? "";
@@ -79,68 +69,26 @@ export default async function CollectionPage({
     : availableMaxYear;
   const hasYearFilter = minYear !== availableMinYear || maxYear !== availableMaxYear;
 
-  const deckAnd: Prisma.DeckWhereInput[] = [];
-  if (q) {
-    deckAnd.push(collectionSearchWhere(q, scope));
-  }
-  if (designers.length > 0) deckAnd.push({ designer: { in: designers } });
-  if (producers.length > 0) deckAnd.push({ producer: { in: producers } });
-  if (creator) deckAnd.push({ OR: [{ designer: creator }, { producer: creator }] });
-  if (selectedSeries.length > 0) deckAnd.push({ series: { in: selectedSeries } });
-  if (tags.length > 0) deckAnd.push({ tags: { hasEvery: tags } });
-  if (hasYearFilter) deckAnd.push({ releaseYear: { gte: minYear, lte: maxYear } });
-  const deckWhere: Prisma.DeckWhereInput = deckAnd.length > 0 ? { AND: deckAnd } : {};
-
-  const coinAnd: Prisma.CoinWhereInput[] = [];
-  if (q) {
-    coinAnd.push(collectionSearchWhere(q, scope));
-  }
-  if (designers.length > 0) coinAnd.push({ designer: { in: designers } });
-  if (producers.length > 0) coinAnd.push({ producer: { in: producers } });
-  if (creator) coinAnd.push({ OR: [{ designer: creator }, { producer: creator }] });
-  if (selectedSeries.length > 0) coinAnd.push({ series: { in: selectedSeries } });
-  if (tags.length > 0) coinAnd.push({ tags: { hasEvery: tags } });
-  if (hasYearFilter) coinAnd.push({ releaseYear: { gte: minYear, lte: maxYear } });
-  const coinWhere: Prisma.CoinWhereInput = coinAnd.length > 0 ? { AND: coinAnd } : {};
-
   const wantDecks = type !== "coin";
   const wantCoins = type !== "deck";
 
-  const [
-    deckIndexRows,
-    coinIndexRows,
-    session,
-  ] = await Promise.all([
-    wantDecks
-      ? prisma.deck.findMany({
-          where: deckWhere,
-          select: {
-            id: true,
-            name: true,
-            favorite: true,
-            releaseYear: true,
-            createdAt: true,
-            _count: { select: { images: true } },
-          },
-        })
-      : Promise.resolve([]),
-    wantCoins
-      ? prisma.coin.findMany({
-          where: coinWhere,
-          select: {
-            id: true,
-            name: true,
-            obverseImageUrl: true,
-            reverseImageUrl: true,
-            releaseYear: true,
-            createdAt: true,
-          },
-        })
-      : Promise.resolve([]),
+  const [catalog, session] = await Promise.all([
+    getBrowseCatalogCards(),
     getSession(),
   ]);
+  const matchesFilters = (item: (typeof catalog.decks)[number] | (typeof catalog.coins)[number]) =>
+    (!q || matchesSearch(item, q, scope)) &&
+    (designers.length === 0 || (item.designer !== null && designers.includes(item.designer))) &&
+    (producers.length === 0 || (item.producer !== null && producers.includes(item.producer))) &&
+    (!creator || item.designer === creator || item.producer === creator) &&
+    (selectedSeries.length === 0 || (item.series !== null && selectedSeries.includes(item.series))) &&
+    tags.every((tag) => item.tags.includes(tag)) &&
+    (!hasYearFilter ||
+      (item.releaseYear !== null && item.releaseYear >= minYear && item.releaseYear <= maxYear));
+  const deckIndexRows = wantDecks ? catalog.decks.filter(matchesFilters) : [];
+  const coinIndexRows = wantCoins ? catalog.coins.filter(matchesFilters) : [];
 
-  const mergedIndex = sortCollectionItems<CollectionIndexItem>([
+  const mergedIndex = sortCollectionItems([
     ...deckIndexRows.map((deck) => ({
       kind: "deck" as const,
       id: deck.id,
@@ -168,45 +116,10 @@ export default async function CollectionPage({
     .filter((item) => item.kind === "coin")
     .map((item) => item.id);
 
-  const [pageDeckRows, pageCoinRows] = await Promise.all([
-    pageDeckIds.length > 0
-      ? prisma.deck.findMany({
-          where: { id: { in: pageDeckIds } },
-          select: {
-            id: true,
-            name: true,
-            series: true,
-            designer: true,
-            producer: true,
-            qty: true,
-            tags: true,
-            favorite: true,
-            whiteWhale: true,
-            images: {
-              orderBy: { sortOrder: "asc" },
-              take: 1,
-              select: { url: true },
-            },
-          },
-        })
-      : Promise.resolve([]),
-    pageCoinIds.length > 0
-      ? prisma.coin.findMany({
-          where: { id: { in: pageCoinIds } },
-          select: {
-            id: true,
-            name: true,
-            series: true,
-            designer: true,
-            producer: true,
-            qty: true,
-            tags: true,
-            obverseImageUrl: true,
-            reverseImageUrl: true,
-          },
-        })
-      : Promise.resolve([]),
-  ]);
+  const pageDeckIdSet = new Set(pageDeckIds);
+  const pageCoinIdSet = new Set(pageCoinIds);
+  const pageDeckRows = deckIndexRows.filter((deck) => pageDeckIdSet.has(deck.id));
+  const pageCoinRows = coinIndexRows.filter((coin) => pageCoinIdSet.has(coin.id));
   const pageDecksById = new Map(pageDeckRows.map((deck) => [deck.id, deck]));
   const pageCoinsById = new Map(pageCoinRows.map((coin) => [coin.id, coin]));
   const pageItems = pageIndexItems.flatMap<CollectionItem>((item) => {
@@ -269,7 +182,7 @@ export default async function CollectionPage({
           availableMaxYear={availableMaxYear}
           surpriseDeckIds={deckIndexRows.map((deck) => deck.id)}
           surpriseDeckIdsWithImages={deckIndexRows
-            .filter((deck) => deck._count.images > 0)
+            .filter((deck) => deck.images.length > 0)
             .map((deck) => deck.id)}
           surpriseCoinIds={coinIndexRows.map((coin) => coin.id)}
           surpriseCoinIdsWithImages={coinIndexRows
@@ -297,20 +210,16 @@ export default async function CollectionPage({
   );
 }
 
-function collectionSearchWhere(query: string, scope: ArchiveSearchScope) {
-  const contains = { contains: query, mode: "insensitive" as const };
-  if (scope === "name") return { name: contains };
-  if (scope === "series") return { series: contains };
-  if (scope === "producer") return { producer: contains };
-  if (scope === "notes") return { notes: contains };
-  if (scope === "creator") return { OR: [{ designer: contains }, { producer: contains }] };
-  return {
-    OR: [
-      { name: contains },
-      { series: contains },
-      { designer: contains },
-      { producer: contains },
-      { notes: contains },
-    ],
-  };
+function matchesSearch(
+  item: { name: string; series: string | null; designer: string | null; producer: string | null; notes: string | null },
+  query: string,
+  scope: ArchiveSearchScope
+) {
+  const includes = (value: string | null) => value?.toLocaleLowerCase().includes(query.toLocaleLowerCase()) ?? false;
+  if (scope === "name") return includes(item.name);
+  if (scope === "series") return includes(item.series);
+  if (scope === "producer") return includes(item.producer);
+  if (scope === "notes") return includes(item.notes);
+  if (scope === "creator") return includes(item.designer) || includes(item.producer);
+  return [item.name, item.series, item.designer, item.producer, item.notes].some(includes);
 }

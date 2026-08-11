@@ -1,11 +1,10 @@
-import { unstable_cache, updateTag } from "next/cache";
+import { unstable_cache } from "next/cache";
 import { CREATORS } from "@/lib/featured-creators";
 import { prisma } from "@/lib/prisma";
+import { CATALOG_CACHE_REVALIDATE_SECONDS, CATALOG_CACHE_TAG } from "@/lib/catalog-cache";
 
 // Writes invalidate these snapshots immediately. The one-day lifetime is only a safety net for
 // out-of-band database changes, not the normal freshness mechanism.
-const CACHE_REVALIDATE_SECONDS = 86_400;
-const CATALOG_METADATA_TAG = "catalog-metadata";
 
 export const getCoreCatalogMetadata = unstable_cache(
   async () => {
@@ -29,7 +28,7 @@ export const getCoreCatalogMetadata = unstable_cache(
     };
   },
   ["core-catalog-metadata-v1"],
-  { tags: [CATALOG_METADATA_TAG], revalidate: CACHE_REVALIDATE_SECONDS }
+  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
 export const getHomePageMetadata = unstable_cache(
@@ -44,7 +43,7 @@ export const getHomePageMetadata = unstable_cache(
     return { miniCount, tarotCount, souvenirCount, whiteWhaleCount };
   },
   ["home-page-metadata-v1"],
-  { tags: [CATALOG_METADATA_TAG], revalidate: CACHE_REVALIDATE_SECONDS }
+  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
 export const getStatsSummaryMetadata = unstable_cache(
@@ -66,7 +65,7 @@ export const getStatsSummaryMetadata = unstable_cache(
     };
   },
   ["stats-summary-metadata-v1"],
-  { tags: [CATALOG_METADATA_TAG], revalidate: CACHE_REVALIDATE_SECONDS }
+  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
 export const getCollectionMetadata = unstable_cache(
@@ -164,7 +163,7 @@ export const getCollectionMetadata = unstable_cache(
     };
   },
   ["collection-metadata-v1"],
-  { tags: [CATALOG_METADATA_TAG], revalidate: CACHE_REVALIDATE_SECONDS }
+  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
 export const getStatsChartMetadata = unstable_cache(
@@ -194,7 +193,7 @@ export const getStatsChartMetadata = unstable_cache(
     return { designerGroups, topSeriesGroups, releaseYearGroups };
   },
   ["stats-chart-metadata-v1"],
-  { tags: [CATALOG_METADATA_TAG], revalidate: CACHE_REVALIDATE_SECONDS }
+  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
 export const getCreatorCounts = unstable_cache(
@@ -214,11 +213,5 @@ export const getCreatorCounts = unstable_cache(
     );
   },
   ["curated-creator-counts-v1", ...CREATORS.map((creator) => creator.designer)],
-  { tags: [CATALOG_METADATA_TAG], revalidate: CACHE_REVALIDATE_SECONDS }
+  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
-
-export function invalidateCatalogMetadata() {
-  // This helper is called only from authenticated Server Actions so updateTag can provide
-  // read-your-own-writes behavior on the redirect that follows a catalog mutation.
-  updateTag(CATALOG_METADATA_TAG);
-}

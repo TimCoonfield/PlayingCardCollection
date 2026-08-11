@@ -1,21 +1,11 @@
-import { prisma } from "@/lib/prisma";
+import { getCreatorLandingCatalog } from "@/lib/catalog-browse";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 
 const LINNEA_HERO_IMAGE_URL =
   "/images/creators/linnea-gits.webp";
 
 export default async function LinneaLandingPage() {
-  const [decks, coins] = await Promise.all([
-    prisma.deck.findMany({
-      where: { designer: "Linnea Gits" },
-      include: { images: { orderBy: { sortOrder: "asc" } } },
-      orderBy: { name: "asc" },
-    }),
-    prisma.coin.findMany({
-      where: { designer: "Linnea Gits" },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+  const { decks, coins } = await getCreatorLandingCatalog("Linnea Gits");
 
   return (
     <DecksLandingPage

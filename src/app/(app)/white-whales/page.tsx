@@ -1,14 +1,11 @@
-import { prisma } from "@/lib/prisma";
+import { getLandingPageCatalog } from "@/lib/catalog-browse";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 
 const WHITE_WHALES_HERO_IMAGE_URL = "/images/specialty/white-whales.webp";
 
 export default async function WhiteWhalesPage() {
-  const decks = await prisma.deck.findMany({
-    where: { whiteWhale: true },
-    include: { images: { orderBy: { sortOrder: "asc" } } },
-    orderBy: { name: "asc" },
-  });
+  const catalog = await getLandingPageCatalog();
+  const decks = catalog.decks.filter((deck) => deck.whiteWhale);
 
   return (
     <DecksLandingPage

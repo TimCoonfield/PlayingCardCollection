@@ -1,21 +1,11 @@
-import { prisma } from "@/lib/prisma";
+import { getSeriesLandingCatalog } from "@/lib/catalog-browse";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 
 const SOUVENIR_HERO_IMAGE_URL =
   "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/pages/souvenir-hero.jpg";
 
 export default async function SouvenirDecksPage() {
-  const [decks, coins] = await Promise.all([
-    prisma.deck.findMany({
-      where: { series: "Souvenir Decks" },
-      include: { images: { orderBy: { sortOrder: "asc" } } },
-      orderBy: { name: "asc" },
-    }),
-    prisma.coin.findMany({
-      where: { series: "Souvenir Decks" },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+  const { decks, coins } = await getSeriesLandingCatalog("Souvenir Decks");
 
   return (
     <DecksLandingPage
