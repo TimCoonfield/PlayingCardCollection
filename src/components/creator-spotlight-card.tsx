@@ -27,6 +27,13 @@ export function CreatorSpotlightCard({
   href: string;
   accent: CreatorAccent;
 }) {
+  const nameSizeClass =
+    name.length >= 34
+      ? "text-[1.75rem] sm:text-3xl lg:text-4xl xl:text-[2rem]"
+      : name.length >= 25
+        ? "text-3xl sm:text-4xl"
+        : "text-5xl";
+
   return (
     <Link
       href={href}
@@ -54,7 +61,9 @@ export function CreatorSpotlightCard({
       )}
       <div className="absolute inset-0 bg-gradient-to-b from-felt-bg/15 via-felt-bg/55 to-felt-bg/95" />
       <div className="relative mt-auto flex flex-col p-5">
-        <span className="font-display text-5xl font-semibold leading-tight text-felt-ink">
+        <span
+          className={`text-balance font-display font-semibold leading-[1.05] text-felt-ink ${nameSizeClass}`}
+        >
           {name}
         </span>
         <span className="mt-2 font-display text-lg italic tracking-wide text-brass">{tagline}</span>
