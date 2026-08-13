@@ -60,7 +60,7 @@ export function CreatorSpotlightCard({
         </span>
       )}
       <div className="absolute inset-0 bg-gradient-to-b from-felt-bg/15 via-felt-bg/55 to-felt-bg/95" />
-      <div className="relative mt-auto flex flex-col p-5">
+      <div className="relative mt-auto flex w-full flex-col p-5">
         <span
           className={`text-balance font-display font-semibold leading-[1.05] text-felt-ink ${nameSizeClass}`}
         >
