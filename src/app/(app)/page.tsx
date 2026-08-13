@@ -199,7 +199,7 @@ export default async function HomePage() {
                       viewAllHref={viewAllHref}
                     /> */}
                 <CreatorSpotlightCard
-                  name={creator.designer}
+                  name={creator.displayName ?? creator.designer}
                   tagline={creator.tagline}
                   imageUrl={creator.spotlightImageUrl}
                   imageAlt={creator.spotlightImageAlt}

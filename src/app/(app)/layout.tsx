@@ -7,7 +7,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const session = await getSession();
   const isAuthenticated = Boolean(session.authenticated);
   const creatorNavItems = NAVIGATION_CREATORS.map((creator) => ({
-    name: creator.designer,
+    name: creator.displayName ?? creator.designer,
     href: creator.landingPageHref,
   }));
 

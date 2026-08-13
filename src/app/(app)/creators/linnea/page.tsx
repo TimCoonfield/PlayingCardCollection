@@ -9,7 +9,7 @@ export default async function LinneaLandingPage() {
 
   return (
     <DecksLandingPage
-      title="Linnea Gits"
+      title="Linnea Gits & Peter Dunham"
       tagline="The Painter"
       heroImageUrl={LINNEA_HERO_IMAGE_URL}
       blurb={

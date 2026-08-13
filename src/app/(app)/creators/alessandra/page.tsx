@@ -9,10 +9,10 @@ export default async function AlessandraLandingPage() {
 
   return (
     <DecksLandingPage
-      title="Alessandra Gagliano"
+      title="Alessandra Gagliano & Anthony Holt"
       tagline="The Folklorist"
       heroImageUrl={ALESSANDRA_HERO_IMAGE_URL}
-      blurb="I was backer number two on Jocu’s first Kickstarter campaign, Fillide, and I haven’t looked back. Alessandra Gagliano creates wonderful artwork rooted in mythology, folklore, and the natural world—often drawing from stories obscure enough that the deck becomes an introduction to them. Her work can be beautiful and inviting at first glance, but there is always more underneath: symbolism, history, emotion, and a genuine reverence for the traditions inspiring it. That balance is what makes Jocu’s decks so appealing to me. They do not simply borrow the imagery of nature and mythology; they explore why those stories endured and find new ways to tell them through playing cards."
+      blurb="I was backer #2 on Jocu's very first Kickstarter, Fillide, and I've been along for the ride ever since. Alessandra's work has a warmth and humanity to it that I find incredibly distinctive—beautifully illustrated decks steeped in folklore, nature, history and a wonderful sense of place. But Jocu has always been a partnership. Her partner Anthony Holt works alongside her on nearly everything beyond the artwork itself, helping turn those ideas and illustrations into the thoughtful, beautifully produced decks that eventually land in our hands. Together they've built something that feels unmistakably their own, and it's been a genuine pleasure watching that body of work grow from the very beginning."
       decks={decks}
       coins={coins}
       showFilters

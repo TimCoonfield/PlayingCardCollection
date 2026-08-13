@@ -37,6 +37,7 @@ export async function GET(request: Request) {
     const profile = CREATORS.find((entry) => entry.designer === creator.label);
     return {
       ...creator,
+      label: profile?.displayName ?? creator.label,
       href: profile?.landingPageHref ?? `/collection?designer=${encodeURIComponent(creator.label)}`,
       meta: "Creator",
     };

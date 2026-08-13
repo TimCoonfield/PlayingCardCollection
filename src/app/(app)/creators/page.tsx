@@ -43,7 +43,7 @@ export default async function CreatorsPage() {
         {creators.map((creator) => (
           <CreatorSpotlightCard
             key={creator.designer}
-            name={creator.designer}
+            name={creator.displayName ?? creator.designer}
             tagline={creator.tagline}
             imageUrl={creator.directoryImageUrl}
             imageAlt={creator.directoryImageAlt}

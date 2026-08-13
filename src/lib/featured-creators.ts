@@ -4,6 +4,8 @@ export const JACK_BRUTUS_PENNY_IMAGE_URL =
   "/images/creators/jack-brutus-penny.webp";
 
 export interface CreatorProfile {
+  /** Presentation-only title. `designer` remains the exact database attribution key. */
+  displayName?: string;
   designer: string;
   producer: string;
   bio: string;
@@ -68,6 +70,7 @@ export const CREATORS: CreatorProfile[] = [
   },
   {
     designer: "Linnea Gits",
+    displayName: "Linnea Gits & Peter Dunham",
     landingPageHref: "/creators/linnea",
     featuredOnHomepage: true,
     featuredInNavigation: true,
@@ -83,11 +86,12 @@ export const CREATORS: CreatorProfile[] = [
   },
   {
     designer: "Alessandra Gagliano",
+    displayName: "Alessandra Gagliano & Anthony Holt",
     landingPageHref: "/creators/alessandra",
     featuredOnHomepage: true,
     featuredInNavigation: true,
     producer: "Jocu",
-    bio: "Alessandra Gagliano is a Sicilian artist who hand-designs every Jocu deck from scratch, starting as pencil sketches or paintings before being reimagined digitally. Her work includes Fillide, inspired by Sicilian folklore, and The Green Man, exploring plant mythology.",
+    bio: "I was backer #2 on Jocu's very first Kickstarter, Fillide, and I've been along for the ride ever since. Alessandra's work has a warmth and humanity to it that I find incredibly distinctive—beautifully illustrated decks steeped in folklore, nature, history and a wonderful sense of place. But Jocu has always been a partnership. Her partner Anthony Holt works alongside her on nearly everything beyond the artwork itself, helping turn those ideas and illustrations into the thoughtful, beautifully produced decks that eventually land in our hands. Together they've built something that feels unmistakably their own, and it's been a genuine pleasure watching that body of work grow from the very beginning.",
     accent: "sage",
     initials: "AG",
     logoUrl: "/images/creators/jocu-logo.webp",
