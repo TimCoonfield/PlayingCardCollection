@@ -77,7 +77,7 @@ export function CollectionFilters({
     selectedMinYear !== availableMinYear || selectedMaxYear !== availableMaxYear;
   // "creator" isn't a filter surfaced in this UI (see collection/page.tsx) — it's a link-only
   // param from the homepage's featured-creator cards — but it still needs to count here so
-  // "Clear all" appears and the extra filters start expanded when arriving via that link.
+  // "Clear all" appears when arriving via that link.
   const creator = searchParams.get("creator") ?? "";
   const advancedFilterCount =
     selectedDesigners.length +
@@ -88,9 +88,9 @@ export function CollectionFilters({
     advancedFilterCount + (creator ? 1 : 0) + tags.length + (missingPhoto ? 1 : 0);
   const hasFilters = Boolean(q) || nonSearchFilterCount > 0 || type !== "all";
 
-  // On mobile the extra filters start collapsed to save space, unless some are already
-  // applied (e.g. arriving from a Stats page link) — then show them open so nothing's hidden.
-  const [expanded, setExpanded] = useState(() => advancedFilterCount > 0 || Boolean(creator));
+  // Applied filters remain summarized below, so this panel can start collapsed consistently
+  // even when the visitor arrived through a pre-filtered link.
+  const [expanded, setExpanded] = useState(false);
 
   // Tracks the last value *this component* pushed to the URL, so the sync effect below
   // can tell "the URL changed because of our own debounce/Enter" apart from "the URL
