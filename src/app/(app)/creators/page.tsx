@@ -8,8 +8,15 @@ export default async function CreatorsPage() {
     getCreatorCounts(),
     Promise.all(
       CREATORS.map(async (creator) => {
-        const where = creator.collectionProducer
-          ? { producer: creator.collectionProducer }
+        const where = creator.collectionProducer && creator.collectionDesigners
+          ? {
+              OR: [
+                { producer: creator.collectionProducer },
+                { designer: { in: creator.collectionDesigners } },
+              ],
+            }
+          : creator.collectionProducer
+            ? { producer: creator.collectionProducer }
           : creator.matchProducerToo
             ? { OR: [{ designer: creator.designer }, { producer: creator.designer }] }
             : { designer: creator.designer };

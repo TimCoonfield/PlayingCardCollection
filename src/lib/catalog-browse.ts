@@ -119,9 +119,14 @@ export async function getCreatorLandingCatalog(name: string, matchProducerToo = 
   };
 }
 
-export async function getProducerLandingCatalog(producer: string) {
+export async function getProducerOrDesignerLandingCatalog(
+  producer: string,
+  designers: string[]
+) {
   const catalog = await getLandingPageCatalog();
-  const matches = (item: { producer: string | null }) => item.producer === producer;
+  const matches = (item: { designer: string | null; producer: string | null }) =>
+    item.producer === producer ||
+    (item.designer !== null && designers.includes(item.designer));
   return {
     decks: catalog.decks.filter(matches),
     coins: catalog.coins.filter(matches),

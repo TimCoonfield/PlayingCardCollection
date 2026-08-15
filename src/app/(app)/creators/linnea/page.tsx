@@ -1,11 +1,14 @@
-import { getProducerLandingCatalog } from "@/lib/catalog-browse";
+import { getProducerOrDesignerLandingCatalog } from "@/lib/catalog-browse";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 
 const LINNEA_HERO_IMAGE_URL =
   "/images/creators/linnea-gits.webp";
 
 export default async function LinneaLandingPage() {
-  const { decks, coins } = await getProducerLandingCatalog("Uusi");
+  const { decks, coins } = await getProducerOrDesignerLandingCatalog(
+    "Uusi",
+    ["Linnea Gits", "Peter Dunham"]
+  );
 
   return (
     <DecksLandingPage
