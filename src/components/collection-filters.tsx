@@ -80,12 +80,14 @@ export function CollectionFilters({
   // "Clear all" appears when arriving via that link.
   const creator = searchParams.get("creator") ?? "";
   const advancedFilterCount =
+    tags.length +
     selectedDesigners.length +
     selectedProducers.length +
     selectedSeries.length +
-    (hasYearFilter ? 1 : 0);
+    (hasYearFilter ? 1 : 0) +
+    (missingPhoto ? 1 : 0);
   const nonSearchFilterCount =
-    advancedFilterCount + (creator ? 1 : 0) + tags.length + (missingPhoto ? 1 : 0);
+    advancedFilterCount + (creator ? 1 : 0);
   const hasFilters = Boolean(q) || nonSearchFilterCount > 0 || type !== "all";
 
   // Applied filters remain summarized below, so this panel can start collapsed consistently
@@ -247,28 +249,6 @@ export function CollectionFilters({
         </div>
       </div>
 
-      <div>
-        <div className="flex flex-wrap items-center gap-2">
-          <CollectionTagPills
-            availableTags={ALL_COLLECTION_TAGS}
-            selectedTags={tags}
-            onToggle={handleTagToggle}
-            useCheckboxes
-          />
-          {isAuthenticated && (
-            <MissingPhotoFilter
-              selected={missingPhoto}
-              onChange={(selected) =>
-                pushParams((params) => {
-                  if (selected) params.set("missingPhoto", "1");
-                  else params.delete("missingPhoto");
-                })
-              }
-            />
-          )}
-        </div>
-      </div>
-
       <div className="border-t border-felt-line pt-3">
         <button
           type="button"
@@ -291,6 +271,25 @@ export function CollectionFilters({
 
         {expanded && (
           <div className="mt-4 flex flex-col gap-4 border-t border-felt-line/70 pt-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <CollectionTagPills
+                availableTags={ALL_COLLECTION_TAGS}
+                selectedTags={tags}
+                onToggle={handleTagToggle}
+                useCheckboxes
+              />
+              {isAuthenticated && (
+                <MissingPhotoFilter
+                  selected={missingPhoto}
+                  onChange={(selected) =>
+                    pushParams((params) => {
+                      if (selected) params.set("missingPhoto", "1");
+                      else params.delete("missingPhoto");
+                    })
+                  }
+                />
+              )}
+            </div>
             <div className="grid gap-3 sm:grid-cols-3">
               <CollectionFacetPicker
                 label="Creators / designers"

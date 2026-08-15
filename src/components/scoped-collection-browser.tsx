@@ -251,15 +251,6 @@ export function ScopedCollectionBrowser({
               <CollectionSortSelector value={sort} onChange={changeSort} />
             </div>
 
-            <CollectionTagPills
-              availableTags={availableTags}
-              selectedTags={tags}
-              onToggle={(tag) => toggleTag(tag)}
-            />
-            {isAuthenticated && (
-              <MissingPhotoFilter selected={missingPhoto} onChange={setMissingPhoto} />
-            )}
-
             <div className="border-t border-felt-line pt-3">
               <button
                 type="button"
@@ -276,6 +267,19 @@ export function ScopedCollectionBrowser({
               </button>
               {advancedExpanded && (
                 <div className="mt-4 flex flex-col gap-4 border-t border-felt-line/70 pt-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <CollectionTagPills
+                      availableTags={availableTags}
+                      selectedTags={tags}
+                      onToggle={(tag) => toggleTag(tag)}
+                    />
+                    {isAuthenticated && (
+                      <MissingPhotoFilter
+                        selected={missingPhoto}
+                        onChange={setMissingPhoto}
+                      />
+                    )}
+                  </div>
                   <div className="grid gap-3 sm:grid-cols-3">
                     <CollectionFacetPicker
                       label="Creators / designers"
