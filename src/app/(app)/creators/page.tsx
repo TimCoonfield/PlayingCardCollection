@@ -8,9 +8,11 @@ export default async function CreatorsPage() {
     getCreatorCounts(),
     Promise.all(
       CREATORS.map(async (creator) => {
-        const where = creator.matchProducerToo
-          ? { OR: [{ designer: creator.designer }, { producer: creator.designer }] }
-          : { designer: creator.designer };
+        const where = creator.collectionProducer
+          ? { producer: creator.collectionProducer }
+          : creator.matchProducerToo
+            ? { OR: [{ designer: creator.designer }, { producer: creator.designer }] }
+            : { designer: creator.designer };
         return prisma.deck.findFirst({
           where: { AND: [where, { images: { some: {} } }] },
           orderBy: { name: "asc" },

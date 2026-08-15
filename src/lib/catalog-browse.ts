@@ -119,6 +119,15 @@ export async function getCreatorLandingCatalog(name: string, matchProducerToo = 
   };
 }
 
+export async function getProducerLandingCatalog(producer: string) {
+  const catalog = await getLandingPageCatalog();
+  const matches = (item: { producer: string | null }) => item.producer === producer;
+  return {
+    decks: catalog.decks.filter(matches),
+    coins: catalog.coins.filter(matches),
+  };
+}
+
 export async function getTaggedLandingCatalog(tag: string) {
   const catalog = await getLandingPageCatalog();
   const matches = (item: { tags: string[] }) => item.tags.includes(tag);

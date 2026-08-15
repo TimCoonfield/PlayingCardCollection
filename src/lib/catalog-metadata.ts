@@ -201,9 +201,11 @@ export const getCreatorCounts = unstable_cache(
     const counts = await Promise.all(
       CREATORS.map((creator) =>
         prisma.deck.count({
-          where: creator.matchProducerToo
-            ? { OR: [{ designer: creator.designer }, { producer: creator.designer }] }
-            : { designer: creator.designer },
+          where: creator.collectionProducer
+            ? { producer: creator.collectionProducer }
+            : creator.matchProducerToo
+              ? { OR: [{ designer: creator.designer }, { producer: creator.designer }] }
+              : { designer: creator.designer },
         })
       )
     );
@@ -212,6 +214,9 @@ export const getCreatorCounts = unstable_cache(
       CREATORS.map((creator, index) => [creator.designer, counts[index]])
     );
   },
-  ["curated-creator-counts-v1", ...CREATORS.map((creator) => creator.designer)],
+  [
+    "curated-creator-counts-v2",
+    ...CREATORS.map((creator) => creator.collectionProducer ?? creator.designer),
+  ],
   { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );

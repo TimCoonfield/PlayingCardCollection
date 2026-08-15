@@ -29,6 +29,8 @@ export interface CreatorProfile {
    * (not designer) — e.g. decks they produced but someone else drew. Changes the "View all"
    * link from ?designer= to the OR-matching ?creator= filter. */
   matchProducerToo?: boolean;
+  /** Use an exact producer credit as this profile's collection scope instead of designer. */
+  collectionProducer?: string;
   landingPageHref: string;
   featuredOnHomepage: boolean;
   featuredInNavigation: boolean;
@@ -75,6 +77,7 @@ export const CREATORS: CreatorProfile[] = [
     featuredOnHomepage: true,
     featuredInNavigation: true,
     producer: "Uusi",
+    collectionProducer: "Uusi",
     bio: "Linnea Gits co-founded the design studio Uusi with Peter Dunham in 2010, hand-painting original artwork in oils and watercolors for decks like Blue Blood, Pagan, and Republic. The duo has funded 13 tarot and playing card projects on Kickstarter and collaborated with brands like Herman Miller and Taschen.",
     accent: "felt-ink",
     initials: "LG",
