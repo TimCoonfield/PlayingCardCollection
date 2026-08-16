@@ -48,12 +48,11 @@ export const getHomePageMetadata = unstable_cache(
 
 export const getStatsSummaryMetadata = unstable_cache(
   async () => {
-    const [qtySum, modernCount, vintageCount, antiqueCount, decksWithPhoto] = await Promise.all([
+    const [qtySum, modernCount, vintageCount, antiqueCount] = await Promise.all([
       prisma.deck.aggregate({ _sum: { qty: true } }),
       prisma.deck.count({ where: { tags: { has: "Modern" } } }),
       prisma.deck.count({ where: { tags: { has: "Vintage" } } }),
       prisma.deck.count({ where: { tags: { has: "Antique" } } }),
-      prisma.deck.count({ where: { images: { some: {} } } }),
     ]);
 
     return {
@@ -61,10 +60,9 @@ export const getStatsSummaryMetadata = unstable_cache(
       modernCount,
       vintageCount,
       antiqueCount,
-      decksWithPhoto,
     };
   },
-  ["stats-summary-metadata-v1"],
+  ["stats-summary-metadata-v2"],
   { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 

@@ -19,6 +19,7 @@ import {
   CollectionYearRange,
   ALL_COLLECTION_TAGS,
   MissingPhotoFilter,
+  MissingYearFilter,
   type CollectionItemType,
 } from "./collection-filter-controls";
 
@@ -61,6 +62,7 @@ export function CollectionFilters({
   const tags = searchParams.getAll("tag");
   const type = searchParams.get("type") ?? "all";
   const missingPhoto = isAuthenticated && searchParams.get("missingPhoto") === "1";
+  const missingYear = isAuthenticated && searchParams.get("missingYear") === "1";
   const rawSort = searchParams.get("sort") ?? "";
   const sort: CollectionSort = isCollectionSort(rawSort) ? rawSort : "featured";
   const rawMinYear = searchParams.get("minYear");
@@ -85,7 +87,8 @@ export function CollectionFilters({
     selectedProducers.length +
     selectedSeries.length +
     (hasYearFilter ? 1 : 0) +
-    (missingPhoto ? 1 : 0);
+    (missingPhoto ? 1 : 0) +
+    (missingYear ? 1 : 0);
   const nonSearchFilterCount =
     advancedFilterCount + (creator ? 1 : 0);
   const hasFilters = Boolean(q) || nonSearchFilterCount > 0 || type !== "all";
@@ -146,6 +149,7 @@ export function CollectionFilters({
     pushParams((params) => {
       if (value === "all") params.delete("type");
       else params.set("type", value);
+      if (value === "coin") params.delete("missingYear");
     });
   }
 
@@ -191,6 +195,7 @@ export function CollectionFilters({
 
   function commitYearRange(minYear: number, maxYear: number) {
     pushParams((params) => {
+      params.delete("missingYear");
       if (minYear === availableMinYear && maxYear === availableMaxYear) {
         params.delete("minYear");
         params.delete("maxYear");
@@ -256,15 +261,32 @@ export function CollectionFilters({
                 useCheckboxes
               />
               {isAuthenticated && (
-                <MissingPhotoFilter
-                  selected={missingPhoto}
-                  onChange={(selected) =>
-                    pushParams((params) => {
-                      if (selected) params.set("missingPhoto", "1");
-                      else params.delete("missingPhoto");
-                    })
-                  }
-                />
+                <>
+                  <MissingPhotoFilter
+                    selected={missingPhoto}
+                    onChange={(selected) =>
+                      pushParams((params) => {
+                        if (selected) params.set("missingPhoto", "1");
+                        else params.delete("missingPhoto");
+                      })
+                    }
+                  />
+                  <MissingYearFilter
+                    selected={missingYear}
+                    onChange={(selected) =>
+                      pushParams((params) => {
+                        if (selected) {
+                          params.set("missingYear", "1");
+                          params.set("type", "deck");
+                          params.delete("minYear");
+                          params.delete("maxYear");
+                        } else {
+                          params.delete("missingYear");
+                        }
+                      })
+                    }
+                  />
+                </>
               )}
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -341,6 +363,12 @@ export function CollectionFilters({
             <CollectionActiveFilter
               label="Missing photo"
               onRemove={() => removeParam("missingPhoto")}
+            />
+          )}
+          {missingYear && (
+            <CollectionActiveFilter
+              label="Missing year"
+              onRemove={() => removeParam("missingYear")}
             />
           )}
           {hasYearFilter && (

@@ -56,6 +56,7 @@ export default async function CollectionPage({
   const typeParam = toParam(params.type);
   const type: "all" | "deck" | "coin" = typeParam === "deck" || typeParam === "coin" ? typeParam : "all";
   const missingPhotoRequested = toParam(params.missingPhoto) === "1";
+  const missingYearRequested = toParam(params.missingYear) === "1";
   const rawSort = toParam(params.sort);
   const sort: CollectionSort = isCollectionSort(rawSort) ? rawSort : "featured";
   const randomSeed = toOptionalNumberParam(params.randomSeed) ?? 0;
@@ -79,6 +80,7 @@ export default async function CollectionPage({
   ]);
   const isAuthenticated = Boolean(session.authenticated);
   const missingPhoto = isAuthenticated && missingPhotoRequested;
+  const missingYear = isAuthenticated && missingYearRequested;
   const matchesFilters = (item: (typeof catalog.decks)[number] | (typeof catalog.coins)[number]) =>
     (!q || matchesSearch(item, q, scope)) &&
     (designers.length === 0 || (item.designer !== null && designers.includes(item.designer))) &&
@@ -90,6 +92,7 @@ export default async function CollectionPage({
       ("images" in item
         ? item.images.length === 0
         : !item.obverseImageUrl && !item.reverseImageUrl)) &&
+    (!missingYear || ("images" in item && item.releaseYear === null)) &&
     (!hasYearFilter ||
       (item.releaseYear !== null && item.releaseYear >= minYear && item.releaseYear <= maxYear));
   const deckIndexRows = wantDecks ? catalog.decks.filter(matchesFilters) : [];
@@ -150,6 +153,7 @@ export default async function CollectionPage({
   if (sort === "random") currentSearchParams.set("randomSeed", String(randomSeed));
   for (const tag of tags) currentSearchParams.append("tag", tag);
   if (missingPhoto) currentSearchParams.set("missingPhoto", "1");
+  if (missingYear) currentSearchParams.set("missingYear", "1");
   if (hasYearFilter) {
     currentSearchParams.set("minYear", String(minYear));
     currentSearchParams.set("maxYear", String(maxYear));

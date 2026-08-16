@@ -32,6 +32,31 @@ export function MissingPhotoFilter({
   );
 }
 
+export function MissingYearFilter({
+  selected,
+  onChange,
+}: {
+  selected: boolean;
+  onChange: (selected: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!selected)}
+      aria-pressed={selected}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/60 focus-visible:ring-offset-2 focus-visible:ring-offset-felt-surface ${
+        selected
+          ? "border-brass bg-brass/20 text-felt-ink shadow-sm"
+          : "border-felt-line bg-felt-bg/40 text-felt-sub hover:border-brass/70 hover:text-brass"
+      }`}
+    >
+      <span aria-hidden="true" className="font-display text-sm leading-none">?</span>
+      Missing year
+      {selected && <span aria-hidden="true">✓</span>}
+    </button>
+  );
+}
+
 export const ALL_COLLECTION_TAGS = [
   "Modern",
   "Vintage",

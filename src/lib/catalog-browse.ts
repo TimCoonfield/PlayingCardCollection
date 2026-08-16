@@ -89,6 +89,20 @@ export async function getBrowseCatalogCards() {
   return { decks: deckPages.flat(), coins };
 }
 
+/** Admin maintenance totals derived from the same deck snapshot used by /collection. */
+export async function getDeckWorkCounts() {
+  const { decks } = await getBrowseCatalogCards();
+  const decksWithPhoto = decks.filter((deck) => deck.images.length > 0).length;
+
+  return {
+    missingPhotoCount: decks.length - decksWithPhoto,
+    missingYearCount: decks.filter((deck) => deck.releaseYear === null).length,
+    photoCompletionPercent: decks.length > 0
+      ? Math.round((decksWithPhoto / decks.length) * 100)
+      : 0,
+  };
+}
+
 /**
  * Landing pages need every image for their favorite-deck mosaics. Keep those uncommon extra
  * URLs separate so ordinary collection browsing does not repeatedly transfer them from Neon.

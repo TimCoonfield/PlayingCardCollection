@@ -4,6 +4,8 @@ import { HorizontalRankedChart, PieBreakdownChart, YearHistogramChart } from "@/
 import { SeriesShowcase, type SeriesSpotlightDatum } from "@/components/series-showcase";
 import { DeckCard } from "@/components/deck-card";
 import { CardsIcon, PaletteIcon, CoinIcon, LayersIcon, CameraIcon } from "@/components/icons";
+import { getSession } from "@/lib/auth";
+import { getDeckWorkCounts } from "@/lib/catalog-browse";
 import {
   getCoreCatalogMetadata,
   getStatsChartMetadata,
@@ -29,7 +31,9 @@ function bucketReleaseYear(year: number): { label: string; sortKey: number } {
 const ERA_COLORS = ["#b58a35", "#8266b3", "#b1473f"];
 
 export default async function StatsPage() {
-  const [metadata, summaryMetadata, chartMetadata, recentDecks] = await Promise.all([
+  const session = await getSession();
+  const isAuthenticated = Boolean(session.authenticated);
+  const [metadata, summaryMetadata, chartMetadata, recentDecks, workCounts] = await Promise.all([
     getCoreCatalogMetadata(),
     getStatsSummaryMetadata(),
     getStatsChartMetadata(),
@@ -49,12 +53,9 @@ export default async function StatsPage() {
         images: { orderBy: { sortOrder: "asc" }, select: { url: true } },
       },
     }),
+    isAuthenticated ? getDeckWorkCounts() : Promise.resolve(null),
   ]);
   const { designerGroups, topSeriesGroups, releaseYearGroups } = chartMetadata;
-
-  const photoPct = metadata.totalDecks > 0
-    ? Math.round((summaryMetadata.decksWithPhoto / metadata.totalDecks) * 100)
-    : 0;
 
   const designerData = designerGroups.map((g) => ({
     label: g.designer!,
@@ -86,18 +87,35 @@ export default async function StatsPage() {
     <div className="flex flex-col gap-8">
       <h1 className="font-display text-xl font-semibold text-felt-ink">Collection Stats</h1>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <StatTile icon={<CardsIcon className="h-6 w-6" />} label="Total unique decks" value={metadata.totalDecks} />
         <StatTile icon={<CardsIcon className="h-6 w-6" />} label="Total decks" value={summaryMetadata.totalQuantity} />
         <StatTile icon={<PaletteIcon className="h-6 w-6" />} label="Designers" value={metadata.designerCount} />
         <StatTile icon={<CoinIcon className="h-6 w-6" />} label="Coins" value={metadata.coinCount} />
         <StatTile icon={<LayersIcon className="h-6 w-6" />} label="Series" value={metadata.seriesCount} />
-        <StatTile
-          icon={<CameraIcon className="h-6 w-6" />}
-          label={`${summaryMetadata.decksWithPhoto}/${metadata.totalDecks} have a photo`}
-          value={`${photoPct}%`}
-        />
       </div>
+
+      {workCounts && (
+        <section className="flex flex-col gap-3">
+          <h2 className="font-display text-base font-semibold tracking-wide text-brass">
+            Work to be Done
+          </h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <StatTile
+              icon={<CameraIcon className="h-6 w-6" />}
+              label={`Decks missing photo · ${workCounts.photoCompletionPercent}% complete`}
+              value={workCounts.missingPhotoCount}
+              href="/collection?type=deck&missingPhoto=1"
+            />
+            <StatTile
+              icon={<LayersIcon className="h-6 w-6" />}
+              label="Decks missing year"
+              value={workCounts.missingYearCount}
+              href="/collection?type=deck&missingYear=1"
+            />
+          </div>
+        </section>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <ChartCard title="Top designers by deck count">
