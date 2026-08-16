@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronDownIcon } from "./icons";
 import { SurpriseMeButton } from "./surprise-me-button";
+import { CollectionFilterPanel } from "./collection-filter-panel";
 import { isCollectionSort, type CollectionSort } from "@/lib/collection-sort";
 import {
   ARCHIVE_SEARCH_SCOPE_LABELS,
@@ -89,10 +89,6 @@ export function CollectionFilters({
   const nonSearchFilterCount =
     advancedFilterCount + (creator ? 1 : 0);
   const hasFilters = Boolean(q) || nonSearchFilterCount > 0 || type !== "all";
-
-  // Applied filters remain summarized below, so this panel can start collapsed consistently
-  // even when the visitor arrived through a pre-filtered link.
-  const [expanded, setExpanded] = useState(false);
 
   // Tracks the last value *this component* pushed to the URL, so the sync effect below
   // can tell "the URL changed because of our own debounce/Enter" apart from "the URL
@@ -207,30 +203,12 @@ export function CollectionFilters({
 
   function clearAll() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    setExpanded(false);
     startTransition(() => router.push("/collection"));
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-felt-line bg-felt-surface p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <CollectionTypeSelector value={type as CollectionItemType} onChange={handleTypeChange} />
-        <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
-          <CollectionSortSelector
-            value={sort}
-            onChange={handleSortChange}
-            includeFeatured
-          />
-          <SurpriseMeButton
-            preferredDeckIds={surpriseDeckIdsWithImages}
-            fallbackDeckIds={surpriseDeckIds}
-            preferredCoinIds={surpriseCoinIdsWithImages}
-            fallbackCoinIds={surpriseCoinIds}
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-3 sm:flex-row">
+    <CollectionFilterPanel
+      searchControl={
         <div className="relative flex-1">
           <input
             ref={inputRef}
@@ -247,30 +225,29 @@ export function CollectionFilters({
             </span>
           )}
         </div>
-      </div>
-
-      <div className="border-t border-felt-line pt-3">
-        <button
-          type="button"
-          onClick={() => setExpanded((current) => !current)}
-          aria-expanded={expanded}
-          className="flex w-full items-center justify-between gap-3 text-left"
-        >
-          <span className="flex items-center gap-2 font-display text-sm font-semibold uppercase tracking-[0.14em] text-brass">
-            Advanced filters
-            {advancedFilterCount > 0 && (
-              <span className="rounded-full bg-brass px-1.5 py-0.5 font-sans text-[10px] tracking-normal text-felt-bg">
-                {advancedFilterCount}
-              </span>
-            )}
-          </span>
-          <ChevronDownIcon
-            className={`h-4 w-4 text-felt-sub transition-transform ${expanded ? "rotate-180" : ""}`}
+      }
+      sortControl={
+        <CollectionSortSelector
+          value={sort}
+          onChange={handleSortChange}
+          includeFeatured
+        />
+      }
+      surpriseControl={
+        <SurpriseMeButton
+          preferredDeckIds={surpriseDeckIdsWithImages}
+          fallbackDeckIds={surpriseDeckIds}
+          preferredCoinIds={surpriseCoinIdsWithImages}
+          fallbackCoinIds={surpriseCoinIds}
+        />
+      }
+      advancedFilterCount={advancedFilterCount + (type === "all" ? 0 : 1)}
+      advancedControls={
+        <>
+          <CollectionTypeSelector
+            value={type as CollectionItemType}
+            onChange={handleTypeChange}
           />
-        </button>
-
-        {expanded && (
-          <div className="mt-4 flex flex-col gap-4 border-t border-felt-line/70 pt-4">
             <div className="flex flex-wrap items-center gap-2">
               <CollectionTagPills
                 availableTags={ALL_COLLECTION_TAGS}
@@ -318,12 +295,11 @@ export function CollectionFilters({
               selectedMaxYear={selectedMaxYear}
               onCommit={commitYearRange}
             />
-          </div>
-        )}
-      </div>
-
-      {hasFilters && (
-        <div className="flex flex-wrap items-center gap-2 border-t border-felt-line pt-3">
+        </>
+      }
+      activeFilters={
+        hasFilters ? (
+          <>
           {q && (
             <CollectionActiveFilter
               label={`${scope === "all" ? "Search" : ARCHIVE_SEARCH_SCOPE_LABELS[scope]}: ${q}`}
@@ -378,15 +354,10 @@ export function CollectionFilters({
               }}
             />
           )}
-          <button
-            type="button"
-            onClick={clearAll}
-            className="text-sm text-felt-sub hover:text-felt-ink"
-          >
-            Clear all
-          </button>
-        </div>
-      )}
-    </div>
+          </>
+        ) : undefined
+      }
+      onClear={hasFilters ? clearAll : undefined}
+    />
   );
 }

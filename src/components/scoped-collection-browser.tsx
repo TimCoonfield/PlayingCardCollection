@@ -4,8 +4,9 @@ import { useMemo, useState } from "react";
 import { CoinCard, type CoinCardData } from "./coin-card";
 import { DeckCard, type DeckCardData } from "./deck-card";
 import { DeckSpotlightCard } from "./deck-spotlight-card";
-import { ChevronDownIcon, SearchIcon } from "./icons";
+import { SearchIcon } from "./icons";
 import { SurpriseMeButton } from "./surprise-me-button";
+import { CollectionFilterPanel } from "./collection-filter-panel";
 import { sortCollectionItems, type CollectionSort } from "@/lib/collection-sort";
 import {
   ALL_COLLECTION_TAGS,
@@ -45,14 +46,12 @@ export function ScopedCollectionBrowser({
   tagSet?: "curated" | "all";
   isAuthenticated?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const [type, setType] = useState<CollectionItemType>("all");
   const [tags, setTags] = useState<string[]>([]);
   const [designers, setDesigners] = useState<string[]>([]);
   const [producers, setProducers] = useState<string[]>([]);
   const [series, setSeries] = useState<string[]>([]);
-  const [advancedExpanded, setAdvancedExpanded] = useState(false);
   const [sort, setSort] = useState<CollectionSort>("alpha-asc");
   const [randomSeed, setRandomSeed] = useState(0);
   const [missingPhoto, setMissingPhoto] = useState(false);
@@ -167,6 +166,14 @@ export function ScopedCollectionBrowser({
     series.length +
     (isFullYearRange ? 0 : 1) +
     (missingPhoto ? 1 : 0);
+  const advancedFilterCount =
+    (type === "all" ? 0 : 1) +
+    tags.length +
+    designers.length +
+    producers.length +
+    series.length +
+    (isFullYearRange ? 0 : 1) +
+    (missingPhoto ? 1 : 0);
   const availableTags = tagSet === "all" ? ALL_COLLECTION_TAGS : CURATED_COLLECTION_TAGS;
 
   function toggleTag(tag: string) {
@@ -193,80 +200,37 @@ export function ScopedCollectionBrowser({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="overflow-hidden rounded-lg border border-felt-line bg-felt-surface">
-        <div className="flex items-center">
-          <button
-            type="button"
-            onClick={() => setExpanded((current) => !current)}
-            aria-expanded={expanded}
-            className="flex min-w-0 flex-1 items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-felt-surface-2"
-          >
-            <span className="flex items-center gap-2">
-              <span className="font-display text-sm font-semibold uppercase tracking-[0.16em] text-brass">
-                Filter collection
-              </span>
-              {activeFilterCount > 0 && (
-                <span className="rounded-full bg-brass px-1.5 py-0.5 text-[10px] font-semibold text-felt-bg">
-                  {activeFilterCount}
-                </span>
-              )}
-            </span>
-            <span className="flex items-center gap-3 text-xs text-felt-sub">
-              <span className="hidden sm:inline">
-                {filteredItems.length} {filteredItems.length === 1 ? "item" : "items"}
-              </span>
-              <ChevronDownIcon
-                className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`}
-              />
-            </span>
-          </button>
-          <div className="shrink-0 pr-3">
-            <SurpriseMeButton
-              preferredDeckIds={filteredDecks
-                .filter((deck) => deck.images.length > 0)
-                .map((deck) => deck.id)}
-              fallbackDeckIds={filteredDecks.map((deck) => deck.id)}
-              preferredCoinIds={filteredCoins
-                .filter((coin) => coin.obverseImageUrl || coin.reverseImageUrl)
-                .map((coin) => coin.id)}
-              fallbackCoinIds={filteredCoins.map((coin) => coin.id)}
+      <CollectionFilterPanel
+        searchControl={
+          <div className="relative">
+            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-felt-sub" />
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search this collection..."
+              className="w-full rounded-md border border-felt-line bg-felt-bg py-2 pl-9 pr-3 text-sm text-felt-ink placeholder:text-felt-sub/60 outline-none focus:border-brass"
             />
           </div>
-        </div>
-
-        {expanded && (
-          <div className="flex flex-col gap-4 border-t border-felt-line p-4">
-            <div className="flex flex-col gap-3 lg:flex-row">
-              <div className="relative flex-1">
-                <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-felt-sub" />
-                <input
-                  type="search"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search this collection..."
-                  className="w-full rounded-md border border-felt-line bg-felt-bg py-2 pl-9 pr-3 text-sm text-felt-ink placeholder:text-felt-sub/60 outline-none focus:border-brass"
-                />
-              </div>
-              <CollectionTypeSelector value={type} onChange={setType} />
-              <CollectionSortSelector value={sort} onChange={changeSort} />
-            </div>
-
-            <div className="border-t border-felt-line pt-3">
-              <button
-                type="button"
-                onClick={() => setAdvancedExpanded((current) => !current)}
-                aria-expanded={advancedExpanded}
-                className="flex w-full items-center justify-between gap-3 text-left"
-              >
-                <span className="font-display text-sm font-semibold uppercase tracking-[0.14em] text-brass">
-                  Advanced filters
-                </span>
-                <ChevronDownIcon
-                  className={`h-4 w-4 text-felt-sub transition-transform ${advancedExpanded ? "rotate-180" : ""}`}
-                />
-              </button>
-              {advancedExpanded && (
-                <div className="mt-4 flex flex-col gap-4 border-t border-felt-line/70 pt-4">
+        }
+        sortControl={<CollectionSortSelector value={sort} onChange={changeSort} />}
+        surpriseControl={
+          <SurpriseMeButton
+            preferredDeckIds={filteredDecks
+              .filter((deck) => deck.images.length > 0)
+              .map((deck) => deck.id)}
+            fallbackDeckIds={filteredDecks.map((deck) => deck.id)}
+            preferredCoinIds={filteredCoins
+              .filter((coin) => coin.obverseImageUrl || coin.reverseImageUrl)
+              .map((coin) => coin.id)}
+            fallbackCoinIds={filteredCoins.map((coin) => coin.id)}
+          />
+        }
+        advancedFilterCount={advancedFilterCount}
+        resultCount={filteredItems.length}
+        advancedControls={
+          <>
+            <CollectionTypeSelector value={type} onChange={setType} />
                   <div className="flex flex-wrap items-center gap-2">
                     <CollectionTagPills
                       availableTags={availableTags}
@@ -308,12 +272,11 @@ export function ScopedCollectionBrowser({
                     selectedMaxYear={yearRange[1]}
                     onCommit={(minYear, maxYear) => setYearRange([minYear, maxYear])}
                   />
-                </div>
-              )}
-            </div>
-
-            {activeFilterCount > 0 && (
-              <div className="flex flex-wrap items-center gap-2 border-t border-felt-line pt-3">
+          </>
+        }
+        activeFilters={
+          activeFilterCount > 0 ? (
+            <>
                 {normalizedQuery && (
                   <CollectionActiveFilter
                     label={`Search: ${query.trim()}`}
@@ -368,19 +331,11 @@ export function ScopedCollectionBrowser({
                     onRemove={() => setYearRange([availableMinYear, availableMaxYear])}
                   />
                 )}
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className="text-sm text-felt-sub hover:text-felt-ink"
-                >
-                  Clear all
-                </button>
-              </div>
-            )}
-
-          </div>
-        )}
-      </div>
+            </>
+          ) : undefined
+        }
+        onClear={activeFilterCount > 0 ? clearFilters : undefined}
+      />
 
       {featuredDecks.length > 0 && (
         <div className="flex flex-col gap-4">
