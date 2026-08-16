@@ -57,6 +57,25 @@ export function MissingYearFilter({
   );
 }
 
+export function CollectionMaintenanceFilters({
+  missingPhoto,
+  missingYear,
+  onMissingPhotoChange,
+  onMissingYearChange,
+}: {
+  missingPhoto: boolean;
+  missingYear: boolean;
+  onMissingPhotoChange: (selected: boolean) => void;
+  onMissingYearChange: (selected: boolean) => void;
+}) {
+  return (
+    <>
+      <MissingPhotoFilter selected={missingPhoto} onChange={onMissingPhotoChange} />
+      <MissingYearFilter selected={missingYear} onChange={onMissingYearChange} />
+    </>
+  );
+}
+
 export const ALL_COLLECTION_TAGS = [
   "Modern",
   "Vintage",

@@ -18,8 +18,7 @@ import {
   CollectionTypeSelector,
   CollectionYearRange,
   ALL_COLLECTION_TAGS,
-  MissingPhotoFilter,
-  MissingYearFilter,
+  CollectionMaintenanceFilters,
   type CollectionItemType,
 } from "./collection-filter-controls";
 
@@ -261,32 +260,28 @@ export function CollectionFilters({
                 useCheckboxes
               />
               {isAuthenticated && (
-                <>
-                  <MissingPhotoFilter
-                    selected={missingPhoto}
-                    onChange={(selected) =>
-                      pushParams((params) => {
-                        if (selected) params.set("missingPhoto", "1");
-                        else params.delete("missingPhoto");
-                      })
-                    }
-                  />
-                  <MissingYearFilter
-                    selected={missingYear}
-                    onChange={(selected) =>
-                      pushParams((params) => {
-                        if (selected) {
-                          params.set("missingYear", "1");
-                          params.set("type", "deck");
-                          params.delete("minYear");
-                          params.delete("maxYear");
-                        } else {
-                          params.delete("missingYear");
-                        }
-                      })
-                    }
-                  />
-                </>
+                <CollectionMaintenanceFilters
+                  missingPhoto={missingPhoto}
+                  missingYear={missingYear}
+                  onMissingPhotoChange={(selected) =>
+                    pushParams((params) => {
+                      if (selected) params.set("missingPhoto", "1");
+                      else params.delete("missingPhoto");
+                    })
+                  }
+                  onMissingYearChange={(selected) =>
+                    pushParams((params) => {
+                      if (selected) {
+                        params.set("missingYear", "1");
+                        params.set("type", "deck");
+                        params.delete("minYear");
+                        params.delete("maxYear");
+                      } else {
+                        params.delete("missingYear");
+                      }
+                    })
+                  }
+                />
               )}
             </div>
             <div className="grid gap-3 sm:grid-cols-3">

@@ -17,7 +17,7 @@ import {
   CollectionSortSelector,
   CollectionTypeSelector,
   CollectionYearRange,
-  MissingPhotoFilter,
+  CollectionMaintenanceFilters,
   type CollectionItemType,
 } from "./collection-filter-controls";
 
@@ -55,6 +55,7 @@ export function ScopedCollectionBrowser({
   const [sort, setSort] = useState<CollectionSort>("alpha-asc");
   const [randomSeed, setRandomSeed] = useState(0);
   const [missingPhoto, setMissingPhoto] = useState(false);
+  const [missingYear, setMissingYear] = useState(false);
 
   const yearValues = useMemo(
     () =>
@@ -123,11 +124,12 @@ export function ScopedCollectionBrowser({
       (item.producer !== null && producers.includes(item.producer));
     const matchesSeries =
       series.length === 0 || (item.series !== null && series.includes(item.series));
-    const matchesYear =
-      isFullYearRange ||
-      (item.releaseYear !== null &&
-        item.releaseYear >= yearRange[0] &&
-        item.releaseYear <= yearRange[1]);
+    const matchesYear = missingYear
+      ? "images" in item && item.releaseYear === null
+      : isFullYearRange ||
+        (item.releaseYear !== null &&
+          item.releaseYear >= yearRange[0] &&
+          item.releaseYear <= yearRange[1]);
     const matchesPhoto =
       !missingPhoto ||
       ("images" in item
@@ -165,7 +167,8 @@ export function ScopedCollectionBrowser({
     producers.length +
     series.length +
     (isFullYearRange ? 0 : 1) +
-    (missingPhoto ? 1 : 0);
+    (missingPhoto ? 1 : 0) +
+    (missingYear ? 1 : 0);
   const advancedFilterCount =
     (type === "all" ? 0 : 1) +
     tags.length +
@@ -173,7 +176,8 @@ export function ScopedCollectionBrowser({
     producers.length +
     series.length +
     (isFullYearRange ? 0 : 1) +
-    (missingPhoto ? 1 : 0);
+    (missingPhoto ? 1 : 0) +
+    (missingYear ? 1 : 0);
   const availableTags = tagSet === "all" ? ALL_COLLECTION_TAGS : CURATED_COLLECTION_TAGS;
 
   function toggleTag(tag: string) {
@@ -191,6 +195,7 @@ export function ScopedCollectionBrowser({
     setSeries([]);
     setYearRange([availableMinYear, availableMaxYear]);
     setMissingPhoto(false);
+    setMissingYear(false);
   }
 
   function changeSort(value: CollectionSort) {
@@ -230,7 +235,13 @@ export function ScopedCollectionBrowser({
         resultCount={filteredItems.length}
         advancedControls={
           <>
-            <CollectionTypeSelector value={type} onChange={setType} />
+            <CollectionTypeSelector
+              value={type}
+              onChange={(value) => {
+                setType(value);
+                if (value === "coin") setMissingYear(false);
+              }}
+            />
                   <div className="flex flex-wrap items-center gap-2">
                     <CollectionTagPills
                       availableTags={availableTags}
@@ -238,9 +249,17 @@ export function ScopedCollectionBrowser({
                       onToggle={(tag) => toggleTag(tag)}
                     />
                     {isAuthenticated && (
-                      <MissingPhotoFilter
-                        selected={missingPhoto}
-                        onChange={setMissingPhoto}
+                      <CollectionMaintenanceFilters
+                        missingPhoto={missingPhoto}
+                        missingYear={missingYear}
+                        onMissingPhotoChange={setMissingPhoto}
+                        onMissingYearChange={(selected) => {
+                          setMissingYear(selected);
+                          if (selected) {
+                            setType("deck");
+                            setYearRange([availableMinYear, availableMaxYear]);
+                          }
+                        }}
                       />
                     )}
                   </div>
@@ -270,7 +289,10 @@ export function ScopedCollectionBrowser({
                     availableMaxYear={availableMaxYear}
                     selectedMinYear={yearRange[0]}
                     selectedMaxYear={yearRange[1]}
-                    onCommit={(minYear, maxYear) => setYearRange([minYear, maxYear])}
+                    onCommit={(minYear, maxYear) => {
+                      setMissingYear(false);
+                      setYearRange([minYear, maxYear]);
+                    }}
                   />
           </>
         }
@@ -323,6 +345,12 @@ export function ScopedCollectionBrowser({
                   <CollectionActiveFilter
                     label="Missing photo"
                     onRemove={() => setMissingPhoto(false)}
+                  />
+                )}
+                {missingYear && (
+                  <CollectionActiveFilter
+                    label="Missing year"
+                    onRemove={() => setMissingYear(false)}
                   />
                 )}
                 {!isFullYearRange && (
