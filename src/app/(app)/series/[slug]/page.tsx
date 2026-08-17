@@ -107,15 +107,16 @@ export default async function SeriesPage({
               {series.name}
             </h1>
             {series.subtitle && <p className="font-display text-lg italic text-brass">{series.subtitle}</p>}
-            {series.attributionText && (
+            {(series.attributionLabel || series.attributionText) && (
               <p className="text-sm text-felt-sub">
-                {series.attributionLabel && <span className="mr-2 uppercase tracking-wide text-felt-sub/70">{series.attributionLabel}</span>}
-                <span className="text-felt-ink">{series.attributionText}</span>
+                {series.attributionLabel && (
+                  <span className={`${series.attributionText ? "mr-2" : ""} uppercase tracking-wide text-felt-sub/70`}>
+                    {series.attributionLabel}
+                  </span>
+                )}
+                {series.attributionText && <span className="text-felt-ink">{series.attributionText}</span>}
               </p>
             )}
-            <p className="text-sm text-felt-sub">
-              {decks.length} {decks.length === 1 ? "Deck" : "Decks"} in this Series
-            </p>
           </div>
         </header>
 
@@ -150,7 +151,7 @@ export default async function SeriesPage({
       <section className="flex flex-col gap-4">
         <div className="flex items-center gap-3">
           <h2 className="whitespace-nowrap font-display text-sm font-bold uppercase tracking-[0.2em] text-brass">
-            The Series
+            {decks.length} {decks.length === 1 ? "Deck" : "Decks"} in the Series
           </h2>
           <div className="h-px flex-1 bg-brass/30" />
         </div>
