@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { sortSeriesDecks } from "@/lib/series-order";
+import { getSeriesFallbackHero } from "@/lib/series-fallback-hero";
 import { DeckCard } from "@/components/deck-card";
 import { SeriesEditor } from "@/components/series-editor";
 import { updateSeries } from "../actions";
@@ -56,8 +57,8 @@ export default async function SeriesPage({
   if (!series) notFound();
 
   const decks = sortSeriesDecks(series.decks);
-  const fallbackImageUrl = decks.find((deck) => deck.images.length > 0)?.images[0]?.url;
-  const heroImageUrl = series.heroImageUrl ?? fallbackImageUrl;
+  const usesFallbackHero = !series.heroImageUrl;
+  const heroImageUrl = series.heroImageUrl ?? getSeriesFallbackHero(series.id);
   const updateSeriesWithId = updateSeries.bind(null, series.id);
 
   return (
@@ -82,21 +83,14 @@ export default async function SeriesPage({
       </div>
 
       <header className="relative min-h-72 overflow-hidden rounded-lg border border-felt-line bg-felt-surface sm:min-h-80">
-        {heroImageUrl ? (
-          <Image
-            src={heroImageUrl}
-            alt=""
-            fill
-            priority
-            unoptimized={heroImageUrl.startsWith("/")}
-            sizes="(min-width: 1200px) 1152px, 100vw"
-            className="object-cover opacity-55"
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-end overflow-hidden bg-[radial-gradient(circle_at_75%_35%,var(--felt-surface-2),var(--felt-bg)_70%)] pr-[10%] text-[9rem] text-brass/20 sm:text-[13rem]">
-            ♠
-          </div>
-        )}
+        <Image
+          src={heroImageUrl}
+          alt=""
+          fill
+          priority
+          sizes="(min-width: 1200px) 1152px, 100vw"
+          className={`object-cover opacity-55 ${usesFallbackHero ? "object-[64%_center]" : ""}`}
+        />
         <div className="absolute inset-0 bg-gradient-to-r from-felt-bg via-felt-bg/85 to-felt-bg/10" />
         <div className="relative flex min-h-72 max-w-2xl flex-col justify-end gap-3 p-6 sm:min-h-80 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brass">Series</p>
