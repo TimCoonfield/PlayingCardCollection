@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { getSeriesPageData } from "@/lib/series-data";
 import { sortSeriesDecks } from "@/lib/series-order";
 import { getSeriesFallbackHero } from "@/lib/series-fallback-hero";
 import { DeckCard } from "@/components/deck-card";
@@ -20,7 +20,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const series = await prisma.series.findUnique({ where: { slug }, select: { name: true, subtitle: true } });
+  const series = await getSeriesPageData(slug);
   return series
     ? { title: `${series.name} | Card Guy Archive`, description: series.subtitle ?? undefined }
     : { title: "Series Not Found | Card Guy Archive" };
@@ -33,26 +33,7 @@ export default async function SeriesPage({
 }) {
   const { slug } = await params;
   const [series, session] = await Promise.all([
-    prisma.series.findUnique({
-      where: { slug },
-      include: {
-        decks: {
-          select: {
-            id: true,
-            name: true,
-            designer: true,
-            producer: true,
-            qty: true,
-            tags: true,
-            favorite: true,
-            whiteWhale: true,
-            releaseYear: true,
-            seriesOrder: true,
-            images: { orderBy: { sortOrder: "asc" }, take: 1, select: { url: true } },
-          },
-        },
-      },
-    }),
+    getSeriesPageData(slug),
     getSession(),
   ]);
 

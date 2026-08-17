@@ -1,11 +1,10 @@
-import { prisma } from "@/lib/prisma";
 import { StatTile } from "@/components/stat-tile";
 import { HorizontalRankedChart, PieBreakdownChart, YearHistogramChart } from "@/components/stats-charts";
 import { SeriesShowcase, type SeriesSpotlightDatum } from "@/components/series-showcase";
 import { DeckCard } from "@/components/deck-card";
 import { CardsIcon, PaletteIcon, CoinIcon, LayersIcon, CameraIcon } from "@/components/icons";
 import { getSession } from "@/lib/auth";
-import { getDeckWorkCounts } from "@/lib/catalog-browse";
+import { getDeckWorkCounts, getRecentDecks, getSeriesSpotlightDecks } from "@/lib/catalog-browse";
 import {
   getCoreCatalogMetadata,
   getStatsChartMetadata,
@@ -37,22 +36,7 @@ export default async function StatsPage() {
     getCoreCatalogMetadata(),
     getStatsSummaryMetadata(),
     getStatsChartMetadata(),
-    prisma.deck.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 10,
-      select: {
-        id: true,
-        name: true,
-        series: { select: { name: true } },
-        designer: true,
-        producer: true,
-        qty: true,
-        tags: true,
-        favorite: true,
-        whiteWhale: true,
-        images: { orderBy: { sortOrder: "asc" }, select: { url: true } },
-      },
-    }),
+    getRecentDecks(),
     isAuthenticated ? getDeckWorkCounts() : Promise.resolve(null),
   ]);
   const { designerGroups, topSeriesGroups, releaseYearGroups } = chartMetadata;
@@ -79,11 +63,18 @@ export default async function StatsPage() {
     .map(([label, { count, sortKey }]) => ({ label, count, sortKey }))
     .sort((a, b) => a.sortKey - b.sortKey);
 
-  const seriesShowcase: SeriesSpotlightDatum[] = await Promise.all(
-    topSeriesGroups.map((series) =>
-      buildSeriesSpotlight(series.id, series.name, series.slug, series._count.decks)
-    )
-  );
+  const spotlightDecks = await getSeriesSpotlightDecks(topSeriesGroups.map((series) => series.id));
+  const seriesShowcase: SeriesSpotlightDatum[] = topSeriesGroups.map((series) => {
+    const deck = spotlightDecks.get(series.id);
+    return {
+      series: series.name,
+      slug: series.slug,
+      count: series._count.decks,
+      deck: deck
+        ? { id: deck.id, name: deck.name, tags: deck.tags, imageUrl: deck.images[0]?.url ?? null }
+        : null,
+    };
+  });
 
   return (
     <div className="flex flex-col gap-8">
@@ -160,30 +151,6 @@ export default async function StatsPage() {
       </div>
     </div>
   );
-}
-
-async function buildSeriesSpotlight(
-  seriesId: string,
-  seriesName: string,
-  slug: string,
-  count: number
-): Promise<SeriesSpotlightDatum> {
-  const decks = await prisma.deck.findMany({
-    where: { seriesId },
-    select: { id: true, name: true, tags: true, images: { take: 1, orderBy: { sortOrder: "asc" } } },
-  });
-  const withImages = decks.filter((d) => d.images.length > 0);
-  const pool = withImages.length > 0 ? withImages : decks;
-  const pick = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null;
-
-  return {
-    series: seriesName,
-    slug,
-    count,
-    deck: pick
-      ? { id: pick.id, name: pick.name, tags: pick.tags, imageUrl: pick.images[0]?.url ?? null }
-      : null,
-  };
 }
 
 function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {

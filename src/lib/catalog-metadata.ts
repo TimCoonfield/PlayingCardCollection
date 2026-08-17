@@ -220,3 +220,52 @@ export const getCreatorCounts = unstable_cache(
   ],
   { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
+
+export const getCreatorRepresentativeImages = unstable_cache(
+  async () => {
+    const creatorsNeedingImages = CREATORS.filter((creator) => !creator.spotlightImageUrl);
+    if (creatorsNeedingImages.length === 0) return {};
+
+    const decks = await prisma.deck.findMany({
+      where: { images: { some: {} } },
+      orderBy: [{ name: "asc" }, { id: "asc" }],
+      select: {
+        designer: true,
+        producer: true,
+        images: { orderBy: { sortOrder: "asc" }, take: 1, select: { url: true } },
+      },
+    });
+
+    return Object.fromEntries(
+      creatorsNeedingImages.map((creator) => {
+        const deck = decks.find(({ designer, producer }) =>
+          creator.collectionProducer && creator.collectionDesigners
+            ? producer === creator.collectionProducer || creator.collectionDesigners.includes(designer ?? "")
+            : creator.collectionProducer
+              ? producer === creator.collectionProducer
+              : creator.matchProducerToo
+                ? designer === creator.designer || producer === creator.designer
+                : designer === creator.designer
+        );
+        return [creator.designer, deck?.images[0]?.url ?? null];
+      })
+    );
+  },
+  [
+    "curated-creator-representative-images-v1",
+    ...CREATORS.flatMap((creator) => [
+      creator.collectionProducer ?? creator.designer,
+      ...(creator.collectionDesigners ?? []),
+    ]),
+  ],
+  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
+);
+
+export const getArchiveSearchSeries = unstable_cache(
+  async () =>
+    prisma.series.findMany({
+      select: { name: true, slug: true, _count: { select: { decks: true } } },
+    }),
+  ["archive-search-series-v1"],
+  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
+);

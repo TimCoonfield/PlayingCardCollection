@@ -1,5 +1,6 @@
-import { prisma } from "@/lib/prisma";
 import { CREATORS } from "@/lib/featured-creators";
+import { getBrowseDeckCards } from "@/lib/catalog-browse";
+import { getArchiveSearchSeries } from "@/lib/catalog-metadata";
 import {
   isArchiveSearchScope,
   type ArchiveSearchScope,
@@ -14,6 +15,8 @@ const ARCHIVES = [
 ] as const;
 
 type EntityResult = { label: string; href: string; count?: number; meta?: string };
+type SearchDeck = Awaited<ReturnType<typeof getBrowseDeckCards>>[number];
+type SearchSeries = Awaited<ReturnType<typeof getArchiveSearchSeries>>[number];
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -26,11 +29,15 @@ export async function GET(request: Request) {
   }
 
   const include = (candidate: ArchiveSearchScope) => scope === "all" || scope === candidate;
+  const [catalogDecks, catalogSeries] = await Promise.all([
+    getBrowseDeckCards(),
+    include("series") ? getArchiveSearchSeries() : Promise.resolve([]),
+  ]);
   const [decks, creators, series, producers] = await Promise.all([
-    findDecks(query, scope),
-    include("creator") ? findEntities("designer", query) : Promise.resolve([]),
-    include("series") ? findEntities("series", query) : Promise.resolve([]),
-    include("producer") ? findEntities("producer", query) : Promise.resolve([]),
+    findDecks(catalogDecks, query, scope),
+    include("creator") ? findEntities(catalogDecks, [], "designer", query) : Promise.resolve([]),
+    include("series") ? findEntities(catalogDecks, catalogSeries, "series", query) : Promise.resolve([]),
+    include("producer") ? findEntities(catalogDecks, [], "producer", query) : Promise.resolve([]),
   ]);
 
   const creatorResults = creators.map((creator) => {
@@ -58,34 +65,22 @@ export async function GET(request: Request) {
   });
 }
 
-async function findDecks(query: string, scope: ArchiveSearchScope) {
-  const field =
-    scope === "notes"
-      ? { notes: { contains: query, mode: "insensitive" as const } }
-      : scope === "creator"
-        ? {
-            OR: [
-              { designer: { contains: query, mode: "insensitive" as const } },
-              { producer: { contains: query, mode: "insensitive" as const } },
-            ],
-          }
-        : scope === "series"
-          ? {
-              OR: [
-                { series: { is: { name: { contains: query, mode: "insensitive" as const } } } },
-                { seriesRaw: { contains: query, mode: "insensitive" as const } },
-              ],
-            }
-          : scope === "producer"
-            ? { producer: { contains: query, mode: "insensitive" as const } }
-            : { name: { contains: query, mode: "insensitive" as const } };
-  const rows = await prisma.deck.findMany({
-    where: field,
-    select: { id: true, name: true, designer: true },
-    take: 20,
-  });
+function findDecks(decks: SearchDeck[], query: string, scope: ArchiveSearchScope) {
   const normalized = query.toLocaleLowerCase();
-  return rows
+  const includes = (value: string | null | undefined) =>
+    value?.toLocaleLowerCase().includes(normalized) ?? false;
+  return decks
+    .filter((deck) =>
+      scope === "notes"
+        ? includes(deck.notes)
+        : scope === "creator"
+          ? includes(deck.designer) || includes(deck.producer)
+          : scope === "series"
+            ? includes(deck.series) || includes(deck.seriesRaw)
+            : scope === "producer"
+              ? includes(deck.producer)
+              : includes(deck.name)
+    )
     .map((deck) => {
       const name = deck.name.toLocaleLowerCase();
       const rank = name === normalized ? 0 : name.startsWith(normalized) ? 1 : name.includes(normalized) ? 2 : 3;
@@ -103,22 +98,22 @@ async function findDecks(query: string, scope: ArchiveSearchScope) {
     }));
 }
 
-async function findEntities(field: "designer" | "series" | "producer", query: string) {
+function findEntities(
+  decks: SearchDeck[],
+  series: SearchSeries[],
+  field: "designer" | "series" | "producer",
+  query: string
+) {
+  const normalized = query.toLocaleLowerCase();
+  const rank = (value: string) => {
+    const candidate = value.toLocaleLowerCase();
+    return candidate === normalized ? 0 : candidate.startsWith(normalized) ? 1 : 2;
+  };
+
   if (field === "series") {
-    const rows = await prisma.series.findMany({
-      where: { name: { contains: query, mode: "insensitive" } },
-      select: { name: true, slug: true, _count: { select: { decks: true } } },
-      take: 6,
-    });
-    const normalized = query.toLocaleLowerCase();
-    return rows
-      .sort((a, b) => {
-        const rank = (value: string) => {
-          const candidate = value.toLocaleLowerCase();
-          return candidate === normalized ? 0 : candidate.startsWith(normalized) ? 1 : 2;
-        };
-        return rank(a.name) - rank(b.name) || a.name.localeCompare(b.name);
-      })
+    return series
+      .filter(({ name }) => name.toLocaleLowerCase().includes(normalized))
+      .sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name))
       .slice(0, 4)
       .map((series): EntityResult => ({
         label: series.name,
@@ -127,44 +122,18 @@ async function findEntities(field: "designer" | "series" | "producer", query: st
       }));
   }
 
-  const candidates =
-    field === "designer"
-      ? (await prisma.deck.findMany({
-          where: { designer: { contains: query, mode: "insensitive" } },
-          distinct: ["designer"],
-          select: { designer: true },
-          take: 6,
-        })).map((item) => item.designer)
-      : (await prisma.deck.findMany({
-            where: { producer: { contains: query, mode: "insensitive" } },
-            distinct: ["producer"],
-            select: { producer: true },
-            take: 6,
-          })).map((item) => item.producer);
-  const labels = candidates
-    .filter((value): value is string => Boolean(value))
-    .sort((a, b) => {
-      const normalized = query.toLocaleLowerCase();
-      const rank = (value: string) => {
-        const candidate = value.toLocaleLowerCase();
-        return candidate === normalized ? 0 : candidate.startsWith(normalized) ? 1 : 2;
-      };
-      return rank(a) - rank(b) || a.localeCompare(b);
-    })
+  const counts = new Map<string, number>();
+  for (const deck of decks) {
+    const label = field === "designer" ? deck.designer : deck.producer;
+    if (label) counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+  const labels = Array.from(counts.keys())
+    .filter((label) => label.toLocaleLowerCase().includes(normalized))
+    .sort((a, b) => rank(a) - rank(b) || a.localeCompare(b))
     .slice(0, 4);
-  const counts = await Promise.all(
-    labels.map((label) =>
-      prisma.deck.count({
-        where:
-          field === "designer"
-            ? { designer: label }
-            : { producer: label },
-      })
-    )
-  );
-  return labels.map((label, index): EntityResult => ({
+  return labels.map((label): EntityResult => ({
     label,
-    count: counts[index],
+    count: counts.get(label),
     href: `/collection?${field}=${encodeURIComponent(label)}`,
   }));
 }

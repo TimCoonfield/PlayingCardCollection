@@ -1,38 +1,17 @@
-import { prisma } from "@/lib/prisma";
 import { CREATORS } from "@/lib/featured-creators";
-import { getCreatorCounts } from "@/lib/catalog-metadata";
+import { getCreatorCounts, getCreatorRepresentativeImages } from "@/lib/catalog-metadata";
 import { CreatorSpotlightCard } from "@/components/creator-spotlight-card";
 
 export default async function CreatorsPage() {
-  const [creatorCounts, representativeDecks] = await Promise.all([
+  const [creatorCounts, representativeImages] = await Promise.all([
     getCreatorCounts(),
-    Promise.all(
-      CREATORS.map(async (creator) => {
-        const where = creator.collectionProducer && creator.collectionDesigners
-          ? {
-              OR: [
-                { producer: creator.collectionProducer },
-                { designer: { in: creator.collectionDesigners } },
-              ],
-            }
-          : creator.collectionProducer
-            ? { producer: creator.collectionProducer }
-          : creator.matchProducerToo
-            ? { OR: [{ designer: creator.designer }, { producer: creator.designer }] }
-            : { designer: creator.designer };
-        return prisma.deck.findFirst({
-          where: { AND: [where, { images: { some: {} } }] },
-          orderBy: { name: "asc" },
-          select: { images: { orderBy: { sortOrder: "asc" }, take: 1, select: { url: true } } },
-        });
-      })
-    ),
+    getCreatorRepresentativeImages(),
   ]);
-  const creators = CREATORS.map((creator, index) => ({
+  const creators = CREATORS.map((creator) => ({
     ...creator,
     deckCount: creatorCounts[creator.designer] ?? 0,
     directoryImageUrl:
-      creator.spotlightImageUrl ?? representativeDecks[index]?.images[0]?.url,
+      creator.spotlightImageUrl ?? representativeImages[creator.designer] ?? undefined,
     directoryImageAlt:
       creator.spotlightImageAlt ?? `Artwork from a deck by ${creator.designer}`,
   }));

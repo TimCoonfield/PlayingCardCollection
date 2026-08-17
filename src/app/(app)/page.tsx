@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
 import { DeckCard } from "@/components/deck-card";
 import { CreatorSpotlightCard } from "@/components/creator-spotlight-card";
 import { SpecialtyCollectionCard } from "@/components/specialty-collection-card";
@@ -19,28 +18,14 @@ import {
   getCreatorCounts,
   getHomePageMetadata,
 } from "@/lib/catalog-metadata";
+import { getRecentDecks } from "@/lib/catalog-browse";
 
 export default async function HomePage() {
   const [metadata, homeMetadata, creatorCounts, recentDecks] = await Promise.all([
     getCoreCatalogMetadata(),
     getHomePageMetadata(),
     getCreatorCounts(),
-    prisma.deck.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 10,
-      select: {
-        id: true,
-        name: true,
-        series: { select: { name: true } },
-        designer: true,
-        producer: true,
-        qty: true,
-        tags: true,
-        favorite: true,
-        whiteWhale: true,
-        images: { orderBy: { sortOrder: "asc" }, select: { url: true } },
-      },
-    }),
+    getRecentDecks(),
   ]);
   const creatorsData = HOMEPAGE_CREATORS.map((creator) => ({
     ...creator,

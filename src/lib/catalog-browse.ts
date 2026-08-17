@@ -87,22 +87,74 @@ const getFavoriteDeckImages = unstable_cache(
   { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
-/** Lightweight cards for the full archive: one image URL per deck. */
-export async function getBrowseCatalogCards() {
-  const [{ totalDecks }, coins] = await Promise.all([
-    getCoreCatalogMetadata(),
-    getBrowseCoins(),
-  ]);
+export const getRecentDecks = unstable_cache(
+  async () =>
+    prisma.deck.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      select: {
+        id: true,
+        name: true,
+        series: { select: { name: true } },
+        designer: true,
+        producer: true,
+        qty: true,
+        tags: true,
+        favorite: true,
+        whiteWhale: true,
+        images: { orderBy: { sortOrder: "asc" }, take: 1, select: { url: true } },
+      },
+    }),
+  ["recent-decks-v1"],
+  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
+);
+
+const getSeriesSpotlightRows = unstable_cache(
+  async (seriesIds: string[]) =>
+    prisma.deck.findMany({
+      where: { seriesId: { in: seriesIds } },
+      orderBy: [{ name: "asc" }, { id: "asc" }],
+      select: {
+        id: true,
+        name: true,
+        seriesId: true,
+        tags: true,
+        images: { orderBy: { sortOrder: "asc" }, take: 1, select: { url: true } },
+      },
+    }),
+  ["series-spotlight-rows-v1"],
+  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
+);
+
+export async function getSeriesSpotlightDecks(seriesIds: string[]) {
+  const rows = await getSeriesSpotlightRows(seriesIds);
+  return new Map(
+    seriesIds.map((seriesId) => {
+      const decks = rows.filter((deck) => deck.seriesId === seriesId);
+      return [seriesId, decks.find((deck) => deck.images.length > 0) ?? decks[0] ?? null];
+    })
+  );
+}
+
+/** Lightweight deck cards for the full archive: one image URL per deck. */
+export async function getBrowseDeckCards() {
+  const { totalDecks } = await getCoreCatalogMetadata();
   const pageCount = Math.ceil(totalDecks / DECK_CACHE_PAGE_SIZE);
   const deckPages = await Promise.all(
     Array.from({ length: pageCount }, (_, page) => getBrowseDeckPage(page))
   );
-  return { decks: deckPages.flat(), coins };
+  return deckPages.flat();
+}
+
+/** Lightweight cards for the full archive: one image URL per deck. */
+export async function getBrowseCatalogCards() {
+  const [decks, coins] = await Promise.all([getBrowseDeckCards(), getBrowseCoins()]);
+  return { decks, coins };
 }
 
 /** Admin maintenance totals derived from the same deck snapshot used by /collection. */
 export async function getDeckWorkCounts() {
-  const { decks } = await getBrowseCatalogCards();
+  const decks = await getBrowseDeckCards();
   const decksWithPhoto = decks.filter((deck) => deck.images.length > 0).length;
 
   return {
