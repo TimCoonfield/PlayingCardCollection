@@ -22,9 +22,13 @@ const DEFAULT_CARD_SIZES =
 export function DeckCard({
   deck,
   sizes = DEFAULT_CARD_SIZES,
+  uniformHeight = false,
+  describedBy,
 }: {
   deck: DeckCardData;
   sizes?: string;
+  uniformHeight?: boolean;
+  describedBy?: string;
 }) {
   const hasImages = deck.images.length > 0;
 
@@ -32,7 +36,10 @@ export function DeckCard({
     <Link
       href={`/decks/${deck.id}`}
       prefetch={false}
-      className="group flex flex-col overflow-hidden rounded-lg border border-felt-line bg-felt-surface transition-colors hover:border-brass"
+      aria-describedby={describedBy}
+      className={`group flex flex-col overflow-hidden rounded-lg border border-felt-line bg-felt-surface transition-colors hover:border-brass ${
+        uniformHeight ? "h-full" : ""
+      }`}
     >
       <div className="relative aspect-[3/4] w-full bg-felt-surface-2">
         {hasImages ? (
@@ -71,7 +78,7 @@ export function DeckCard({
           </span>
         )}
       </div>
-      <div className="flex flex-col gap-0.5 p-2.5">
+      <div className={`flex flex-col gap-0.5 p-2.5 ${uniformHeight ? "h-28" : ""}`}>
         <p className="line-clamp-2 font-display text-base font-semibold leading-snug text-felt-ink">
           {deck.name}
         </p>

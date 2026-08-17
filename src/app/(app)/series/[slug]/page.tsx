@@ -142,10 +142,23 @@ export default async function SeriesPage({
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {decks.map((deck) => (
-              <div key={deck.id} className="flex flex-col gap-2">
-                <DeckCard deck={{ ...deck, series: series.name }} />
+              <div key={deck.id} className="group/series-tile relative h-full">
+                <DeckCard
+                  deck={{ ...deck, series: series.name }}
+                  uniformHeight
+                  describedBy={deck.variantNote ? `series-note-${deck.id}` : undefined}
+                />
                 {deck.variantNote && (
-                  <p className="px-1 text-xs leading-5 text-felt-sub">{deck.variantNote}</p>
+                  <div
+                    id={`series-note-${deck.id}`}
+                    role="tooltip"
+                    className="pointer-events-none absolute inset-x-2 bottom-[7.5rem] z-20 translate-y-1 rounded-md border border-brass/50 bg-felt-bg/95 px-3 py-2.5 opacity-0 shadow-xl shadow-black/30 backdrop-blur-sm transition-[opacity,transform] duration-150 delay-0 group-hover/series-tile:translate-y-0 group-hover/series-tile:opacity-100 group-hover/series-tile:delay-500 group-focus-within/series-tile:translate-y-0 group-focus-within/series-tile:opacity-100 group-focus-within/series-tile:delay-0"
+                  >
+                    <p className="mb-1 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-brass">
+                      Within this Series
+                    </p>
+                    <p className="text-xs leading-5 text-felt-ink">{deck.variantNote}</p>
+                  </div>
                 )}
               </div>
             ))}
