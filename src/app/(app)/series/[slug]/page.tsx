@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { prisma } from "@/lib/prisma";
@@ -66,25 +65,6 @@ export default async function SeriesPage({
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex items-center justify-between gap-4">
-        <Link href="/collection" className="text-sm text-felt-sub hover:text-brass">
-          ← Back to collection
-        </Link>
-        {session.authenticated && (
-          <SeriesEditor
-            action={updateSeriesWithId}
-            values={{
-              name: series.name,
-              subtitle: series.subtitle,
-              attributionLabel: series.attributionLabel,
-              attributionText: series.attributionText,
-              description: series.description,
-              heroImageUrl: series.heroImageUrl,
-            }}
-          />
-        )}
-      </div>
-
       <div className="flex flex-col">
         <header className={`relative overflow-hidden border border-felt-line bg-felt-surface ${series.description ? "rounded-t-lg" : "rounded-lg"}`}>
           <Image
@@ -101,6 +81,21 @@ export default async function SeriesPage({
             className="pointer-events-none absolute inset-0 hidden lg:block"
             style={{ background: HERO_FADE_GRADIENT }}
           />
+          {session.authenticated && (
+            <div className="absolute right-3 top-3 z-20">
+              <SeriesEditor
+                action={updateSeriesWithId}
+                values={{
+                  name: series.name,
+                  subtitle: series.subtitle,
+                  attributionLabel: series.attributionLabel,
+                  attributionText: series.attributionText,
+                  description: series.description,
+                  heroImageUrl: series.heroImageUrl,
+                }}
+              />
+            </div>
+          )}
           <div className="relative flex min-h-72 max-w-xl flex-col justify-end gap-3 p-6 sm:min-h-80 sm:p-8">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brass">Series</p>
             <h1 className="font-display text-4xl font-semibold leading-tight text-felt-ink sm:text-5xl">

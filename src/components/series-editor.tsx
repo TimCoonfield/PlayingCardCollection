@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import type { SeriesFormState } from "@/app/(app)/series/actions";
+import { PencilIcon } from "./icons";
 
 export interface SeriesEditorValues {
   name: string;
@@ -27,9 +28,11 @@ export function SeriesEditor({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-md border border-brass/60 px-3 py-1.5 text-xs font-semibold text-brass hover:bg-brass/10"
+        aria-label="Edit Series"
+        title="Edit Series"
+        className="flex h-9 w-9 items-center justify-center rounded-full border border-felt-line bg-felt-bg/75 text-felt-sub backdrop-blur-sm transition-colors hover:border-brass/60 hover:text-brass"
       >
-        Edit Series
+        <PencilIcon className="h-4 w-4" />
       </button>
     );
   }
