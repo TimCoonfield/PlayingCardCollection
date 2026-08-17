@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import type { ZodError } from "zod";
+import { z, type ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
 import { getSession } from "@/lib/auth";
@@ -15,6 +15,18 @@ export interface DeckFormState {
   error?: string;
   fieldErrors?: Record<string, string>;
 }
+
+export interface QuickReleaseYearState {
+  status?: "saved" | "error";
+  message?: string;
+  savedYear?: number;
+}
+
+const quickReleaseYearSchema = z.coerce
+  .number()
+  .int()
+  .min(1000, "Enter a four-digit year")
+  .max(9999, "Enter a four-digit year");
 
 // Server Actions are reachable via direct POST requests regardless of what the UI
 // shows, so every mutation checks the session itself rather than relying on the
@@ -202,6 +214,35 @@ export async function updateDeck(
   revalidatePath("/collection");
   revalidatePath(`/decks/${deckId}`);
   redirect(`/decks/${deckId}`);
+}
+
+export async function updateDeckReleaseYear(
+  deckId: string,
+  _prevState: QuickReleaseYearState,
+  formData: FormData
+): Promise<QuickReleaseYearState> {
+  if (!(await isAuthenticated())) {
+    return { status: "error", message: "Your login has expired. Refresh and log in again." };
+  }
+
+  const parsed = quickReleaseYearSchema.safeParse(formData.get("releaseYear"));
+  if (!parsed.success) {
+    return { status: "error", message: parsed.error.issues[0]?.message ?? "Enter a valid year" };
+  }
+
+  const result = await prisma.deck.updateMany({
+    where: { id: deckId },
+    data: { releaseYear: parsed.data },
+  });
+  if (result.count === 0) {
+    return { status: "error", message: "This deck no longer exists." };
+  }
+
+  invalidateCatalogCaches();
+  revalidatePath("/collection");
+  revalidatePath("/stats");
+  revalidatePath(`/decks/${deckId}`);
+  return { status: "saved", message: "Saved", savedYear: parsed.data };
 }
 
 export async function deleteDeck(deckId: string) {

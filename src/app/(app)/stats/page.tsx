@@ -104,7 +104,7 @@ export default async function StatsPage() {
               icon={<LayersIcon className="h-6 w-6" />}
               label="Decks missing year"
               value={workCounts.missingYearCount}
-              href="/collection?type=deck&missingYear=1"
+              href="/decks/missing-years"
             />
           </div>
         </section>

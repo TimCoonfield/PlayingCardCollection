@@ -6,6 +6,7 @@ import { sessionOptions, type SessionData } from "@/lib/auth";
 /** Routes that require a logged-in session; everything else is browsable read-only. */
 function isProtectedPath(pathname: string): boolean {
   if (pathname === "/decks/new") return true;
+  if (pathname === "/decks/missing-years") return true;
   if (/^\/decks\/[^/]+\/edit$/.test(pathname)) return true;
   if (pathname === "/coins/new") return true;
   if (/^\/coins\/[^/]+\/edit$/.test(pathname)) return true;
@@ -44,6 +45,7 @@ export const config = {
   matcher: [
     "/login",
     "/decks/new",
+    "/decks/missing-years",
     "/decks/:id/edit",
     "/coins/new",
     "/coins/:id/edit",
