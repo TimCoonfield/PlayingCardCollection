@@ -8,12 +8,14 @@ const DECK_CACHE_PAGE_SIZE = 400;
 // Vercel cache entries have a 2 MB ceiling. Paging the archive keeps each entry comfortably
 // below it as notes and image URLs accumulate, while still hydrating Neon only once per write.
 const getBrowseDeckPage = unstable_cache(
-  async (page: number) =>
-    prisma.deck.findMany({
+  async (page: number) => {
+    const rows = await prisma.deck.findMany({
       select: {
         id: true,
         name: true,
-        series: true,
+        seriesRaw: true,
+        seriesLegacy: true,
+        series: { select: { name: true, slug: true } },
         designer: true,
         producer: true,
         qty: true,
@@ -32,8 +34,15 @@ const getBrowseDeckPage = unstable_cache(
       orderBy: [{ name: "asc" }, { id: "asc" }],
       skip: page * DECK_CACHE_PAGE_SIZE,
       take: DECK_CACHE_PAGE_SIZE,
-    }),
-  ["browse-deck-page-v1"],
+    });
+    return rows.map(({ series, seriesRaw, seriesLegacy, ...deck }) => ({
+      ...deck,
+      series: series?.name ?? seriesRaw?.trim() ?? seriesLegacy?.trim() ?? null,
+      seriesSlug: series?.slug ?? null,
+      seriesRaw,
+    }));
+  },
+  ["browse-deck-page-v2"],
   { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
@@ -156,11 +165,12 @@ export async function getTaggedLandingCatalog(tag: string) {
   };
 }
 
-export async function getSeriesLandingCatalog(series: string) {
+export async function getSeriesLandingCatalog(slug: string, legacyCoinSeries?: string) {
   const catalog = await getLandingPageCatalog();
-  const matches = (item: { series: string | null }) => item.series === series;
   return {
-    decks: catalog.decks.filter(matches),
-    coins: catalog.coins.filter(matches),
+    decks: catalog.decks.filter((deck) => deck.seriesSlug === slug),
+    coins: legacyCoinSeries
+      ? catalog.coins.filter((coin) => coin.series === legacyCoinSeries)
+      : [],
   };
 }

@@ -2,13 +2,18 @@
 
 import { useActionState, useRef, useState } from "react";
 import { ImageUploader } from "./image-uploader";
+import { SeriesSelector, type SeriesOption } from "./series-selector";
 import { ALL_TAGS } from "@/lib/schemas";
 import type { DeckIdentification } from "@/lib/anthropic";
 import type { DeckFormState } from "@/app/(app)/decks/actions";
 
 export interface DeckFormDefaultValues {
   name?: string;
-  series?: string;
+  seriesId?: string;
+  seriesName?: string;
+  seriesRaw?: string;
+  seriesOrder?: number | null;
+  variantNote?: string;
   designer?: string;
   producer?: string;
   qty?: number;
@@ -26,6 +31,7 @@ export function DeckForm({
   initialImages = [],
   designers,
   producers,
+  seriesOptions,
   submitLabel,
   enableAiIdentify = false,
 }: {
@@ -34,6 +40,7 @@ export function DeckForm({
   initialImages?: { url: string }[];
   designers: string[];
   producers: string[];
+  seriesOptions: SeriesOption[];
   submitLabel: string;
   enableAiIdentify?: boolean;
 }) {
@@ -47,9 +54,9 @@ export function DeckForm({
   const [identifying, setIdentifying] = useState(false);
   const [identifyError, setIdentifyError] = useState<string | null>(null);
   const [identified, setIdentified] = useState(false);
+  const [seriesSuggestion, setSeriesSuggestion] = useState<string | undefined>();
 
   const nameRef = useRef<HTMLInputElement>(null);
-  const seriesRef = useRef<HTMLInputElement>(null);
   const designerRef = useRef<HTMLInputElement>(null);
   const producerRef = useRef<HTMLInputElement>(null);
   const productionRunRef = useRef<HTMLInputElement>(null);
@@ -72,7 +79,7 @@ export function DeckForm({
       }
       const result = data as DeckIdentification;
       if (nameRef.current && result.name) nameRef.current.value = result.name;
-      if (seriesRef.current && result.series) seriesRef.current.value = result.series;
+      if (result.series) setSeriesSuggestion(result.series);
       if (designerRef.current && result.designer) designerRef.current.value = result.designer;
       if (producerRef.current && result.producer) producerRef.current.value = result.producer;
       if (result.deckNumber) {
@@ -140,8 +147,18 @@ export function DeckForm({
       </Field>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Series" error={state?.fieldErrors?.series}>
-          <input ref={seriesRef} name="series" defaultValue={defaultValues.series} className={inputClass} />
+        <Field label="Series" error={state?.fieldErrors?.seriesId}>
+          <SeriesSelector
+            options={seriesOptions}
+            defaultSeriesId={defaultValues.seriesId}
+            defaultSeriesName={defaultValues.seriesName}
+            suggestedName={seriesSuggestion}
+          />
+          {defaultValues.seriesRaw && (
+            <span className="text-xs text-felt-sub/70">
+              Legacy value: {defaultValues.seriesRaw}
+            </span>
+          )}
         </Field>
         <Field label="Quantity">
           <input
@@ -204,7 +221,26 @@ export function DeckForm({
             className={inputClass}
           />
         </Field>
+        <Field label="Series order" error={state?.fieldErrors?.seriesOrder}>
+          <input
+            name="seriesOrder"
+            type="number"
+            min={1}
+            defaultValue={defaultValues.seriesOrder ?? ""}
+            className={inputClass}
+          />
+        </Field>
       </div>
+
+      <Field label="Variant note" error={state?.fieldErrors?.variantNote}>
+        <input
+          name="variantNote"
+          maxLength={300}
+          defaultValue={defaultValues.variantNote}
+          placeholder="What distinguishes this Deck within the Series?"
+          className={inputClass}
+        />
+      </Field>
 
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 text-sm font-medium text-felt-sub">Edition numbers</legend>

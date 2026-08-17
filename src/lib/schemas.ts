@@ -12,10 +12,22 @@ const optionalInt = z
   .transform((v) => (v.length > 0 ? Number(v) : undefined))
   .pipe(z.number().int().positive().optional());
 
+const optionalBoundedString = (max: number) =>
+  z
+    .string()
+    .transform((v) => v.trim())
+    .pipe(z.string().max(max))
+    .transform((v) => (v.length > 0 ? v : undefined))
+    .optional();
+
 export const deckFormSchema = z
   .object({
     name: z.string().trim().min(1, "Name is required"),
-    series: optionalString,
+    seriesQuery: optionalString,
+    seriesId: optionalString,
+    newSeriesName: optionalBoundedString(200),
+    seriesOrder: optionalInt,
+    variantNote: optionalBoundedString(300),
     designer: optionalString,
     producer: optionalString,
     ownershipStatus: z.string().trim().min(1).default("Owned"),
@@ -34,7 +46,28 @@ export const deckFormSchema = z
   .refine((data) => data.editionNumbers.length <= data.qty, {
     message: "Can't have more editions than quantity",
     path: ["editionNumbers"],
-  });
+  })
+  .refine((data) => !(data.seriesId && data.newSeriesName), {
+    message: "Choose an existing Series or create a new one, not both",
+    path: ["seriesId"],
+  })
+  .refine(
+    (data) => !data.seriesQuery || Boolean(data.seriesId || data.newSeriesName),
+    {
+      message: "Choose an existing Series or use the Create option",
+      path: ["seriesId"],
+    }
+  )
+  .refine(
+    (data) =>
+      !data.newSeriesName ||
+      !data.seriesQuery ||
+      data.newSeriesName === data.seriesQuery,
+    {
+      message: "Choose the Create option for the Series name you entered",
+      path: ["seriesId"],
+    }
+  );
 
 export type DeckFormValues = z.infer<typeof deckFormSchema>;
 
@@ -53,7 +86,11 @@ export const ALL_TAGS = [
 export function parseDeckFormData(formData: FormData) {
   return deckFormSchema.safeParse({
     name: formData.get("name") ?? "",
-    series: formData.get("series") ?? "",
+    seriesQuery: formData.get("seriesQuery") ?? "",
+    seriesId: formData.get("seriesId") ?? "",
+    newSeriesName: formData.get("newSeriesName") ?? "",
+    seriesOrder: formData.get("seriesOrder") ?? "",
+    variantNote: formData.get("variantNote") ?? "",
     designer: formData.get("designer") ?? "",
     producer: formData.get("producer") ?? "",
     ownershipStatus: formData.get("ownershipStatus") || "Owned",

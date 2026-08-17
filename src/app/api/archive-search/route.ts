@@ -70,7 +70,12 @@ async function findDecks(query: string, scope: ArchiveSearchScope) {
             ],
           }
         : scope === "series"
-          ? { series: { contains: query, mode: "insensitive" as const } }
+          ? {
+              OR: [
+                { series: { is: { name: { contains: query, mode: "insensitive" as const } } } },
+                { seriesRaw: { contains: query, mode: "insensitive" as const } },
+              ],
+            }
           : scope === "producer"
             ? { producer: { contains: query, mode: "insensitive" as const } }
             : { name: { contains: query, mode: "insensitive" as const } };
@@ -99,6 +104,29 @@ async function findDecks(query: string, scope: ArchiveSearchScope) {
 }
 
 async function findEntities(field: "designer" | "series" | "producer", query: string) {
+  if (field === "series") {
+    const rows = await prisma.series.findMany({
+      where: { name: { contains: query, mode: "insensitive" } },
+      select: { name: true, slug: true, _count: { select: { decks: true } } },
+      take: 6,
+    });
+    const normalized = query.toLocaleLowerCase();
+    return rows
+      .sort((a, b) => {
+        const rank = (value: string) => {
+          const candidate = value.toLocaleLowerCase();
+          return candidate === normalized ? 0 : candidate.startsWith(normalized) ? 1 : 2;
+        };
+        return rank(a.name) - rank(b.name) || a.name.localeCompare(b.name);
+      })
+      .slice(0, 4)
+      .map((series): EntityResult => ({
+        label: series.name,
+        count: series._count.decks,
+        href: `/series/${series.slug}`,
+      }));
+  }
+
   const candidates =
     field === "designer"
       ? (await prisma.deck.findMany({
@@ -107,14 +135,7 @@ async function findEntities(field: "designer" | "series" | "producer", query: st
           select: { designer: true },
           take: 6,
         })).map((item) => item.designer)
-      : field === "series"
-        ? (await prisma.deck.findMany({
-            where: { series: { contains: query, mode: "insensitive" } },
-            distinct: ["series"],
-            select: { series: true },
-            take: 6,
-          })).map((item) => item.series)
-        : (await prisma.deck.findMany({
+      : (await prisma.deck.findMany({
             where: { producer: { contains: query, mode: "insensitive" } },
             distinct: ["producer"],
             select: { producer: true },
@@ -137,9 +158,7 @@ async function findEntities(field: "designer" | "series" | "producer", query: st
         where:
           field === "designer"
             ? { designer: label }
-            : field === "series"
-              ? { series: label }
-              : { producer: label },
+            : { producer: label },
       })
     )
   );

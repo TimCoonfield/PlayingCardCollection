@@ -86,7 +86,7 @@ export default async function CollectionPage({
     (designers.length === 0 || (item.designer !== null && designers.includes(item.designer))) &&
     (producers.length === 0 || (item.producer !== null && producers.includes(item.producer))) &&
     (!creator || item.designer === creator || item.producer === creator) &&
-    (selectedSeries.length === 0 || (item.series !== null && selectedSeries.includes(item.series))) &&
+    matchesSeriesFilter(item, selectedSeries) &&
     tags.every((tag) => item.tags.includes(tag)) &&
     (!missingPhoto ||
       ("images" in item
@@ -222,15 +222,28 @@ export default async function CollectionPage({
 }
 
 function matchesSearch(
-  item: { name: string; series: string | null; designer: string | null; producer: string | null; notes: string | null },
+  item: { name: string; series: string | null; designer: string | null; producer: string | null; notes: string | null; seriesRaw?: string | null },
   query: string,
   scope: ArchiveSearchScope
 ) {
   const includes = (value: string | null) => value?.toLocaleLowerCase().includes(query.toLocaleLowerCase()) ?? false;
   if (scope === "name") return includes(item.name);
-  if (scope === "series") return includes(item.series);
+  if (scope === "series") return includes(item.series) || includes(item.seriesRaw ?? null);
   if (scope === "producer") return includes(item.producer);
   if (scope === "notes") return includes(item.notes);
   if (scope === "creator") return includes(item.designer) || includes(item.producer);
-  return [item.name, item.series, item.designer, item.producer, item.notes].some(includes);
+  return [item.name, item.series, item.seriesRaw ?? null, item.designer, item.producer, item.notes].some(includes);
+}
+
+function matchesSeriesFilter(
+  item: { series: string | null; seriesRaw?: string | null },
+  selectedSeries: string[]
+) {
+  if (selectedSeries.length === 0) return true;
+  return (
+    (item.series !== null && selectedSeries.includes(item.series)) ||
+    (item.seriesRaw !== undefined &&
+      item.seriesRaw !== null &&
+      selectedSeries.includes(item.seriesRaw.trim()))
+  );
 }

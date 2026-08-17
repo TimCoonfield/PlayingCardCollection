@@ -14,8 +14,8 @@ interface SeedDeck {
   tags: string[];
   ownershipStatus: string;
   qty: number;
-  deckNumber: number | null;
   productionRun: number | null;
+  releaseYear?: number | null;
   notes: string | null;
   catalogNumber: string | null;
 }
@@ -40,7 +40,22 @@ async function main() {
   const batchSize = 200;
   for (let i = 0; i < decks.length; i += batchSize) {
     const batch = decks.slice(i, i + batchSize);
-    await prisma.deck.createMany({ data: batch });
+    await prisma.deck.createMany({
+      data: batch.map((deck) => ({
+        name: deck.name,
+        seriesLegacy: deck.series,
+        seriesRaw: deck.series,
+        designer: deck.designer,
+        producer: deck.producer,
+        tags: deck.tags,
+        ownershipStatus: deck.ownershipStatus,
+        qty: deck.qty,
+        productionRun: deck.productionRun,
+        releaseYear: deck.releaseYear,
+        notes: deck.notes,
+        catalogNumber: deck.catalogNumber,
+      })),
+    });
     console.log(`  inserted ${Math.min(i + batchSize, decks.length)}/${decks.length}`);
   }
 

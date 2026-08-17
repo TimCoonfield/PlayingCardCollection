@@ -205,12 +205,17 @@ src/
 ## 6. Data model
 
 Authoritative source: `prisma/schema.prisma` (kept intentionally short — read it directly rather
-than trusting a stale copy in this doc). Three write-through models: `Deck`, `DeckImage`,
+than trusting a stale copy in this doc). Four write-through models: `Series`, `Deck`, `DeckImage`,
 `DeckEdition`, plus a standalone `Coin`.
 
 ### Deck
-The primary entity. Key fields beyond the obvious (`name`, `series`, `designer`, `producer`,
+The primary entity. Key fields beyond the obvious (`name`, `designer`, `producer`,
 `notes`, `catalogNumber`, `releaseYear`): 
+- `seriesId: String?` — nullable FK to the one canonical `Series` a Deck belongs to.
+  `seriesOrder` provides optional within-Series ordering and `variantNote` explains what
+  distinguishes similar members. The physical `series` column remains as a compatibility mirror
+  exposed by Prisma as `seriesLegacy`; `seriesRaw` preserves the original imported value and is
+  not rewritten when membership or a Series name changes.
 - `tags: String[]` — free-form but validated against a fixed allowlist (`ALL_TAGS` in
   `src/lib/schemas.ts`), Postgres GIN-indexed for filtering.
 - `qty: Int` — how many physical copies of this deck are owned (default 1).
@@ -225,6 +230,14 @@ The primary entity. Key fields beyond the obvious (`name`, `series`, `designer`,
 - Detail-page display logic (see `src/app/(app)/decks/[id]/page.tsx`): if `editions.length > 0`,
   show one tile per edition as `"{deckNumber}/{productionRun}"`; else if `productionRun` is set
   but no editions are recorded, show a single placeholder tile `"XX/{productionRun}"`.
+
+### Series
+First-class canonical Deck families. A Series owns its display name, stable unique slug, optional
+subtitle, Markdown description, hero override, and free-text attribution label/text. Attribution
+is never inferred from member Decks. Every Series is public at `/series/[slug]`; if no hero is set,
+the page uses the first primary member image and then the archive fallback treatment. Legacy
+`/collection?series=...` filters remain supported. Backfill, duplicate-review, merge, and rollback
+tooling lives in `scripts/series-migration.ts`.
 
 ### DeckImage
 `{ url, sortOrder }`, cascade-deletes with its Deck. **The image at `sortOrder: 0` (ascending) is
@@ -319,7 +332,8 @@ delete form submits — purely a UI courtesy, not enforced server-side.
   `createDeck`/`updateDeck` in `decks/actions.ts`. Includes the AI-identify button
   (`enableAiIdentify` prop, new-deck form only) which POSTs uploaded photo URLs to
   `/api/ai/identify` and pre-fills form fields from the response — the user still reviews/edits
-  before saving, nothing auto-submits.
+  before saving, nothing auto-submits. The Series field is a searchable selector that can create
+  and immediately assign an exact new Series; the preserved legacy value is reference-only.
 - **Create/edit a coin** (`/coins/new`, `/coins/[id]/edit`) → `CoinForm`
   (`src/components/coin-form.tsx`), same pattern, no AI-identify.
 - **Validation**: both forms parse `FormData` through a zod schema
@@ -352,7 +366,8 @@ delete form submits — purely a UI courtesy, not enforced server-side.
   this with per-request full-table Prisma queries or a raw SQL UNION without a measured reason.
 - **`/stats`**: aggregate dashboard — totals, top designers, Modern/Vintage/Antique era
   breakdown (era = tag membership, not a separate column), release-year histogram, "Biggest
-  series" (top 5 by deck count, each showing one random photo from that series), a
+  series" (top 5 by Deck count, each linking to its first-class Series page and showing one
+  random member photo), a
   photo-coverage stat (`% of decks with ≥1 photo`), and a recently-added strip. All numbers come
   from server-side Prisma `count`/`groupBy`/`aggregate` calls — no client-side computation.
 - **Landing pages** (`/souvenir`, `/mini`, `/tarot`, `/creators/*`) — see [§4](#4-architecture)
@@ -569,12 +584,10 @@ beyond Vercel's own auto-detection) — verification is entirely manual/local ri
 
 ## 16. Known risks and sharp edges
 
-- **`scripts/seed.ts` is likely stale/broken for a fresh re-seed.** Its `SeedDeck` interface
-  still includes a `deckNumber` field that no longer exists on the `Deck` model — that column was
-  dropped in migration `20260802142014_drop_deck_number` in favor of the `DeckEdition` relation.
-  Because the script only runs when the `Deck` table is empty (it no-ops otherwise) and the local
-  DB already has rows, this was never re-exercised after that migration. Treat it as unverified;
-  don't assume it works without testing against an empty database first.
+- **`scripts/seed.ts` intentionally seeds legacy Series text, not Series rows.** It maps each
+  imported value into both `seriesLegacy` and `seriesRaw`; run the idempotent Series backfill after
+  seeding a fresh database. The current mapping was verified against an empty local database
+  during the first-class Series implementation.
 - **`src/app/api/upload/route.ts` has a leftover diagnostic** in its error path that echoes a
   partial `BLOB_READ_WRITE_TOKEN` (length + first/last few characters) into the JSON response.
   It was added intentionally to debug a real production token-detection issue and does not leak

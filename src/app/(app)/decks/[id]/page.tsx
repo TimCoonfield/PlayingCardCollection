@@ -11,6 +11,7 @@ import { WhiteWhaleButton } from "@/components/white-whale-button";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { getSession } from "@/lib/auth";
 import { deleteDeck } from "../actions";
+import { sortSeriesDecks } from "@/lib/series-order";
 
 export default async function DeckDetailPage({
   params,
@@ -24,6 +25,13 @@ export default async function DeckDetailPage({
       include: {
         images: { orderBy: { sortOrder: "asc" } },
         editions: { orderBy: { deckNumber: "asc" } },
+        series: {
+          include: {
+            decks: {
+              select: { id: true, name: true, seriesOrder: true, releaseYear: true },
+            },
+          },
+        },
       },
     }),
     getSession(),
@@ -33,6 +41,12 @@ export default async function DeckDetailPage({
 
   const isAuthenticated = Boolean(session.authenticated);
   const deleteDeckWithId = deleteDeck.bind(null, deck.id);
+  const orderedSeriesDecks = deck.series ? sortSeriesDecks(deck.series.decks) : [];
+  const seriesIndex = orderedSeriesDecks.findIndex((member) => member.id === deck.id);
+  const previousDeck = seriesIndex > 0 ? orderedSeriesDecks[seriesIndex - 1] : null;
+  const nextDeck = seriesIndex >= 0 && seriesIndex < orderedSeriesDecks.length - 1
+    ? orderedSeriesDecks[seriesIndex + 1]
+    : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -76,10 +90,10 @@ export default async function DeckDetailPage({
           <div className="flex flex-col gap-1">
             {deck.series && (
               <Link
-                href={`/collection?series=${encodeURIComponent(deck.series)}`}
+                href={`/series/${deck.series.slug}`}
                 className="text-sm text-felt-sub hover:text-brass"
               >
-                {deck.series}
+                {deck.series.name}
               </Link>
             )}
             <div className="flex items-center gap-2.5">
@@ -163,6 +177,15 @@ export default async function DeckDetailPage({
             </p>
           )}
 
+          {deck.variantNote && (
+            <div className="rounded-lg border border-felt-line bg-felt-surface p-4">
+              <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-felt-sub/70">
+                Within this Series
+              </h2>
+              <p className="text-sm text-felt-sub">{deck.variantNote}</p>
+            </div>
+          )}
+
           {deck.notes && (
             <div className="rounded-lg border border-felt-line bg-felt-surface p-4">
               <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-felt-sub/70">
@@ -173,6 +196,36 @@ export default async function DeckDetailPage({
           )}
         </div>
       </div>
+
+      {deck.series && (
+        <nav
+          aria-label={`${deck.series.name} Series navigation`}
+          className="grid grid-cols-1 gap-3 border-t border-felt-line pt-6 sm:grid-cols-[1fr_auto_1fr] sm:items-center"
+        >
+          <div>
+            {previousDeck && (
+              <Link href={`/decks/${previousDeck.id}`} className="group flex flex-col text-sm">
+                <span className="text-xs uppercase tracking-wide text-felt-sub/70">← Previous</span>
+                <span className="font-display text-felt-ink group-hover:text-brass">{previousDeck.name}</span>
+              </Link>
+            )}
+          </div>
+          <Link
+            href={`/series/${deck.series.slug}`}
+            className="text-center text-sm font-medium text-brass hover:text-brass-deep"
+          >
+            View {deck.series.name}
+          </Link>
+          <div className="sm:text-right">
+            {nextDeck && (
+              <Link href={`/decks/${nextDeck.id}`} className="group flex flex-col text-sm">
+                <span className="text-xs uppercase tracking-wide text-felt-sub/70">Next →</span>
+                <span className="font-display text-felt-ink group-hover:text-brass">{nextDeck.name}</span>
+              </Link>
+            )}
+          </div>
+        </nav>
+      )}
     </div>
   );
 }

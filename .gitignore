@@ -41,4 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+/reports/series-backfill-manifest.json
+/reports/series-backfill-production-*.json
 .claude/settings.local.json

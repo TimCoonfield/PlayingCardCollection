@@ -10,10 +10,29 @@ datasource db {
   provider = "postgresql"
 }
 
+model Series {
+  id               String   @id @default(cuid())
+  name             String   @unique @db.VarChar(200)
+  slug             String   @unique @db.VarChar(240)
+  subtitle         String?  @db.VarChar(300)
+  description      String?
+  heroImageUrl     String?
+  attributionLabel String?  @db.VarChar(80)
+  attributionText  String?  @db.VarChar(300)
+  decks            Deck[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
 model Deck {
   id              String        @id @default(cuid())
   name            String
-  series          String?
+  seriesLegacy    String?       @map("series")
+  seriesRaw       String?
+  seriesId        String?
+  series          Series?       @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  seriesOrder     Int?
+  variantNote     String?       @db.VarChar(300)
   designer        String?
   producer        String?
   tags            String[]      @default([])
@@ -33,7 +52,8 @@ model Deck {
   @@index([tags], type: Gin)
   @@index([designer])
   @@index([producer])
-  @@index([series])
+  @@index([seriesLegacy], map: "Deck_series_idx")
+  @@index([seriesId, seriesOrder])
 }
 
 model DeckImage {

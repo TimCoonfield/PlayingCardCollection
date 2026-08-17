@@ -10,10 +10,11 @@ export default async function EditDeckPage({
 }) {
   const { id } = await params;
 
-  const [deck, designers, producers] = await Promise.all([
+  const [deck, designers, producers, seriesOptions] = await Promise.all([
     prisma.deck.findUnique({
       where: { id },
       include: {
+        series: true,
         images: { orderBy: { sortOrder: "asc" } },
         editions: { orderBy: { deckNumber: "asc" } },
       },
@@ -30,6 +31,10 @@ export default async function EditDeckPage({
       select: { producer: true },
       orderBy: { producer: "asc" },
     }),
+    prisma.series.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   if (!deck) notFound();
@@ -43,7 +48,11 @@ export default async function EditDeckPage({
         action={updateDeckWithId}
         defaultValues={{
           name: deck.name,
-          series: deck.series ?? undefined,
+          seriesId: deck.seriesId ?? undefined,
+          seriesName: deck.series?.name,
+          seriesRaw: deck.seriesRaw ?? undefined,
+          seriesOrder: deck.seriesOrder,
+          variantNote: deck.variantNote ?? undefined,
           designer: deck.designer ?? undefined,
           producer: deck.producer ?? undefined,
           qty: deck.qty,
@@ -57,6 +66,7 @@ export default async function EditDeckPage({
         initialImages={deck.images.map((i) => ({ url: i.url }))}
         designers={designers.map((d) => d.designer!).filter(Boolean)}
         producers={producers.map((p) => p.producer!).filter(Boolean)}
+        seriesOptions={seriesOptions}
         submitLabel="Save changes"
       />
     </div>

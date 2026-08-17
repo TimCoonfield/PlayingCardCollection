@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts",
+    "series:migrate": "node --env-file=.env.local --import tsx scripts/series-migration.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
@@ -21,6 +22,7 @@
     "prisma": "^7.9.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-markdown": "^10.1.0",
     "recharts": "^3.10.1",
     "zod": "^4.4.3"
   },

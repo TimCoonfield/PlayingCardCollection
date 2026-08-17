@@ -11,23 +11,23 @@ export const getCoreCatalogMetadata = unstable_cache(
     const [
       totalDecks,
       designerGroups,
-      seriesGroups,
+      seriesCount,
       coinCount,
     ] = await Promise.all([
       prisma.deck.count(),
       prisma.deck.groupBy({ by: ["designer"], where: { designer: { not: null } } }),
-      prisma.deck.groupBy({ by: ["series"], where: { series: { not: null } } }),
+      prisma.series.count(),
       prisma.coin.count(),
     ]);
 
     return {
       totalDecks,
       designerCount: designerGroups.length,
-      seriesCount: seriesGroups.length,
+      seriesCount,
       coinCount,
     };
   },
-  ["core-catalog-metadata-v1"],
+  ["core-catalog-metadata-v2"],
   { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
@@ -36,13 +36,13 @@ export const getHomePageMetadata = unstable_cache(
     const [miniCount, tarotCount, souvenirCount, whiteWhaleCount] = await Promise.all([
       prisma.deck.count({ where: { tags: { has: "Mini" } } }),
       prisma.deck.count({ where: { tags: { has: "Tarot" } } }),
-      prisma.deck.count({ where: { series: "Souvenir Decks" } }),
+      prisma.deck.count({ where: { series: { is: { slug: "souvenir-decks" } } } }),
       prisma.deck.count({ where: { whiteWhale: true } }),
     ]);
 
     return { miniCount, tarotCount, souvenirCount, whiteWhaleCount };
   },
-  ["home-page-metadata-v1"],
+  ["home-page-metadata-v2"],
   { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
@@ -100,11 +100,7 @@ export const getCollectionMetadata = unstable_cache(
         where: { producer: { not: null } },
         select: { producer: true },
       }),
-      prisma.deck.findMany({
-        distinct: ["series"],
-        where: { series: { not: null } },
-        select: { series: true },
-      }),
+      prisma.series.findMany({ select: { name: true } }),
       prisma.coin.findMany({
         distinct: ["series"],
         where: { series: { not: null } },
@@ -150,9 +146,7 @@ export const getCollectionMetadata = unstable_cache(
       ).sort(),
       series: Array.from(
         new Set([
-          ...deckSeries
-            .map(({ series }) => series)
-            .filter((value): value is string => Boolean(value)),
+          ...deckSeries.map(({ name }) => name),
           ...coinSeries
             .map(({ series }) => series)
             .filter((value): value is string => Boolean(value)),
@@ -160,7 +154,7 @@ export const getCollectionMetadata = unstable_cache(
       ).sort(),
     };
   },
-  ["collection-metadata-v1"],
+  ["collection-metadata-v2"],
   { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
@@ -174,11 +168,9 @@ export const getStatsChartMetadata = unstable_cache(
         orderBy: { _count: { designer: "desc" } },
         take: 10,
       }),
-      prisma.deck.groupBy({
-        by: ["series"],
-        where: { series: { not: null } },
-        _count: { _all: true },
-        orderBy: { _count: { series: "desc" } },
+      prisma.series.findMany({
+        select: { id: true, name: true, slug: true, _count: { select: { decks: true } } },
+        orderBy: { decks: { _count: "desc" } },
         take: 5,
       }),
       prisma.deck.groupBy({
@@ -190,7 +182,7 @@ export const getStatsChartMetadata = unstable_cache(
 
     return { designerGroups, topSeriesGroups, releaseYearGroups };
   },
-  ["stats-chart-metadata-v1"],
+  ["stats-chart-metadata-v2"],
   { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 

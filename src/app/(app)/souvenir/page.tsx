@@ -5,7 +5,7 @@ const SOUVENIR_HERO_IMAGE_URL =
   "https://pl3drpvfu4aqzkn0.public.blob.vercel-storage.com/pages/souvenir-hero.jpg";
 
 export default async function SouvenirDecksPage() {
-  const { decks, coins } = await getSeriesLandingCatalog("Souvenir Decks");
+  const { decks, coins } = await getSeriesLandingCatalog("souvenir-decks", "Souvenir Decks");
 
   return (
     <DecksLandingPage

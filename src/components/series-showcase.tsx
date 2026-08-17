@@ -4,6 +4,7 @@ import { DeckPlaceholder } from "./deck-placeholder";
 
 export interface SeriesSpotlightDatum {
   series: string;
+  slug: string;
   count: number;
   deck: { id: string; name: string; imageUrl: string | null; tags: string[] } | null;
 }
@@ -56,7 +57,7 @@ export function SeriesShowcase({ items }: { items: SeriesSpotlightDatum[] }) {
         return (
           <Link
             key={item.series}
-            href={`/collection?series=${encodeURIComponent(item.series)}`}
+            href={`/series/${item.slug}`}
             prefetch={false}
           >
             {content}

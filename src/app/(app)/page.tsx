@@ -31,7 +31,7 @@ export default async function HomePage() {
       select: {
         id: true,
         name: true,
-        series: true,
+        series: { select: { name: true } },
         designer: true,
         producer: true,
         qty: true,
@@ -228,7 +228,7 @@ export default async function HomePage() {
           {recentDecks.map((deck) => (
             <DeckCard
               key={deck.id}
-              deck={deck}
+              deck={{ ...deck, series: deck.series?.name ?? null }}
               sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 10vw"
             />
           ))}

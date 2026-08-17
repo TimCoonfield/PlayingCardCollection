@@ -43,7 +43,7 @@ export default async function StatsPage() {
       select: {
         id: true,
         name: true,
-        series: true,
+        series: { select: { name: true } },
         designer: true,
         producer: true,
         qty: true,
@@ -80,7 +80,9 @@ export default async function StatsPage() {
     .sort((a, b) => a.sortKey - b.sortKey);
 
   const seriesShowcase: SeriesSpotlightDatum[] = await Promise.all(
-    topSeriesGroups.map((g) => buildSeriesSpotlight(g.series!, g._count._all))
+    topSeriesGroups.map((series) =>
+      buildSeriesSpotlight(series.id, series.name, series.slug, series._count.decks)
+    )
   );
 
   return (
@@ -150,7 +152,7 @@ export default async function StatsPage() {
           {recentDecks.map((deck) => (
             <DeckCard
               key={deck.id}
-              deck={deck}
+              deck={{ ...deck, series: deck.series?.name ?? null }}
               sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 10vw"
             />
           ))}
@@ -160,9 +162,14 @@ export default async function StatsPage() {
   );
 }
 
-async function buildSeriesSpotlight(seriesName: string, count: number): Promise<SeriesSpotlightDatum> {
+async function buildSeriesSpotlight(
+  seriesId: string,
+  seriesName: string,
+  slug: string,
+  count: number
+): Promise<SeriesSpotlightDatum> {
   const decks = await prisma.deck.findMany({
-    where: { series: seriesName },
+    where: { seriesId },
     select: { id: true, name: true, tags: true, images: { take: 1, orderBy: { sortOrder: "asc" } } },
   });
   const withImages = decks.filter((d) => d.images.length > 0);
@@ -171,6 +178,7 @@ async function buildSeriesSpotlight(seriesName: string, count: number): Promise<
 
   return {
     series: seriesName,
+    slug,
     count,
     deck: pick
       ? { id: pick.id, name: pick.name, tags: pick.tags, imageUrl: pick.images[0]?.url ?? null }

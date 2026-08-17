@@ -3,7 +3,7 @@ import { DeckForm } from "@/components/deck-form";
 import { createDeck } from "../actions";
 
 export default async function NewDeckPage() {
-  const [designers, producers] = await Promise.all([
+  const [designers, producers, seriesOptions] = await Promise.all([
     prisma.deck.findMany({
       distinct: ["designer"],
       where: { designer: { not: null } },
@@ -16,6 +16,10 @@ export default async function NewDeckPage() {
       select: { producer: true },
       orderBy: { producer: "asc" },
     }),
+    prisma.series.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   return (
@@ -25,6 +29,7 @@ export default async function NewDeckPage() {
         action={createDeck}
         designers={designers.map((d) => d.designer!).filter(Boolean)}
         producers={producers.map((p) => p.producer!).filter(Boolean)}
+        seriesOptions={seriesOptions}
         submitLabel="Save deck"
         enableAiIdentify
       />
