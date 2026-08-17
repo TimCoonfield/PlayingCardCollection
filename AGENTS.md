@@ -249,6 +249,11 @@ Member Deck imagery is not used as the Series fallback. Legacy
 `/collection?series=...` filters remain supported. Backfill, duplicate-review, merge, and rollback
 tooling lives in `scripts/series-migration.ts`.
 
+Series hero overrides are uploaded as a single image through the Series editor and stored in Blob;
+the database keeps only the resulting URL. Replacing or removing a saved hero deletes the old Blob
+only after the new Series value is committed and no deck, coin, or other Series still references it.
+Unsaved replacement uploads are cleaned up when they are replaced, removed, or the editor closes.
+
 ### DeckImage
 `{ url, sortOrder }`, cascade-deletes with its Deck. **The image at `sortOrder: 0` (ascending) is
 the "main" photo everywhere** — listing thumbnails, the gallery's initial frame, and the

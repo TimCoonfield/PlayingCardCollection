@@ -1,8 +1,10 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import type { SeriesFormState } from "@/app/(app)/series/actions";
+import { requestBlobCleanup } from "./image-uploader";
 import { PencilIcon } from "./icons";
+import { SeriesHeroUploader } from "./series-hero-uploader";
 
 export interface SeriesEditorValues {
   name: string;
@@ -21,13 +23,58 @@ export function SeriesEditor({
   values: SeriesEditorValues;
 }) {
   const [open, setOpen] = useState(false);
+  const [heroImageUrl, setHeroImageUrl] = useState(values.heroImageUrl ?? "");
+  const [heroUploading, setHeroUploading] = useState(false);
+  const [persistedHeroUrl, setPersistedHeroUrl] = useState(values.heroImageUrl ?? "");
+  const persistedHeroUrlRef = useRef(values.heroImageUrl ?? "");
+  const currentHeroUrl = useRef(values.heroImageUrl ?? "");
+  const submittedHeroUrl = useRef<string | undefined>(undefined);
   const [state, formAction, pending] = useActionState(action, {});
+
+  useEffect(() => {
+    currentHeroUrl.current = heroImageUrl;
+  }, [heroImageUrl]);
+
+  useEffect(() => {
+    function cleanupUnsavedHero() {
+      if (currentHeroUrl.current && currentHeroUrl.current !== persistedHeroUrlRef.current) {
+        requestBlobCleanup(currentHeroUrl.current);
+      }
+    }
+
+    window.addEventListener("pagehide", cleanupUnsavedHero);
+    return () => {
+      window.removeEventListener("pagehide", cleanupUnsavedHero);
+      cleanupUnsavedHero();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!state.saved || submittedHeroUrl.current === undefined) return;
+    persistedHeroUrlRef.current = submittedHeroUrl.current;
+    setPersistedHeroUrl(submittedHeroUrl.current);
+    submittedHeroUrl.current = undefined;
+  }, [state]);
+
+  function openEditor() {
+    const current = persistedHeroUrl;
+    setHeroImageUrl(current);
+    setOpen(true);
+  }
+
+  function closeEditor() {
+    if (heroImageUrl && heroImageUrl !== persistedHeroUrl) {
+      requestBlobCleanup(heroImageUrl);
+    }
+    setHeroImageUrl(persistedHeroUrl);
+    setOpen(false);
+  }
 
   if (!open) {
     return (
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={openEditor}
         aria-label="Edit Series"
         title="Edit Series"
         className="flex h-9 w-9 items-center justify-center rounded-full border border-felt-line bg-felt-bg/75 text-felt-sub backdrop-blur-sm transition-colors hover:border-brass/60 hover:text-brass"
@@ -44,10 +91,21 @@ export function SeriesEditor({
       aria-label="Edit Series"
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 px-4 py-[8vh] backdrop-blur-sm"
     >
-    <form action={formAction} className="flex w-full max-w-2xl flex-col gap-4 rounded-lg border border-brass/35 bg-felt-surface p-4 shadow-2xl">
+    <form
+      action={formAction}
+      onSubmit={() => {
+        submittedHeroUrl.current = heroImageUrl;
+      }}
+      className="flex w-full max-w-2xl flex-col gap-4 rounded-lg border border-brass/35 bg-felt-surface p-4 shadow-2xl"
+    >
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-display text-lg font-semibold text-felt-ink">Edit Series</h2>
-        <button type="button" onClick={() => setOpen(false)} className="text-xs text-felt-sub hover:text-brass">
+        <button
+          type="button"
+          onClick={closeEditor}
+          disabled={heroUploading}
+          className="text-xs text-felt-sub hover:text-brass disabled:cursor-wait disabled:opacity-50"
+        >
           Close
         </button>
       </div>
@@ -85,15 +143,13 @@ export function SeriesEditor({
         </Field>
       </div>
 
-      <Field label="Hero image URL" error={state.fieldErrors?.heroImageUrl}>
-        <input
-          name="heroImageUrl"
-          type="text"
-          defaultValue={values.heroImageUrl ?? ""}
-          placeholder="Leave blank to use a member Deck image"
-          className={inputClass}
-        />
-      </Field>
+      <SeriesHeroUploader
+        value={heroImageUrl}
+        persistedValue={persistedHeroUrl}
+        error={state.fieldErrors?.heroImageUrl}
+        onChange={setHeroImageUrl}
+        onUploadingChange={setHeroUploading}
+      />
 
       <Field label="About this Series (Markdown)" error={state.fieldErrors?.description}>
         <textarea name="description" rows={10} defaultValue={values.description ?? ""} className={inputClass} />
@@ -104,10 +160,10 @@ export function SeriesEditor({
       </p>
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || heroUploading}
         className="self-start rounded-md bg-brass px-4 py-2 text-sm font-semibold text-felt-bg hover:bg-brass-deep disabled:opacity-60"
       >
-        {pending ? "Saving…" : "Save Series"}
+        {heroUploading ? "Uploading image…" : pending ? "Saving…" : "Save Series"}
       </button>
     </form>
     </div>
