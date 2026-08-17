@@ -9,6 +9,10 @@ import { isCollectionSort, sortCollectionItems, type CollectionSort } from "@/li
 import { isArchiveSearchScope, type ArchiveSearchScope } from "@/lib/archive-search";
 import { getCollectionMetadata } from "@/lib/catalog-metadata";
 import { getBrowseCatalogCards } from "@/lib/catalog-browse";
+import {
+  isCollectionReason,
+  type CollectionReasonValue,
+} from "@/lib/collection-reasons";
 
 const PAGE_SIZE = 60;
 
@@ -50,6 +54,11 @@ export default async function CollectionPage({
   const creator = toParam(params.creator);
   const selectedSeries = toArrayParam(params.series);
   const tags = toArrayParam(params.tag);
+  const rawReason = toParam(params.reason);
+  const reason = isCollectionReason(rawReason) ? rawReason : null;
+  const rawReasonField = toParam(params.reasonField);
+  const reasonField: "any" | "primary" | "secondary" =
+    rawReasonField === "primary" || rawReasonField === "secondary" ? rawReasonField : "any";
   const requestedMinYear = toOptionalNumberParam(params.minYear);
   const requestedMaxYear = toOptionalNumberParam(params.maxYear);
   const page = Math.max(1, Number(toParam(params.page)) || 1);
@@ -88,6 +97,7 @@ export default async function CollectionPage({
     (!creator || item.designer === creator || item.producer === creator) &&
     matchesSeriesFilter(item, selectedSeries) &&
     tags.every((tag) => item.tags.includes(tag)) &&
+    matchesCollectionReason(item, reason, reasonField) &&
     (!missingPhoto ||
       ("images" in item
         ? item.images.length === 0
@@ -152,6 +162,8 @@ export default async function CollectionPage({
   if (sort !== "featured") currentSearchParams.set("sort", sort);
   if (sort === "random") currentSearchParams.set("randomSeed", String(randomSeed));
   for (const tag of tags) currentSearchParams.append("tag", tag);
+  if (reason) currentSearchParams.set("reason", reason);
+  if (reason && reasonField !== "any") currentSearchParams.set("reasonField", reasonField);
   if (missingPhoto) currentSearchParams.set("missingPhoto", "1");
   if (missingYear) currentSearchParams.set("missingYear", "1");
   if (hasYearFilter) {
@@ -246,4 +258,17 @@ function matchesSeriesFilter(
       item.seriesRaw !== null &&
       selectedSeries.includes(item.seriesRaw.trim()))
   );
+}
+
+function matchesCollectionReason(
+  item: (Awaited<ReturnType<typeof getBrowseCatalogCards>>)["decks"][number] |
+    (Awaited<ReturnType<typeof getBrowseCatalogCards>>)["coins"][number],
+  reason: CollectionReasonValue | null,
+  field: "any" | "primary" | "secondary"
+) {
+  if (!reason) return true;
+  if (!("collectionReasonPrimary" in item)) return false;
+  if (field === "primary") return item.collectionReasonPrimary === reason;
+  if (field === "secondary") return item.collectionReasonSecondary === reason;
+  return item.collectionReasonPrimary === reason || item.collectionReasonSecondary === reason;
 }

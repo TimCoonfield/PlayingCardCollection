@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { COLLECTION_REASON_VALUES } from "@/lib/collection-reasons";
 
 const optionalString = z
   .string()
@@ -20,6 +21,19 @@ const optionalBoundedString = (max: number) =>
     .transform((v) => (v.length > 0 ? v : undefined))
     .optional();
 
+// Unlike short catalog fields, editorial text should not be silently rewritten when a Deck is
+// saved. An empty field still clears to null, but existing leading/trailing whitespace survives.
+const optionalVerbatimText = z
+  .string()
+  .transform((v) => (v.length > 0 ? v : undefined))
+  .optional();
+
+const optionalCollectionReason = z
+  .string()
+  .transform((v) => v.trim())
+  .transform((v) => (v.length > 0 ? v : undefined))
+  .pipe(z.enum(COLLECTION_REASON_VALUES).optional());
+
 export const deckFormSchema = z
   .object({
     name: z.string().trim().min(1, "Name is required"),
@@ -38,7 +52,12 @@ export const deckFormSchema = z
     editionNumbers: z.array(z.coerce.number().int().positive()).default([]),
     productionRun: optionalInt,
     releaseYear: optionalInt,
-    notes: optionalString,
+    collectionReasonPrimary: optionalCollectionReason,
+    collectionReasonSecondary: optionalCollectionReason,
+    hook: optionalBoundedString(240),
+    notes: optionalVerbatimText,
+    essay: optionalVerbatimText,
+    notesReviewed: z.boolean().default(false),
     catalogNumber: optionalString,
     tags: z.array(z.string()).default([]),
     imageUrls: z.array(z.string().url()).default([]),
@@ -47,6 +66,16 @@ export const deckFormSchema = z
     message: "Can't have more editions than quantity",
     path: ["editionNumbers"],
   })
+  .refine(
+    (data) =>
+      !data.collectionReasonPrimary ||
+      !data.collectionReasonSecondary ||
+      data.collectionReasonPrimary !== data.collectionReasonSecondary,
+    {
+      message: "Primary and secondary reasons must be different",
+      path: ["collectionReasonSecondary"],
+    }
+  )
   .refine((data) => !(data.seriesId && data.newSeriesName), {
     message: "Choose an existing Series or create a new one, not both",
     path: ["seriesId"],
@@ -98,7 +127,12 @@ export function parseDeckFormData(formData: FormData) {
     editionNumbers: formData.getAll("editionNumbers").map(String),
     productionRun: formData.get("productionRun") ?? "",
     releaseYear: formData.get("releaseYear") ?? "",
+    collectionReasonPrimary: formData.get("collectionReasonPrimary") ?? "",
+    collectionReasonSecondary: formData.get("collectionReasonSecondary") ?? "",
+    hook: formData.get("hook") ?? "",
     notes: formData.get("notes") ?? "",
+    essay: formData.get("essay") ?? "",
+    notesReviewed: formData.has("notesReviewed"),
     catalogNumber: formData.get("catalogNumber") ?? "",
     tags: formData.getAll("tags").map(String),
     imageUrls: formData.getAll("imageUrls").map(String),

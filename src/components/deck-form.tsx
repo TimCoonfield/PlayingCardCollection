@@ -4,6 +4,11 @@ import { useActionState, useRef, useState } from "react";
 import { ImageUploader } from "./image-uploader";
 import { SeriesSelector, type SeriesOption } from "./series-selector";
 import { ALL_TAGS } from "@/lib/schemas";
+import {
+  COLLECTION_REASON_DETAILS,
+  COLLECTION_REASON_VALUES,
+  type CollectionReasonValue,
+} from "@/lib/collection-reasons";
 import type { DeckIdentification } from "@/lib/anthropic";
 import type { DeckFormState } from "@/app/(app)/decks/actions";
 
@@ -20,7 +25,12 @@ export interface DeckFormDefaultValues {
   editionNumbers?: number[];
   productionRun?: number | null;
   releaseYear?: number | null;
+  collectionReasonPrimary?: CollectionReasonValue;
+  collectionReasonSecondary?: CollectionReasonValue;
+  hook?: string;
   notes?: string;
+  essay?: string;
+  notesReviewedAt?: string;
   catalogNumber?: string;
   tags?: string[];
 }
@@ -34,6 +44,7 @@ export function DeckForm({
   seriesOptions,
   submitLabel,
   enableAiIdentify = false,
+  showEditorialFields = false,
 }: {
   action: (prevState: DeckFormState, formData: FormData) => Promise<DeckFormState>;
   defaultValues?: DeckFormDefaultValues;
@@ -43,6 +54,7 @@ export function DeckForm({
   seriesOptions: SeriesOption[];
   submitLabel: string;
   enableAiIdentify?: boolean;
+  showEditorialFields?: boolean;
 }) {
   const [state, formAction, pending] = useActionState<DeckFormState, FormData>(action, {});
   const [tags, setTags] = useState<string[]>(defaultValues.tags ?? []);
@@ -55,6 +67,13 @@ export function DeckForm({
   const [identifyError, setIdentifyError] = useState<string | null>(null);
   const [identified, setIdentified] = useState(false);
   const [seriesSuggestion, setSeriesSuggestion] = useState<string | undefined>();
+  const [primaryReason, setPrimaryReason] = useState<CollectionReasonValue | "">(
+    defaultValues.collectionReasonPrimary ?? ""
+  );
+  const [secondaryReason, setSecondaryReason] = useState<CollectionReasonValue | "">(
+    defaultValues.collectionReasonSecondary ?? ""
+  );
+  const [hook, setHook] = useState(defaultValues.hook ?? "");
 
   const nameRef = useRef<HTMLInputElement>(null);
   const designerRef = useRef<HTMLInputElement>(null);
@@ -313,7 +332,83 @@ export function DeckForm({
         </div>
       </fieldset>
 
-      <Field label="Notes">
+      {showEditorialFields && (
+        <fieldset className="flex flex-col gap-5 border-t border-felt-line pt-6">
+          <legend className="pr-3 font-display text-base font-semibold text-brass">
+            Editorial
+          </legend>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field
+              label="Primary collection reason"
+              error={state?.fieldErrors?.collectionReasonPrimary}
+            >
+              <select
+                name="collectionReasonPrimary"
+                value={primaryReason}
+                onChange={(event) =>
+                  setPrimaryReason(event.target.value as CollectionReasonValue | "")
+                }
+                className={inputClass}
+              >
+                <option value="">No primary reason</option>
+                {COLLECTION_REASON_VALUES.map((reason) => (
+                  <option key={reason} value={reason} disabled={reason === secondaryReason}>
+                    {COLLECTION_REASON_DETAILS[reason].label}
+                  </option>
+                ))}
+              </select>
+              {primaryReason && (
+                <span className="text-xs leading-5 text-felt-sub/80">
+                  {COLLECTION_REASON_DETAILS[primaryReason].description}
+                </span>
+              )}
+            </Field>
+
+            <Field
+              label="Secondary collection reason"
+              error={state?.fieldErrors?.collectionReasonSecondary}
+            >
+              <select
+                name="collectionReasonSecondary"
+                value={secondaryReason}
+                onChange={(event) =>
+                  setSecondaryReason(event.target.value as CollectionReasonValue | "")
+                }
+                className={inputClass}
+              >
+                <option value="">No secondary reason</option>
+                {COLLECTION_REASON_VALUES.map((reason) => (
+                  <option key={reason} value={reason} disabled={reason === primaryReason}>
+                    {COLLECTION_REASON_DETAILS[reason].label}
+                  </option>
+                ))}
+              </select>
+              {secondaryReason && (
+                <span className="text-xs leading-5 text-felt-sub/80">
+                  {COLLECTION_REASON_DETAILS[secondaryReason].description}
+                </span>
+              )}
+            </Field>
+          </div>
+
+          <Field label="Hook" error={state?.fieldErrors?.hook}>
+            <input
+              name="hook"
+              value={hook}
+              maxLength={240}
+              onChange={(event) => setHook(event.target.value)}
+              className={inputClass}
+            />
+            <span className="flex justify-between gap-3 text-xs text-felt-sub/80">
+              <span>One sentence: why should someone care about this Deck?</span>
+              <span className="shrink-0 tabular-nums">{hook.length} / 240</span>
+            </span>
+          </Field>
+        </fieldset>
+      )}
+
+      <Field label={showEditorialFields ? "Note" : "Notes"} error={state?.fieldErrors?.notes}>
         <textarea
           ref={notesRef}
           name="notes"
@@ -321,7 +416,50 @@ export function DeckForm({
           defaultValue={defaultValues.notes}
           className={inputClass}
         />
+        {showEditorialFields && (
+          <span className="text-xs text-felt-sub/80">
+            Deck- or copy-specific collector commentary and concise factual context.
+          </span>
+        )}
       </Field>
+
+      {showEditorialFields && (
+        <>
+          <Field label="Essay" error={state?.fieldErrors?.essay}>
+            <textarea
+              name="essay"
+              rows={10}
+              defaultValue={defaultValues.essay}
+              className={inputClass}
+            />
+            <span className="text-xs text-felt-sub/80">
+              Long-form historical, artistic, acquisition, or research context. Markdown is
+              supported.
+            </span>
+          </Field>
+
+          <label className="flex items-start gap-2 rounded-md border border-felt-line bg-felt-surface/60 p-3">
+            <input
+              type="checkbox"
+              name="notesReviewed"
+              defaultChecked={Boolean(defaultValues.notesReviewedAt)}
+              className="mt-0.5 accent-brass"
+            />
+            <span className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-felt-ink">
+                Reviewed — current level of detail is sufficient.
+              </span>
+              <span className="text-xs leading-5 text-felt-sub/80">
+                This records an explicit editorial review, including the decision that this Deck
+                needs nothing beyond what it currently has. Clearing it removes the review date.
+                {defaultValues.notesReviewedAt && (
+                  <> Last reviewed {defaultValues.notesReviewedAt.slice(0, 10)}.</>
+                )}
+              </span>
+            </span>
+          </label>
+        </>
+      )}
 
       <button
         type="submit"

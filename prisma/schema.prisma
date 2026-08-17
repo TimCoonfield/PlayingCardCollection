@@ -10,6 +10,18 @@ datasource db {
   provider = "postgresql"
 }
 
+enum CollectionReason {
+  ARTISTRY
+  CRAFT
+  LORE
+  HISTORY
+  RARITY
+  ACQUISITION
+  COMPLETION
+  VOLUME
+  PERSONAL
+}
+
 model Series {
   id               String   @id @default(cuid())
   name             String   @unique @db.VarChar(200)
@@ -25,33 +37,40 @@ model Series {
 }
 
 model Deck {
-  id              String        @id @default(cuid())
-  name            String
-  seriesLegacy    String?       @map("series")
-  seriesRaw       String?
-  seriesId        String?
-  series          Series?       @relation(fields: [seriesId], references: [id], onDelete: SetNull)
-  seriesOrder     Int?
-  variantNote     String?       @db.VarChar(300)
-  designer        String?
-  producer        String?
-  tags            String[]      @default([])
-  ownershipStatus String        @default("Owned")
-  qty             Int           @default(1)
-  productionRun   Int?
-  releaseYear     Int?
-  notes           String?
-  catalogNumber   String?
-  favorite        Boolean       @default(false)
-  whiteWhale      Boolean       @default(false)
-  images          DeckImage[]
-  editions        DeckEdition[]
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                        String            @id @default(cuid())
+  name                      String
+  seriesLegacy              String?           @map("series")
+  seriesRaw                 String?
+  seriesId                  String?
+  series                    Series?           @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  seriesOrder               Int?
+  variantNote               String?           @db.VarChar(300)
+  designer                  String?
+  producer                  String?
+  tags                      String[]          @default([])
+  ownershipStatus           String            @default("Owned")
+  qty                       Int               @default(1)
+  productionRun             Int?
+  releaseYear               Int?
+  collectionReasonPrimary   CollectionReason?
+  collectionReasonSecondary CollectionReason?
+  hook                      String?           @db.VarChar(240)
+  notes                     String?
+  essay                     String?
+  notesReviewedAt           DateTime?
+  catalogNumber             String?
+  favorite                  Boolean           @default(false)
+  whiteWhale                Boolean           @default(false)
+  images                    DeckImage[]
+  editions                  DeckEdition[]
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
 
   @@index([tags], type: Gin)
   @@index([designer])
   @@index([producer])
+  @@index([collectionReasonPrimary])
+  @@index([collectionReasonSecondary])
   @@index([seriesLegacy], map: "Deck_series_idx")
   @@index([seriesId, seriesOrder])
 }
@@ -78,23 +97,23 @@ model DeckEdition {
 }
 
 model Coin {
-  id               String   @id @default(cuid())
-  name             String
-  series           String?
-  designer         String?
-  producer         String?
-  material         String?
-  diameter         String?
-  obverseImageUrl  String?
-  reverseImageUrl  String?
-  tags             String[] @default([])
-  ownershipStatus  String   @default("Owned")
-  qty              Int      @default(1)
-  releaseYear      Int?
-  notes            String?
-  catalogNumber    String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String
+  series          String?
+  designer        String?
+  producer        String?
+  material        String?
+  diameter        String?
+  obverseImageUrl String?
+  reverseImageUrl String?
+  tags            String[] @default([])
+  ownershipStatus String   @default("Owned")
+  qty             Int      @default(1)
+  releaseYear     Int?
+  notes           String?
+  catalogNumber   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([tags], type: Gin)
   @@index([designer])

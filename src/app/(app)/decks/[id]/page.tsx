@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ReactMarkdown from "react-markdown";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { DeckGallery } from "@/components/deck-gallery";
@@ -12,6 +13,10 @@ import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { getSession } from "@/lib/auth";
 import { deleteDeck } from "../actions";
 import { sortSeriesDecks } from "@/lib/series-order";
+import {
+  COLLECTION_REASON_DETAILS,
+  type CollectionReasonValue,
+} from "@/lib/collection-reasons";
 
 export default async function DeckDetailPage({
   params,
@@ -47,6 +52,10 @@ export default async function DeckDetailPage({
   const nextDeck = seriesIndex >= 0 && seriesIndex < orderedSeriesDecks.length - 1
     ? orderedSeriesDecks[seriesIndex + 1]
     : null;
+  const collectionReasons = [
+    deck.collectionReasonPrimary,
+    deck.collectionReasonSecondary,
+  ].filter((reason): reason is CollectionReasonValue => reason !== null);
 
   return (
     <div className="flex flex-col gap-6">
@@ -113,6 +122,27 @@ export default async function DeckDetailPage({
               )}
             </div>
           </div>
+
+          {deck.hook && (
+            <p className="font-display text-lg italic leading-7 text-brass">{deck.hook}</p>
+          )}
+
+          {collectionReasons.length > 0 && (
+            <p className="text-sm text-felt-sub">
+              <span className="text-felt-sub/70">Why it&rsquo;s here:</span>{" "}
+              {collectionReasons.map((reason, index) => (
+                <span key={reason}>
+                  {index > 0 && <span aria-hidden="true"> · </span>}
+                  <Link
+                    href={`/collection?reason=${reason}`}
+                    className="text-felt-ink underline decoration-felt-line underline-offset-2 hover:text-brass"
+                  >
+                    {COLLECTION_REASON_DETAILS[reason].label}
+                  </Link>
+                </span>
+              ))}
+            </p>
+          )}
 
           {(deck.designer || deck.producer || deck.releaseYear) && (
             <div className="flex flex-col divide-y divide-felt-line rounded-lg border border-felt-line bg-felt-surface">
@@ -189,13 +219,33 @@ export default async function DeckDetailPage({
           {deck.notes && (
             <div className="rounded-lg border border-felt-line bg-felt-surface p-4">
               <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-felt-sub/70">
-                Notes
+                Note
               </h2>
               <p className="whitespace-pre-wrap text-sm text-felt-sub">{deck.notes}</p>
             </div>
           )}
         </div>
       </div>
+
+      {deck.essay && (
+        <section className="rounded-lg border border-felt-line bg-felt-surface p-5 sm:p-6">
+          <h2 className="mb-4 font-display text-xl font-semibold text-brass">Essay</h2>
+          <ReactMarkdown
+            components={{
+              h1: ({ children }) => <h3 className="mb-3 mt-6 font-display text-2xl font-semibold text-felt-ink first:mt-0">{children}</h3>,
+              h2: ({ children }) => <h3 className="mb-3 mt-6 font-display text-xl font-semibold text-felt-ink first:mt-0">{children}</h3>,
+              h3: ({ children }) => <h3 className="mb-2 mt-5 font-display text-lg font-semibold text-felt-ink first:mt-0">{children}</h3>,
+              p: ({ children }) => <p className="mb-4 leading-7 text-felt-sub last:mb-0">{children}</p>,
+              ul: ({ children }) => <ul className="mb-4 list-disc space-y-1 pl-6 text-felt-sub">{children}</ul>,
+              ol: ({ children }) => <ol className="mb-4 list-decimal space-y-1 pl-6 text-felt-sub">{children}</ol>,
+              a: ({ href, children }) => <a href={href} className="text-brass underline decoration-brass/50 underline-offset-2 hover:text-brass-deep">{children}</a>,
+              blockquote: ({ children }) => <blockquote className="mb-4 border-l-2 border-brass/60 pl-4 italic text-felt-sub">{children}</blockquote>,
+            }}
+          >
+            {deck.essay}
+          </ReactMarkdown>
+        </section>
+      )}
 
       {deck.series && (
         <nav

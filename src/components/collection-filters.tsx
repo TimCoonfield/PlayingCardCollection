@@ -19,8 +19,15 @@ import {
   CollectionYearRange,
   ALL_COLLECTION_TAGS,
   CollectionMaintenanceFilters,
+  CollectionReasonFilter,
+  type CollectionReasonField,
   type CollectionItemType,
 } from "./collection-filter-controls";
+import {
+  COLLECTION_REASON_DETAILS,
+  isCollectionReason,
+  type CollectionReasonValue,
+} from "@/lib/collection-reasons";
 
 const DEBOUNCE_MS = 1000;
 
@@ -59,6 +66,11 @@ export function CollectionFilters({
   const selectedProducers = searchParams.getAll("producer");
   const selectedSeries = searchParams.getAll("series");
   const tags = searchParams.getAll("tag");
+  const rawReason = searchParams.get("reason") ?? "";
+  const reason: CollectionReasonValue | "" = isCollectionReason(rawReason) ? rawReason : "";
+  const rawReasonField = searchParams.get("reasonField") ?? "any";
+  const reasonField: CollectionReasonField =
+    rawReasonField === "primary" || rawReasonField === "secondary" ? rawReasonField : "any";
   const type = searchParams.get("type") ?? "all";
   const missingPhoto = isAuthenticated && searchParams.get("missingPhoto") === "1";
   const missingYear = isAuthenticated && searchParams.get("missingYear") === "1";
@@ -85,6 +97,7 @@ export function CollectionFilters({
     selectedDesigners.length +
     selectedProducers.length +
     selectedSeries.length +
+    (reason ? 1 : 0) +
     (hasYearFilter ? 1 : 0) +
     (missingPhoto ? 1 : 0) +
     (missingYear ? 1 : 0);
@@ -192,6 +205,22 @@ export function CollectionFilters({
     });
   }
 
+  function handleReasonChange(
+    value: CollectionReasonValue | "",
+    field: CollectionReasonField
+  ) {
+    pushParams((params) => {
+      if (!value) {
+        params.delete("reason");
+        params.delete("reasonField");
+        return;
+      }
+      params.set("reason", value);
+      if (field === "any") params.delete("reasonField");
+      else params.set("reasonField", field);
+    });
+  }
+
   function commitYearRange(minYear: number, maxYear: number) {
     pushParams((params) => {
       params.delete("missingYear");
@@ -252,6 +281,11 @@ export function CollectionFilters({
             value={type as CollectionItemType}
             onChange={handleTypeChange}
           />
+            <CollectionReasonFilter
+              reason={reason}
+              field={reasonField}
+              onChange={handleReasonChange}
+            />
             <div className="flex flex-wrap items-center gap-2">
               <CollectionTagPills
                 availableTags={ALL_COLLECTION_TAGS}
@@ -354,6 +388,18 @@ export function CollectionFilters({
           {tags.map((value) => (
             <CollectionActiveFilter key={`tag-${value}`} label={value} onRemove={() => removeParam("tag", value)} />
           ))}
+          {reason && (
+            <CollectionActiveFilter
+              label={`Why it’s here: ${COLLECTION_REASON_DETAILS[reason].label}${
+                reasonField === "primary"
+                  ? " (primary)"
+                  : reasonField === "secondary"
+                    ? " (secondary)"
+                    : ""
+              }`}
+              onRemove={() => handleReasonChange("", "any")}
+            />
+          )}
           {missingPhoto && (
             <CollectionActiveFilter
               label="Missing photo"

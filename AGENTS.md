@@ -221,6 +221,15 @@ The primary entity. Key fields beyond the obvious (`name`, `designer`, `producer
 - `qty: Int` — how many physical copies of this deck are owned (default 1).
 - `productionRun: Int?` — the total size of a limited print run (the "700" in "391/700"), a
   property of the **deck**, not of any one copy.
+- `collectionReasonPrimary` / `collectionReasonSecondary` — nullable `CollectionReason` enum
+  values answering why the Deck belongs in the collection. The two values must differ when both
+  are present and are filterable independently or together on `/collection`; they are deliberately
+  separate from tags.
+- Editorial depth is split across `hook` (nullable `VARCHAR(240)`, one-sentence public lead), the
+  legacy `notes` text field (preserved as concise Deck/copy commentary), and `essay` (nullable
+  Markdown long-form context). `notesReviewedAt` is an explicit owner-set timestamp and must never
+  be inferred from whether any editorial field is populated. Hook and essay are intentionally not
+  searchable; legacy notes retain their existing search behavior.
 - `favorite: Boolean` — deck-only (Coin has no equivalent field). Drives `/collection` sort order
   and the "Featured Decks" spotlight section on every landing page.
 - Relations: `images: DeckImage[]` (unbounded, ordered), `editions: DeckEdition[]` (one row per
@@ -334,7 +343,9 @@ delete form submits — purely a UI courtesy, not enforced server-side.
   (`enableAiIdentify` prop, new-deck form only) which POSTs uploaded photo URLs to
   `/api/ai/identify` and pre-fills form fields from the response — the user still reviews/edits
   before saving, nothing auto-submits. The Series field is a searchable selector that can create
-  and immediately assign an exact new Series; the preserved legacy value is reference-only.
+  and immediately assign an exact new Series; the preserved legacy value is reference-only. The
+  edit form alone exposes Collection Reasons, hook, note guidance, Markdown essay, and the explicit
+  editorial-review control; the Add Deck form retains its existing concise fields.
 - **Create/edit a coin** (`/coins/new`, `/coins/[id]/edit`) → `CoinForm`
   (`src/components/coin-form.tsx`), same pattern, no AI-identify.
 - **Validation**: both forms parse `FormData` through a zod schema
@@ -363,7 +374,9 @@ delete form submits — purely a UI courtesy, not enforced server-side.
   the shared, write-invalidated browse snapshots in `src/lib/catalog-browse.ts`, applies filters
   server-side, then merges and sorts decks and coins in application code. Deck snapshots are
   cached in 400-row pages to stay below Vercel's per-entry cache limit and include only the first
-  image; a separate favorite-image snapshot preserves the landing-page mosaics. Do not replace
+  image; Collection Reasons add only two small enum values to these snapshots, while hook and essay
+  remain out of them and out of search. A separate favorite-image snapshot preserves the
+  landing-page mosaics. Do not replace
   this with per-request full-table Prisma queries or a raw SQL UNION without a measured reason.
 - **`/stats`**: aggregate dashboard — totals, top designers, Modern/Vintage/Antique era
   breakdown (era = tag membership, not a separate column), release-year histogram, "Biggest

@@ -46,6 +46,16 @@ function toDeckData(
   };
 }
 
+function toEditorialDeckData(values: DeckFormValues) {
+  return {
+    collectionReasonPrimary: values.collectionReasonPrimary ?? null,
+    collectionReasonSecondary: values.collectionReasonSecondary ?? null,
+    hook: values.hook ?? null,
+    notes: values.notes ?? null,
+    essay: values.essay ?? null,
+  };
+}
+
 class SeriesSelectionError extends Error {}
 
 async function resolveSeries(
@@ -143,10 +153,16 @@ export async function updateDeck(
     return { error: "Please fix the errors below.", fieldErrors: flatten(parsed.error) };
   }
 
-  const existingImages = await prisma.deckImage.findMany({
-    where: { deckId },
-    select: { url: true },
-  });
+  const [existingImages, existingDeck] = await Promise.all([
+    prisma.deckImage.findMany({
+      where: { deckId },
+      select: { url: true },
+    }),
+    prisma.deck.findUnique({
+      where: { id: deckId },
+      select: { notesReviewedAt: true },
+    }),
+  ]);
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -157,6 +173,10 @@ export async function updateDeck(
         where: { id: deckId },
         data: {
           ...toDeckData(parsed.data, series),
+          ...toEditorialDeckData(parsed.data),
+          notesReviewedAt: parsed.data.notesReviewed
+            ? existingDeck?.notesReviewedAt ?? new Date()
+            : null,
           images: {
             create: parsed.data.imageUrls.map((url, i) => ({ url, sortOrder: i })),
           },

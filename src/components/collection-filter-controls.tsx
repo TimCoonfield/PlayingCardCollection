@@ -4,8 +4,67 @@ import { useState } from "react";
 import { getTagStyle } from "@/lib/placeholders";
 import type { CollectionSort } from "@/lib/collection-sort";
 import { CameraIcon } from "./icons";
+import {
+  COLLECTION_REASON_DETAILS,
+  COLLECTION_REASON_VALUES,
+  type CollectionReasonValue,
+} from "@/lib/collection-reasons";
 
 export type CollectionItemType = "all" | "deck" | "coin";
+export type CollectionReasonField = "any" | "primary" | "secondary";
+
+export function CollectionReasonFilter({
+  reason,
+  field,
+  onChange,
+}: {
+  reason: CollectionReasonValue | "";
+  field: CollectionReasonField;
+  onChange: (reason: CollectionReasonValue | "", field: CollectionReasonField) => void;
+}) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      <label className="flex flex-col gap-1.5">
+        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-felt-sub">
+          Collection reason
+        </span>
+        <select
+          value={reason}
+          onChange={(event) =>
+            onChange(event.target.value as CollectionReasonValue | "", field)
+          }
+          className="w-full rounded-md border border-felt-line bg-felt-bg px-3 py-2 text-sm text-felt-ink outline-none focus:border-brass"
+        >
+          <option value="">Any collection reason</option>
+          {COLLECTION_REASON_VALUES.map((value) => (
+            <option key={value} value={value}>
+              {COLLECTION_REASON_DETAILS[value].label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="flex flex-col gap-1.5">
+        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-felt-sub">
+          Reason position
+        </span>
+        <select
+          value={field}
+          disabled={!reason}
+          onChange={(event) => onChange(reason, event.target.value as CollectionReasonField)}
+          className="w-full rounded-md border border-felt-line bg-felt-bg px-3 py-2 text-sm text-felt-ink outline-none focus:border-brass disabled:opacity-50"
+        >
+          <option value="any">Primary or secondary</option>
+          <option value="primary">Primary only</option>
+          <option value="secondary">Secondary only</option>
+        </select>
+      </label>
+      <p className="text-xs text-felt-sub/70 sm:col-span-2">
+        Collection Reasons apply to Decks only and remain separate from tags.
+      </p>
+    </div>
+  );
+}
 
 export function MissingPhotoFilter({
   selected,

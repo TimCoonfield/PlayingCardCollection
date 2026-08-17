@@ -59,7 +59,12 @@ export default async function EditDeckPage({
           editionNumbers: deck.editions.map((e) => e.deckNumber),
           productionRun: deck.productionRun,
           releaseYear: deck.releaseYear,
+          collectionReasonPrimary: deck.collectionReasonPrimary ?? undefined,
+          collectionReasonSecondary: deck.collectionReasonSecondary ?? undefined,
+          hook: deck.hook ?? undefined,
           notes: deck.notes ?? undefined,
+          essay: deck.essay ?? undefined,
+          notesReviewedAt: deck.notesReviewedAt?.toISOString(),
           catalogNumber: deck.catalogNumber ?? undefined,
           tags: deck.tags,
         }}
@@ -68,6 +73,7 @@ export default async function EditDeckPage({
         producers={producers.map((p) => p.producer!).filter(Boolean)}
         seriesOptions={seriesOptions}
         submitLabel="Save changes"
+        showEditorialFields
       />
     </div>
   );

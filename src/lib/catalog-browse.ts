@@ -23,6 +23,8 @@ const getBrowseDeckPage = unstable_cache(
         favorite: true,
         whiteWhale: true,
         releaseYear: true,
+        collectionReasonPrimary: true,
+        collectionReasonSecondary: true,
         notes: true,
         createdAt: true,
         images: {
