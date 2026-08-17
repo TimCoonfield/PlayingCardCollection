@@ -1,20 +1,22 @@
+import type { TagIconName } from "@/components/tag-icon";
+
 export interface PlaceholderStyle {
-  /** Emoji icon, or null to render the suit-glyph mark instead (colored via CSS). */
-  icon: string | null;
+  /** Archival line icon, or null to render the default deck/coin mark. */
+  icon: TagIconName | null;
   /** Tailwind color token for the accent bar + glyph (when icon is null). */
   accent: string;
 }
 
 const TAG_STYLES: Record<string, PlaceholderStyle> = {
-  Tarot: { icon: "🔮", accent: "plum" },
-  Mini: { icon: "🔍", accent: "brass" },
-  Prototype: { icon: "🧪", accent: "sage" },
-  Signed: { icon: "✍️", accent: "felt-ink" },
+  Tarot: { icon: "tarot", accent: "plum" },
+  Mini: { icon: "mini", accent: "brass" },
+  Prototype: { icon: "prototype", accent: "sage" },
+  Signed: { icon: "signed", accent: "felt-ink" },
   Modern: { icon: null, accent: "brass" },
-  Antique: { icon: "🕰️", accent: "brick" },
-  Vintage: { icon: "📻", accent: "plum" },
-  Gilded: { icon: "✨", accent: "brass" },
-  "Edge Painted": { icon: "🎨", accent: "sage" },
+  Antique: { icon: "antique", accent: "brick" },
+  Vintage: { icon: "vintage", accent: "plum" },
+  Gilded: { icon: "gilded", accent: "brass" },
+  "Edge Painted": { icon: "edge-painted", accent: "sage" },
 };
 
 /** Highest-precedence tag first: an earlier entry overrides a later one. */

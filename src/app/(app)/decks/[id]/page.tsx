@@ -3,7 +3,6 @@ import ReactMarkdown from "react-markdown";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { DeckGallery } from "@/components/deck-gallery";
-import { BackLink } from "@/components/back-link";
 import { StatTile } from "@/components/stat-tile";
 import { TagChip } from "@/components/tag-chip";
 import { PencilIcon, TrashIcon, HeartIcon, WhaleIcon } from "@/components/icons";
@@ -68,38 +67,35 @@ export default async function DeckDetailPage({
         />
       )}
 
-      <div className="flex items-center justify-between">
-        <BackLink fallbackHref="/collection">← Back to collection</BackLink>
-        {isAuthenticated && (
-          <div className="flex gap-2">
-            <FavoriteButton deckId={deck.id} initialFavorite={deck.favorite} />
-            <WhiteWhaleButton deckId={deck.id} initialWhiteWhale={deck.whiteWhale} />
-            <Link
-              href={`/decks/${deck.id}/edit`}
-              aria-label="Edit deck"
-              title="Edit"
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-brass/50 text-brass transition-colors hover:bg-brass/10"
+      {isAuthenticated && (
+        <div className="flex justify-end gap-2">
+          <FavoriteButton deckId={deck.id} initialFavorite={deck.favorite} />
+          <WhiteWhaleButton deckId={deck.id} initialWhiteWhale={deck.whiteWhale} />
+          <Link
+            href={`/decks/${deck.id}/edit`}
+            aria-label="Edit deck"
+            title="Edit"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-brass/50 text-brass transition-colors hover:bg-brass/10"
+          >
+            <PencilIcon className="h-4 w-4" />
+          </Link>
+          <form
+            action={async () => {
+              "use server";
+              await deleteDeckWithId();
+            }}
+          >
+            <ConfirmSubmitButton
+              confirmMessage={`Delete "${deck.name}"? This can't be undone.`}
+              ariaLabel="Delete deck"
+              title="Delete"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-brick/50 text-brick transition-colors hover:bg-brick/10"
             >
-              <PencilIcon className="h-4 w-4" />
-            </Link>
-            <form
-              action={async () => {
-                "use server";
-                await deleteDeckWithId();
-              }}
-            >
-              <ConfirmSubmitButton
-                confirmMessage={`Delete "${deck.name}"? This can't be undone.`}
-                ariaLabel="Delete deck"
-                title="Delete"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-brick/50 text-brick transition-colors hover:bg-brick/10"
-              >
-                <TrashIcon className="h-4 w-4" />
-              </ConfirmSubmitButton>
-            </form>
-          </div>
-        )}
-      </div>
+              <TrashIcon className="h-4 w-4" />
+            </ConfirmSubmitButton>
+          </form>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         <DeckGallery images={deck.images} tags={deck.tags} deckName={deck.name} />
@@ -179,14 +175,6 @@ export default async function DeckDetailPage({
             </div>
           )}
 
-          {deck.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {deck.tags.map((tag) => (
-                <TagChip key={tag} tag={tag} />
-              ))}
-            </div>
-          )}
-
           {deck.editions.length > 0 ? (
             <div className="flex flex-wrap gap-3">
               {deck.editions.map((edition) => (
@@ -233,12 +221,31 @@ export default async function DeckDetailPage({
               <p className="whitespace-pre-wrap text-sm text-felt-sub">{deck.notes}</p>
             </div>
           )}
+
+          {deck.tags.length > 0 && (
+            <section
+              className="border-t border-felt-line pt-4"
+              aria-labelledby="deck-classification-heading"
+            >
+              <h2
+                id="deck-classification-heading"
+                className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-felt-sub/70"
+              >
+                Classification
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {deck.tags.map((tag) => (
+                  <TagChip key={tag} tag={tag} />
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </div>
 
       {deck.essay && (
         <section className="rounded-lg border border-felt-line bg-felt-surface p-5 sm:p-6">
-          <h2 className="mb-4 font-display text-xl font-semibold text-brass">Essay</h2>
+          <h2 className="mb-4 font-display text-xl font-semibold text-brass">From the archives</h2>
           <ReactMarkdown
             components={{
               h1: ({ children }) => <h3 className="mb-3 mt-6 font-display text-2xl font-semibold text-felt-ink first:mt-0">{children}</h3>,

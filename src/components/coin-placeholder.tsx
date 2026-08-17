@@ -1,9 +1,10 @@
 import { getDeckPlaceholder } from "@/lib/placeholders";
+import { TagIcon } from "@/components/tag-icon";
 
 const ICON_SIZE_CLASSES = {
-  sm: "text-4xl",
-  md: "text-5xl",
-  lg: "text-7xl",
+  sm: "h-12 w-12",
+  md: "h-16 w-16",
+  lg: "h-24 w-24",
 };
 
 const ACCENT_CLASSES: Record<string, { text: string; bar: string }> = {
@@ -24,12 +25,15 @@ export function CoinPlaceholder({
   thickAccent?: boolean;
 }) {
   const style = getDeckPlaceholder(tags);
+  const accent = ACCENT_CLASSES[style.accent] ?? ACCENT_CLASSES.brass;
 
   return (
     <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-felt-surface-2 to-felt-bg">
-      <span className={`${ICON_SIZE_CLASSES[size]} opacity-90 drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)]`}>
-        {style.icon ?? "🪙"}
-      </span>
+      <TagIcon
+        icon={style.icon}
+        fallback="coin"
+        className={`${ICON_SIZE_CLASSES[size]} ${accent.text} opacity-90 drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)]`}
+      />
       <CoinAccentBar tags={tags} thick={thickAccent} />
     </div>
   );

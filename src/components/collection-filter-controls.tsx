@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getTagStyle } from "@/lib/placeholders";
+import { TagIcon } from "@/components/tag-icon";
 import type { CollectionSort } from "@/lib/collection-sort";
 import { CameraIcon } from "./icons";
 import {
@@ -344,12 +345,7 @@ export function CollectionTagPills({
         }`;
         const content = (
           <>
-            <span
-              aria-hidden="true"
-              className={style.icon ? "text-sm leading-none" : "font-display text-sm leading-none"}
-            >
-              {style.icon ?? "♠"}
-            </span>
+            <TagIcon icon={style.icon} className="h-3.5 w-3.5 shrink-0" />
             {tag}
             {selected && <span aria-hidden="true">✓</span>}
           </>

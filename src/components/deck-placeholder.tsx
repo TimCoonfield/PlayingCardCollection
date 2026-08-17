@@ -1,15 +1,10 @@
 import { getDeckPlaceholder } from "@/lib/placeholders";
+import { TagIcon } from "@/components/tag-icon";
 
 const ICON_SIZE_CLASSES = {
-  sm: "text-4xl",
-  md: "text-5xl",
-  lg: "text-7xl",
-};
-
-const GLYPH_SIZE_CLASSES = {
-  sm: "text-5xl",
-  md: "text-6xl",
-  lg: "text-8xl",
+  sm: "h-12 w-12",
+  md: "h-16 w-16",
+  lg: "h-24 w-24",
 };
 
 const ACCENT_CLASSES: Record<string, { text: string; bar: string }> = {
@@ -34,17 +29,10 @@ export function DeckPlaceholder({
 
   return (
     <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-felt-surface-2 to-felt-bg">
-      {style.icon ? (
-        <span
-          className={`${ICON_SIZE_CLASSES[size]} opacity-90 drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)]`}
-        >
-          {style.icon}
-        </span>
-      ) : (
-        <span className={`${GLYPH_SIZE_CLASSES[size]} font-display ${accent.text} opacity-90`}>
-          ♠
-        </span>
-      )}
+      <TagIcon
+        icon={style.icon}
+        className={`${ICON_SIZE_CLASSES[size]} ${accent.text} opacity-90 drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)]`}
+      />
       <AccentBar tags={tags} thick={thickAccent} />
     </div>
   );

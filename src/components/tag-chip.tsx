@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getTagStyle } from "@/lib/placeholders";
+import { TagIcon } from "@/components/tag-icon";
 
 const ACCENT_CLASSES: Record<string, string> = {
   plum: "text-plum border-plum/40 hover:bg-plum/10",
@@ -18,9 +19,7 @@ export function TagChip({ tag }: { tag: string }) {
       href={`/collection?tag=${encodeURIComponent(tag)}`}
       className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${accentClass}`}
     >
-      <span className={style.icon ? "text-sm leading-none" : "font-display text-sm leading-none"}>
-        {style.icon ?? "♠"}
-      </span>
+      <TagIcon icon={style.icon} className="h-3.5 w-3.5 shrink-0" />
       {tag}
     </Link>
   );
