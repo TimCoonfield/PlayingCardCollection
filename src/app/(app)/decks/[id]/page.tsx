@@ -10,6 +10,7 @@ import { PencilIcon, TrashIcon, HeartIcon, WhaleIcon } from "@/components/icons"
 import { FavoriteButton } from "@/components/favorite-button";
 import { WhiteWhaleButton } from "@/components/white-whale-button";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
+import { SeriesDeckNavigation } from "@/components/series-deck-navigation";
 import { getSession } from "@/lib/auth";
 import { deleteDeck } from "../actions";
 import { sortSeriesDecks } from "@/lib/series-order";
@@ -59,6 +60,14 @@ export default async function DeckDetailPage({
 
   return (
     <div className="flex flex-col gap-6">
+      {deck.series && (
+        <SeriesDeckNavigation
+          series={deck.series}
+          previousDeck={previousDeck}
+          nextDeck={nextDeck}
+        />
+      )}
+
       <div className="flex items-center justify-between">
         <BackLink fallbackHref="/collection">← Back to collection</BackLink>
         {isAuthenticated && (
@@ -247,35 +256,6 @@ export default async function DeckDetailPage({
         </section>
       )}
 
-      {deck.series && (
-        <nav
-          aria-label={`${deck.series.name} Series navigation`}
-          className="grid grid-cols-1 gap-3 border-t border-felt-line pt-6 sm:grid-cols-[1fr_auto_1fr] sm:items-center"
-        >
-          <div>
-            {previousDeck && (
-              <Link href={`/decks/${previousDeck.id}`} className="group flex flex-col text-sm">
-                <span className="text-xs uppercase tracking-wide text-felt-sub/70">← Previous</span>
-                <span className="font-display text-felt-ink group-hover:text-brass">{previousDeck.name}</span>
-              </Link>
-            )}
-          </div>
-          <Link
-            href={`/series/${deck.series.slug}`}
-            className="text-center text-sm font-medium text-brass hover:text-brass-deep"
-          >
-            View {deck.series.name}
-          </Link>
-          <div className="sm:text-right">
-            {nextDeck && (
-              <Link href={`/decks/${nextDeck.id}`} className="group flex flex-col text-sm">
-                <span className="text-xs uppercase tracking-wide text-felt-sub/70">Next →</span>
-                <span className="font-display text-felt-ink group-hover:text-brass">{nextDeck.name}</span>
-              </Link>
-            )}
-          </div>
-        </nav>
-      )}
     </div>
   );
 }
