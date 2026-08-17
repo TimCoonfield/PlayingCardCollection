@@ -8,8 +8,12 @@ import { getSession } from "@/lib/auth";
 import { sortSeriesDecks } from "@/lib/series-order";
 import { getSeriesFallbackHero } from "@/lib/series-fallback-hero";
 import { DeckCard } from "@/components/deck-card";
+import { ChevronDownIcon } from "@/components/icons";
 import { SeriesEditor } from "@/components/series-editor";
 import { updateSeries } from "../actions";
+
+const HERO_FADE_GRADIENT =
+  "linear-gradient(to right, color-mix(in srgb, var(--felt-bg) 90%, transparent) 0%, color-mix(in srgb, var(--felt-bg) 90%, transparent) 44%, transparent 58%)";
 
 export async function generateMetadata({
   params,
@@ -45,7 +49,6 @@ export default async function SeriesPage({
             whiteWhale: true,
             releaseYear: true,
             seriesOrder: true,
-            variantNote: true,
             images: { orderBy: { sortOrder: "asc" }, take: 1, select: { url: true } },
           },
         },
@@ -82,53 +85,67 @@ export default async function SeriesPage({
         )}
       </div>
 
-      <header className="relative min-h-72 overflow-hidden rounded-lg border border-felt-line bg-felt-surface sm:min-h-80">
-        <Image
-          src={heroImageUrl}
-          alt=""
-          fill
-          priority
-          sizes="(min-width: 1200px) 1152px, 100vw"
-          className={`object-cover opacity-55 ${usesFallbackHero ? "object-[64%_center]" : ""}`}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-felt-bg via-felt-bg/85 to-felt-bg/10" />
-        <div className="relative flex min-h-72 max-w-2xl flex-col justify-end gap-3 p-6 sm:min-h-80 sm:p-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brass">Series</p>
-          <h1 className="font-display text-4xl font-semibold leading-tight text-felt-ink sm:text-5xl">
-            {series.name}
-          </h1>
-          {series.subtitle && <p className="font-display text-lg italic text-brass">{series.subtitle}</p>}
-          {series.attributionText && (
+      <div className="flex flex-col">
+        <header className={`relative overflow-hidden border border-felt-line bg-felt-surface ${series.description ? "rounded-t-lg" : "rounded-lg"}`}>
+          <Image
+            src={heroImageUrl}
+            alt=""
+            fill
+            priority
+            sizes="(min-width: 1200px) 1152px, 100vw"
+            className={`pointer-events-none object-cover opacity-[0.18] ${
+              usesFallbackHero ? "lg:object-[64%_center] lg:opacity-55" : "lg:opacity-100"
+            }`}
+          />
+          <div
+            className="pointer-events-none absolute inset-0 hidden lg:block"
+            style={{ background: HERO_FADE_GRADIENT }}
+          />
+          <div className="relative flex min-h-72 max-w-xl flex-col justify-end gap-3 p-6 sm:min-h-80 sm:p-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brass">Series</p>
+            <h1 className="font-display text-4xl font-semibold leading-tight text-felt-ink sm:text-5xl">
+              {series.name}
+            </h1>
+            {series.subtitle && <p className="font-display text-lg italic text-brass">{series.subtitle}</p>}
+            {series.attributionText && (
+              <p className="text-sm text-felt-sub">
+                {series.attributionLabel && <span className="mr-2 uppercase tracking-wide text-felt-sub/70">{series.attributionLabel}</span>}
+                <span className="text-felt-ink">{series.attributionText}</span>
+              </p>
+            )}
             <p className="text-sm text-felt-sub">
-              {series.attributionLabel && <span className="mr-2 uppercase tracking-wide text-felt-sub/70">{series.attributionLabel}</span>}
-              <span className="text-felt-ink">{series.attributionText}</span>
+              {decks.length} {decks.length === 1 ? "Deck" : "Decks"} in this Series
             </p>
-          )}
-          <p className="text-sm text-felt-sub">
-            {decks.length} {decks.length === 1 ? "Deck" : "Decks"} in this Series
-          </p>
-        </div>
-      </header>
+          </div>
+        </header>
 
-      {series.description && (
-        <section className="rounded-lg border border-felt-line bg-felt-surface p-5 sm:p-6">
-          <h2 className="mb-4 font-display text-xl font-semibold text-brass">About this Series</h2>
-          <ReactMarkdown
-            components={{
-              h1: ({ children }) => <h3 className="mb-3 mt-6 font-display text-2xl font-semibold text-felt-ink first:mt-0">{children}</h3>,
-              h2: ({ children }) => <h3 className="mb-3 mt-6 font-display text-xl font-semibold text-felt-ink first:mt-0">{children}</h3>,
-              h3: ({ children }) => <h3 className="mb-2 mt-5 font-display text-lg font-semibold text-felt-ink first:mt-0">{children}</h3>,
-              p: ({ children }) => <p className="mb-4 leading-7 text-felt-sub last:mb-0">{children}</p>,
-              ul: ({ children }) => <ul className="mb-4 list-disc space-y-1 pl-6 text-felt-sub">{children}</ul>,
-              ol: ({ children }) => <ol className="mb-4 list-decimal space-y-1 pl-6 text-felt-sub">{children}</ol>,
-              a: ({ href, children }) => <a href={href} className="text-brass underline decoration-brass/50 underline-offset-2 hover:text-brass-deep">{children}</a>,
-              blockquote: ({ children }) => <blockquote className="mb-4 border-l-2 border-brass/60 pl-4 italic text-felt-sub">{children}</blockquote>,
-            }}
-          >
-            {series.description}
-          </ReactMarkdown>
-        </section>
-      )}
+        {series.description && (
+          <details className="group overflow-hidden rounded-b-lg border border-t-0 border-felt-line bg-felt-surface">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-felt-surface-2/60 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brass [&::-webkit-details-marker]:hidden">
+              <h2 className="font-display text-sm font-semibold uppercase tracking-[0.14em] text-brass">
+                About this Series
+              </h2>
+              <ChevronDownIcon className="h-4 w-4 text-felt-sub transition-transform duration-200 group-open:rotate-180" />
+            </summary>
+            <div className="border-t border-felt-line px-5 py-5 sm:px-6 sm:py-6">
+              <ReactMarkdown
+                components={{
+                  h1: ({ children }) => <h3 className="mb-3 mt-6 font-display text-2xl font-semibold text-felt-ink first:mt-0">{children}</h3>,
+                  h2: ({ children }) => <h3 className="mb-3 mt-6 font-display text-xl font-semibold text-felt-ink first:mt-0">{children}</h3>,
+                  h3: ({ children }) => <h3 className="mb-2 mt-5 font-display text-lg font-semibold text-felt-ink first:mt-0">{children}</h3>,
+                  p: ({ children }) => <p className="mb-4 leading-7 text-felt-sub last:mb-0">{children}</p>,
+                  ul: ({ children }) => <ul className="mb-4 list-disc space-y-1 pl-6 text-felt-sub">{children}</ul>,
+                  ol: ({ children }) => <ol className="mb-4 list-decimal space-y-1 pl-6 text-felt-sub">{children}</ol>,
+                  a: ({ href, children }) => <a href={href} className="text-brass underline decoration-brass/50 underline-offset-2 hover:text-brass-deep">{children}</a>,
+                  blockquote: ({ children }) => <blockquote className="mb-4 border-l-2 border-brass/60 pl-4 italic text-felt-sub">{children}</blockquote>,
+                }}
+              >
+                {series.description}
+              </ReactMarkdown>
+            </div>
+          </details>
+        )}
+      </div>
 
       <section className="flex flex-col gap-4">
         <div className="flex items-center gap-3">
@@ -142,25 +159,7 @@ export default async function SeriesPage({
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {decks.map((deck) => (
-              <div key={deck.id} className="group/series-tile relative h-full">
-                <DeckCard
-                  deck={{ ...deck, series: series.name }}
-                  uniformHeight
-                  describedBy={deck.variantNote ? `series-note-${deck.id}` : undefined}
-                />
-                {deck.variantNote && (
-                  <div
-                    id={`series-note-${deck.id}`}
-                    role="tooltip"
-                    className="pointer-events-none absolute inset-x-2 bottom-[7.5rem] z-20 translate-y-1 rounded-md border border-brass/50 bg-felt-bg/95 px-3 py-2.5 opacity-0 shadow-xl shadow-black/30 backdrop-blur-sm transition-[opacity,transform] duration-150 delay-0 group-hover/series-tile:translate-y-0 group-hover/series-tile:opacity-100 group-hover/series-tile:delay-500 group-focus-within/series-tile:translate-y-0 group-focus-within/series-tile:opacity-100 group-focus-within/series-tile:delay-0"
-                  >
-                    <p className="mb-1 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-brass">
-                      Within this Series
-                    </p>
-                    <p className="text-xs leading-5 text-felt-ink">{deck.variantNote}</p>
-                  </div>
-                )}
-              </div>
+              <DeckCard key={deck.id} deck={{ ...deck, series: series.name }} uniformHeight />
             ))}
           </div>
         )}

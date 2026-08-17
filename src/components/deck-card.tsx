@@ -23,12 +23,10 @@ export function DeckCard({
   deck,
   sizes = DEFAULT_CARD_SIZES,
   uniformHeight = false,
-  describedBy,
 }: {
   deck: DeckCardData;
   sizes?: string;
   uniformHeight?: boolean;
-  describedBy?: string;
 }) {
   const hasImages = deck.images.length > 0;
 
@@ -36,7 +34,6 @@ export function DeckCard({
     <Link
       href={`/decks/${deck.id}`}
       prefetch={false}
-      aria-describedby={describedBy}
       className={`group flex flex-col overflow-hidden rounded-lg border border-felt-line bg-felt-surface transition-colors hover:border-brass ${
         uniformHeight ? "h-full" : ""
       }`}
