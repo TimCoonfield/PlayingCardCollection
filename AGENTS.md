@@ -30,10 +30,14 @@ Major content types (see [§6 Data model](#6-data-model) for details):
   (exactly two photos: obverse/reverse; no edition-number concept).
 - **Creators** — a small, hand-curated list of favorite designers (`src/lib/featured-creators.ts`),
   **not a database table**. Matched to decks purely by string equality on `designer`/`producer`.
-- **Specialty/creator landing pages** — 9 dedicated pages (Souvenir, Mini, Tarot, and 6 creator
-  pages) built from one shared layout component.
-- **Favorites** — a boolean flag on decks (decks only, not coins) that drives sort order and a
-  dedicated "Featured Decks" spotlight treatment on landing pages.
+- **Specialty/creator landing pages** — 10 dedicated pages (White Whales, Souvenir, Mini, Tarot,
+  and 7 creator pages) built from one shared layout component.
+- **Favorites** and **White Whales** — two independent boolean flags on decks (decks only, not
+  coins). Favorite drives `/collection` sort order and the "Featured Decks" spotlight treatment
+  on landing pages; White Whale marks the rarest/hardest-won pieces and powers the dedicated
+  `/white-whales` page.
+- **Series** — a first-class entity (`Series` model, not just a text field) that decks optionally
+  belong to, each with its own public `/series/[slug]` page. See [§6](#6-data-model).
 
 **Inferred design principles** (from the implementation, not stated anywhere explicitly):
 
@@ -119,8 +123,15 @@ src/
     auth.ts                 # iron-session config + getSession()
     schemas.ts               # deck zod schema + ALL_TAGS + parseDeckFormData()
     coin-schemas.ts           # coin zod schema + COIN_TAGS + parseCoinFormData()
-    featured-creators.ts       # hand-curated FEATURED_CREATORS array (not DB-backed)
-    placeholders.ts            # tag → emoji/color placeholder-art rules (deck & tag chip styling)
+    featured-creators.ts       # hand-curated CREATORS array (not DB-backed) + HOMEPAGE_/NAVIGATION_ subsets
+    placeholders.ts            # tag → line-icon (TagIconName) + accent-color placeholder rules
+    collection-reasons.ts      # CollectionReason enum values, labels, and descriptions
+    collection-sort.ts         # shared sort-mode logic (featured/alpha/year/recent/random) for /collection + landing pages
+    archive-search.ts          # ArchiveSearchScope type shared by the search API and the spotlight UI
+    catalog-browse.ts          # cached, paged deck/coin "browse" snapshots powering /collection + all landing pages
+    catalog-metadata.ts        # cached aggregate counts/facets (home stats, /stats charts, filter dropdowns, creator counts)
+    catalog-cache.ts           # CATALOG_CACHE_TAG + invalidateCatalogCaches(), called by every write action
+    series-data.ts             # cached per-Series page query
     anthropic.ts               # Claude vision deck-identification call
   components/               # shared UI — see §10 for which ones to reuse
   app/
@@ -130,17 +141,19 @@ src/
     api/
       upload/route.ts          # Vercel Blob client-upload token endpoint (session-gated)
       ai/identify/route.ts      # Claude deck-identification endpoint (session-gated)
+      archive-search/route.ts   # global search endpoint (decks/creators/series/producers/archives) behind the nav-bar spotlight
     (app)/                    # the route group for the whole authenticated-and-public app shell
       layout.tsx                # NavBar + page shell, reads session for isAuthenticated
       page.tsx                   # homepage: hero, featured creators, specialty tiles, recent decks
-      nav-bar.tsx                 # top nav (client component)
+      nav-bar.tsx                 # top nav (client component): nav links, Specialty Collections menu, Add menu, search trigger
       logout-action.ts
       collection/page.tsx         # the unified deck+coin search/browse page (merged in JS, see §6)
       stats/page.tsx               # aggregate stats dashboard
-      decks/                       # deck CRUD: new/, [id]/, [id]/edit/, actions.ts
+      series/[slug]/page.tsx        # first-class Series pages (see §6)
+      decks/                       # deck CRUD: new/, [id]/, [id]/edit/, missing-years/, actions.ts
       coins/                       # coin CRUD: new/, [id]/, [id]/edit/, actions.ts, page.tsx (redirects to /collection)
-      souvenir/, mini/, tarot/      # 3 specialty-collection landing pages (thin wrappers)
-      creators/{name}/              # 6 creator landing pages (thin wrappers), one dir per person
+      white-whales/, souvenir/, mini/, tarot/  # 4 specialty-collection landing pages (thin wrappers)
+      creators/{name}/              # 7 creator landing pages (thin wrappers), one dir per person
 ```
 
 **Generated/do-not-hand-edit**: `src/generated/prisma/**`, `.next/`, `next-env.d.ts`,
@@ -169,8 +182,14 @@ src/
   favorite-toggle button, nav bar (active-link highlighting). Everything else stays server-only.
 - **No global client state manager.** "State" is either server data (re-fetched via
   `router.push`/`revalidatePath` triggering a server re-render) or local `useState` inside a
-  single client component. `src/components/collection-filters.tsx` is the most complex example:
-  it reads/writes the URL's search params directly and debounces text input before pushing.
+  single client component. `src/components/collection-filters.tsx` (URL-syncing shell) plus
+  `collection-filter-panel.tsx` (collapsible layout) and `collection-filter-controls.tsx`
+  (individual filter widgets + `ALL_COLLECTION_TAGS`) are the most complex example: they read/write
+  the URL's search params directly and debounce text input before pushing. Landing pages that pass
+  `showFilters` to `DecksLandingPage` get the same filtering behavior client-side, in-memory,
+  through `src/components/scoped-collection-browser.tsx` instead of URL params (a given landing
+  page's deck/coin set is already small and pre-fetched, so it filters what it already has rather
+  than round-tripping through `/collection`).
 - **Business logic lives in `actions.ts` (mutations) and `lib/*.ts` (shared logic/validation)**,
   not scattered across components. Page components mostly compose Prisma queries + presentational
   components; form components mostly manage local upload/edit state and defer validation to the
@@ -232,6 +251,10 @@ The primary entity. Key fields beyond the obvious (`name`, `designer`, `producer
   searchable; legacy notes retain their existing search behavior.
 - `favorite: Boolean` — deck-only (Coin has no equivalent field). Drives `/collection` sort order
   and the "Featured Decks" spotlight section on every landing page.
+- `whiteWhale: Boolean` — deck-only, independent of `favorite`. Marks the rarest/hardest-won
+  pieces; toggled from the deck detail page via `WhiteWhaleButton` (same optimistic-UI +
+  `revalidatePath("/", "layout")` pattern as the favorite toggle) and surfaced on its own
+  `/white-whales` landing page (see [§9](#9-public-browsing-flows)).
 - Relations: `images: DeckImage[]` (unbounded, ordered), `editions: DeckEdition[]` (one row per
   *specifically numbered* owned copy — **not** one row per unit of `qty`; a deck can have
   `qty: 3` and 0, 1, 2, or 3 `DeckEdition` rows depending on how many of those copies have a
@@ -332,8 +355,10 @@ delete form submits — purely a UI courtesy, not enforced server-side.
     landing page; any additional favorites beyond 3 fall through into the regular grid instead of
     disappearing.
   - Placeholder art (`DeckPlaceholder`/`CoinPlaceholder`, driven by `src/lib/placeholders.ts`)
-    renders when an item has zero photos — a tag-precedence system picks one emoji/suit-glyph +
-    accent color per item, so browsing never shows a broken-image icon.
+    renders when an item has zero photos — a tag-precedence system picks one line icon
+    (`TagIcon`/`TagIconName` in `src/components/tag-icon.tsx`) + accent color per item, so
+    browsing never shows a broken-image icon. This replaced an earlier emoji-based scheme; tag
+    chips (`TagChip`/`CoinTagChip`) use the same `TagIcon` set.
 - **Known cache/perf risk**: overwriting an existing Blob object's URL (rather than uploading to
   a new path) leaves both the Blob CDN and Next's image optimizer serving the old file
   indefinitely in practice — always upload replacements to a new filename/path.
@@ -358,20 +383,27 @@ delete form submits — purely a UI courtesy, not enforced server-side.
   come back as `fieldErrors: Record<string, string>` and render inline per field. There is no
   separate client-side validation layer — the server action is the single source of truth for
   validity.
-- **Favorite toggle**: a heart button on the deck detail page only (not on edit/new forms, not on
-  coins) — `FavoriteButton` (client) + `toggleFavorite` (server action), optimistic UI update,
-  broad `revalidatePath("/", "layout")` afterward since a favorite change can affect many pages
-  at once (collection sort order + up to 9 landing pages' featured sections).
+- **Favorite / White Whale toggles**: two independent heart-style buttons on the deck detail page
+  only (not on edit/new forms, not on coins) — `FavoriteButton`/`WhiteWhaleButton` (client) +
+  `toggleFavorite`/`toggleWhiteWhale` (server actions in `decks/actions.ts`), optimistic UI update,
+  broad `revalidatePath("/", "layout")` afterward since either flag can affect many pages at once
+  (collection sort order + up to 10 landing pages' featured/filtered sections).
+- **Missing-years workbench** (`/decks/missing-years`, session-gated in `src/proxy.ts`) →
+  `MissingYearsWorkbench` (`src/components/missing-years-workbench.tsx`). An admin-only bulk-entry
+  table listing every deck with `releaseYear: null`; typing a 4-digit year into a row and blurring
+  or pressing Enter calls `updateDeckReleaseYear` (`decks/actions.ts`) to save that one row
+  immediately — no separate submit step, no batch save.
 - **Delete**: a trash-icon button wrapped in `ConfirmSubmitButton`
   (`src/components/confirm-submit-button.tsx`) on both deck and coin detail pages — confirms via
   `window.confirm()` before the delete form submits.
 - **Propagation to the public site**: purely via Next's cache revalidation
-  (`revalidatePath(...)` calls at the end of each action) — there is no separate publish step,
-  draft state, or review queue. A save is live immediately.
+  (`revalidatePath(...)` calls at the end of each action, plus `invalidateCatalogCaches()` in
+  `src/lib/catalog-cache.ts` to bust the cached browse/metadata snapshots described in §9) — there
+  is no separate publish step, draft state, or review queue. A save is live immediately.
 - **Cross-screen consistency to watch**: `ALL_TAGS` (deck tags, `lib/schemas.ts`) is
-  hand-duplicated in `src/components/collection-filters.tsx` for the filter checkboxes — if you
-  add/remove a deck tag, update both places. Coin tags (`COIN_TAGS`) do not have this duplication
-  problem (only used in `coin-form.tsx`).
+  hand-duplicated as `ALL_COLLECTION_TAGS` in `src/components/collection-filter-controls.tsx` for
+  the filter checkboxes — if you add/remove a deck tag, update both places. Coin tags
+  (`COIN_TAGS`) do not have this duplication problem (only used in `coin-form.tsx`).
 
 ## 9. Public browsing flows
 
@@ -383,16 +415,44 @@ delete form submits — purely a UI courtesy, not enforced server-side.
   remain out of them and out of search. A separate favorite-image snapshot preserves the
   landing-page mosaics. Do not replace
   this with per-request full-table Prisma queries or a raw SQL UNION without a measured reason.
+  - **Filtering UI**: `CollectionFilters` (URL-param sync) + `CollectionFilterPanel` (collapsible
+    layout: always-visible search/sort/surprise row, expandable "advanced" section) +
+    `CollectionFilterControls` (the individual widgets — tag pills, designer/producer/series
+    facet pickers, year range, item-type toggle, and the maintenance filters "missing photo" /
+    "missing year" used for admin triage). Collection Reason is filterable independently by value
+    and by primary-vs-secondary position (`CollectionReasonFilter`).
+  - **Sort modes** (`src/lib/collection-sort.ts`, shared by `/collection` and every
+    `showFilters` landing page): `featured`, `alpha-asc`/`desc`, `year-asc`/`desc`, `recent`, and
+    a seeded `random`. A "Surprise Me" button (`SurpriseMeButton`) jumps to a random deck/coin,
+    preferring favorites/white-whales when available and falling back to the full set.
+  - **Pagination**: `Pagination` (`src/components/pagination.tsx`) pages the merged/sorted result
+    set for `/collection`.
+- **Archive Spotlight**: a global, keyboard-driven (`/` key) search palette
+  (`src/components/archive-spotlight.tsx`, triggered from the nav bar) backed by
+  `GET /api/archive-search` (`src/app/api/archive-search/route.ts`). Searches deck names, creators
+  (designer/producer), Series, and a small hardcoded list of specialty archives (White Whales,
+  Mini, Tarot, Souvenir, Coins) in one request, scoped by `src/lib/archive-search.ts`'s
+  `ArchiveSearchScope` (`all`/`name`/`creator`/`series`/`producer`/`notes`). Reuses the same
+  cached `getBrowseDeckCards()` snapshot as `/collection` — no separate search index.
 - **`/stats`**: aggregate dashboard — totals, top designers, Modern/Vintage/Antique era
   breakdown (era = tag membership, not a separate column), release-year histogram, "Biggest
   series" (top 5 by Deck count, each linking to its first-class Series page and showing one
   random member photo), a
   photo-coverage stat (`% of decks with ≥1 photo`), and a recently-added strip. All numbers come
-  from server-side Prisma `count`/`groupBy`/`aggregate` calls — no client-side computation.
-- **Landing pages** (`/souvenir`, `/mini`, `/tarot`, `/creators/*`) — see [§4](#4-architecture)
-  and [§11](#11-coding-conventions) for the shared-component pattern; each page file is only its
-  title/tagline/blurb/hero-image/deck-query, everything else lives in
-  `src/components/decks-landing-page.tsx`.
+  from server-side Prisma `count`/`groupBy`/`aggregate` calls (cached via `src/lib/catalog-metadata.ts`)
+  — no client-side computation.
+- **`/series/[slug]`**: public page for each first-class Series — hero image or engraved suit-emblem
+  fallback, description/attribution, and its member decks with a sticky-header `SeriesDeckNavigation`
+  (prev/next through the Series) shown on each member deck's own detail page.
+- **Landing pages** (`/white-whales`, `/souvenir`, `/mini`, `/tarot`, `/creators/*`) — see
+  [§4](#4-architecture) and [§11](#11-coding-conventions) for the shared-component pattern; each
+  page file is only its title/tagline/blurb/hero-image/deck-query, everything else lives in
+  `src/components/decks-landing-page.tsx`. Most pass `showFilters` (and now `coins`, fetched via
+  `catalog-browse.ts` helpers like `getCreatorLandingCatalog`/`getTaggedLandingCatalog`/
+  `getSeriesLandingCatalog`/`getProducerOrDesignerLandingCatalog`) to get the full sort/filter
+  experience via `ScopedCollectionBrowser` instead of a static grid; White Whales additionally
+  sets `showFeaturedDecks={false}` since every item on that page is already "featured" by
+  definition.
 - **`/coins`** does not have its own listing UI — it's a redirect to `/collection?type=coin`
   (see `src/app/(app)/coins/page.tsx`), preserving other query params.
 
@@ -421,14 +481,26 @@ no star-rating widgets, no "Add to cart," no bright multi-color badges, no card-
   (`DeckCardData`/`CoinCardData` interfaces exported alongside them) including `favorite`,
   `images`, `tags`.
 - `DeckPlaceholder` / `CoinPlaceholder` + `AccentBar` / `CoinAccentBar` — no-photo fallback art,
-  driven by `src/lib/placeholders.ts`'s tag-precedence system (`getDeckPlaceholder`/`getTagStyle`).
+  driven by `src/lib/placeholders.ts`'s tag-precedence system (`getDeckPlaceholder`/`getTagStyle`)
+  and rendered via the shared `TagIcon` line-icon set (`src/components/tag-icon.tsx`).
 - `TagChip` / `CoinTagChip` — tag pill rendering, same placeholder-style system for icon/color.
-- `DecksLandingPage` — the shared layout for all 9 specialty/creator pages (see §4). **Any new
+- `DecksLandingPage` — the shared layout for all 10 specialty/creator pages (see §4). **Any new
   specialty or creator page should be a thin wrapper around this component**, not a new
   hand-built page — this exact mistake (9x copy-pasted pages) was made and then refactored away
   in this project's history; don't repeat it.
 - `DeckSpotlightCard` — the "Featured Decks" poster-style card, only used inside
   `DecksLandingPage`.
+- `ScopedCollectionBrowser` — the in-memory sort/filter/grid experience used by any
+  `DecksLandingPage` invocation with `showFilters` set (most of them); shares filter-widget
+  components with `/collection` but filters client-side over an already-fetched deck/coin array
+  instead of URL params.
+- `SeriesEditor` / `SeriesHeroUploader` — authenticated Series create/edit form and its Blob-backed
+  hero-image upload control (see §6/§7 for the Blob cleanup rules around replacing a hero).
+- `SeriesDeckNavigation` — sticky prev/next-through-Series bar shown at the top of a deck detail
+  page when that deck belongs to a Series.
+- `ArchiveSpotlight` / `ArchiveSpotlightTrigger` — the global `/`-triggered search palette (§9);
+  `AddMenu` and `SpecialtyCollectionsMenu` are the nav bar's dropdown menus for creating new
+  items and jumping to a specialty/creator page, respectively.
 - `ConfirmSubmitButton` — wrap any destructive form-submit button in this rather than a bare
   `<button type="submit">`.
 
@@ -472,10 +544,10 @@ not a guarantee already verified.
   delete them as "unnecessary."
 - **Duplication over premature abstraction**: this codebase intentionally tolerates some small
   duplication (e.g. the two nearly-identical gallery components, the duplicated tag list in
-  `collection-filters.tsx`) rather than introducing shared abstractions for two-off cases — but
-  the 9 landing pages crossed the threshold where duplication became a real maintenance cost and
-  were consolidated (§4, §10). Use judgment: two similar things can stay separate; nine copies of
-  the same thing should not.
+  `collection-filter-controls.tsx`) rather than introducing shared abstractions for two-off cases
+  — but the (now 10) landing pages crossed the threshold where duplication became a real
+  maintenance cost and were consolidated (§4, §10). Use judgment: two similar things can stay
+  separate; ten copies of the same thing should not.
 - **No logging framework** — no `console.log` debugging statements are left in shipped code
   except the one intentional (and documented) diagnostic in `api/upload/route.ts` (see §16).
   Don't add ad-hoc `console.log`s to committed code.
@@ -620,8 +692,8 @@ beyond Vercel's own auto-detection) — verification is entirely manual/local ri
   replacement image (§7).
 - **Creator↔deck matching has no referential integrity** (§6) — a `designer` string typo or
   rename silently breaks a creator's landing page with no error surfaced anywhere.
-  `collection-filters.tsx`'s duplicated tag list is a smaller version of the same risk class:
-  two places that must be kept in sync by hand.
+  `collection-filter-controls.tsx`'s duplicated tag list is a smaller version of the same risk
+  class: two places that must be kept in sync by hand.
 - **`DeckGallery` and `CoinGallery` are near-duplicate components** (§7) — a bug fix or feature
   added to one's carousel behavior needs to be manually ported to the other; they are not shared.
 - **No automated tests anywhere** (§13) — any change to shared components
@@ -639,26 +711,39 @@ beyond Vercel's own auto-detection) — verification is entirely manual/local ri
 Confirmed present in the codebase as of this writing:
 
 - Public read-only browsing of the entire deck + coin collection, no login required.
-- Unified search/filter/paginate across decks and coins (`/collection`) — text search (name,
+- Unified search/filter/sort/paginate across decks and coins (`/collection`) — text search (name,
   series, designer, producer, notes), designer/producer/series dropdowns, multi-select tag
-  filter (AND semantics), deck/coin/all type toggle.
-- Deck detail pages with photo gallery, credits, tags, edition-number stat tiles, notes.
+  filter (AND semantics), deck/coin/all type toggle, year range, Collection Reason filter
+  (value + primary/secondary position), "missing photo"/"missing year" maintenance filters, 7
+  sort modes including seeded random, and a "Surprise Me" jump-to-random-item button.
+- A global `/`-triggered "Archive Spotlight" search palette (nav bar) searching deck names,
+  creators, Series, and specialty archives in one request.
+- First-class Series entities with their own public `/series/[slug]` pages (hero image or
+  engraved-suit-emblem fallback, description, attribution, member decks) and sticky prev/next
+  Series navigation on member decks' detail pages.
+- Deck detail pages with photo gallery, credits, tags, edition-number stat tiles, Collection
+  Reason display, an optional one-line "hook", long-form Markdown "essay", and notes.
 - Coin detail pages with obverse/reverse gallery, credits, tags, material/diameter.
 - Add/edit/delete for both decks and coins (session-gated), with client-side delete
   confirmation.
 - AI-assisted deck identification from photo(s) via Claude Sonnet 5 (deck-add flow only).
 - Deck favoriting (heart toggle on detail page) that reorders `/collection` and populates a
   dramatic "Featured Decks" spotlight section (max 3) on every landing page.
+- Deck "White Whale" flagging (separate toggle from favorite) that populates the dedicated
+  `/white-whales` landing page for the rarest/hardest-won pieces.
+- An admin-only "missing years" bulk-entry workbench (`/decks/missing-years`) for filling
+  `releaseYear` on decks that don't have one, one field at a time with autosave.
 - Homepage: hero with live stat tiles (linking to filtered collection views), a "Featured
-  creators" poster-card row, a "Specialty collections" tile row (Mini, Tarot, Coins, Souvenir),
-  and a "Recently added" strip.
+  creators" poster-card row, a "Specialty collections" tile row (White Whales, Mini, Tarot,
+  Coins, Souvenir), and a "Recently added" strip.
 - Stats dashboard: totals, top designers, era pie chart, release-year histogram, biggest-series
   showcase, photo-coverage percentage, recently added.
-- 9 dedicated landing pages (Souvenir Decks, Mini Decks, Tarot Decks, and 6 individual featured
-  creators), all built from one shared layout component with photo or inline-SVG hero art,
-  gradient text-legibility overlay, and a Featured/Collection two-tier deck grid.
+- 10 dedicated landing pages (White Whales, Souvenir Decks, Mini Decks, Tarot Decks, and 7
+  individual featured creators), all built from one shared layout component with photo or
+  inline-SVG hero art, gradient text-legibility overlay, and — for most pages — the full
+  in-page sort/filter experience (`ScopedCollectionBrowser`) rather than a static grid.
 - Release-year tracking and display, edition/limited-run number tracking.
-- Tag-driven placeholder art for any deck/coin with no photos yet.
+- Tag-driven placeholder art (line icons + accent color) for any deck/coin with no photos yet.
 
 ## 18. Task-completion checklist
 
