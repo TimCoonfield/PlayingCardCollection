@@ -9,10 +9,21 @@ import { getSeriesFallbackHero } from "@/lib/series-fallback-hero";
 import { DeckCard } from "@/components/deck-card";
 import { ChevronDownIcon } from "@/components/icons";
 import { SeriesEditor } from "@/components/series-editor";
+import { SITE_URL } from "@/lib/site";
 import { updateSeries } from "../actions";
 
 const HERO_FADE_GRADIENT =
   "linear-gradient(to right, color-mix(in srgb, var(--felt-bg) 90%, transparent) 0%, color-mix(in srgb, var(--felt-bg) 90%, transparent) 44%, transparent 58%)";
+
+/** Strips Markdown syntax down to plain text for a meta description, truncated to ~155 chars. */
+function toPlainDescription(markdown: string, maxLength = 155): string {
+  const plain = markdown
+    .replace(/[#>*_`~-]/g, "")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+  return plain.length > maxLength ? `${plain.slice(0, maxLength - 1).trimEnd()}…` : plain;
+}
 
 export async function generateMetadata({
   params,
@@ -21,9 +32,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const series = await getSeriesPageData(slug);
-  return series
-    ? { title: `${series.name} | Card Guy Archive`, description: series.subtitle ?? undefined }
-    : { title: "Series Not Found | Card Guy Archive" };
+  if (!series) return { title: "Series Not Found" };
+
+  const description =
+    series.subtitle ??
+    (series.description ? toPlainDescription(series.description) : null) ??
+    `${series.decks.length} ${series.decks.length === 1 ? "deck" : "decks"} in the Card Guy Archive's ${series.name} series.`;
+
+  return { title: series.name, description };
 }
 
 export default async function SeriesPage({
@@ -44,8 +60,31 @@ export default async function SeriesPage({
   const heroImageUrl = series.heroImageUrl ?? getSeriesFallbackHero(series.id);
   const updateSeriesWithId = updateSeries.bind(null, series.id);
 
+  const seriesJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: series.name,
+    description: series.subtitle ?? undefined,
+    url: `${SITE_URL}/series/${series.slug}`,
+    isPartOf: { "@type": "WebSite", name: "Card Guy Archive", url: SITE_URL },
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: decks.length,
+      itemListElement: decks.slice(0, 50).map((deck, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: `${SITE_URL}/decks/${deck.id}`,
+        name: deck.name,
+      })),
+    },
+  };
+
   return (
     <div className="flex flex-col gap-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(seriesJsonLd) }}
+      />
       <div className="flex flex-col">
         <header className={`relative overflow-hidden border border-felt-line bg-felt-surface ${series.description ? "rounded-t-lg" : "rounded-lg"}`}>
           <Image

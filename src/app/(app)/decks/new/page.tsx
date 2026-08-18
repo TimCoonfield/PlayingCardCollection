@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { DeckForm } from "@/components/deck-form";
 import { createDeck } from "../actions";
+
+export const metadata: Metadata = {
+  title: "Add Deck",
+  robots: { index: false, follow: false },
+};
 
 export default async function NewDeckPage() {
   const [designers, producers, seriesOptions] = await Promise.all([

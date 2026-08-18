@@ -1,3 +1,5 @@
+import { cache } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -8,6 +10,30 @@ import { PencilIcon, TrashIcon } from "@/components/icons";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { getSession } from "@/lib/auth";
 import { deleteCoin } from "../actions";
+import { SITE_URL } from "@/lib/site";
+
+// Wrapped in React's cache() so generateMetadata and the page body share one query per request.
+const getCoin = cache((id: string) => prisma.coin.findUnique({ where: { id } }));
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const coin = await getCoin(id);
+  if (!coin) return { title: "Coin Not Found" };
+
+  const credit = [coin.designer, coin.producer].filter(Boolean).join(" / ");
+  const description = coin.notes ?? [coin.name, credit, coin.releaseYear].filter(Boolean).join(" — ");
+  const image = coin.obverseImageUrl ?? coin.reverseImageUrl ?? undefined;
+
+  return {
+    title: coin.name,
+    description,
+    openGraph: image ? { images: [{ url: image }] } : undefined,
+  };
+}
 
 export default async function CoinDetailPage({
   params,
@@ -16,7 +42,7 @@ export default async function CoinDetailPage({
 }) {
   const { id } = await params;
   const [coin, session] = await Promise.all([
-    prisma.coin.findUnique({ where: { id } }),
+    getCoin(id),
     getSession(),
   ]);
 
@@ -28,8 +54,25 @@ export default async function CoinDetailPage({
     .filter((url): url is string => Boolean(url))
     .map((url) => ({ url }));
 
+  const coinJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    name: coin.name,
+    description: coin.notes ?? undefined,
+    url: `${SITE_URL}/coins/${coin.id}`,
+    image: galleryImages.map((image) => image.url),
+    creator: coin.designer ? { "@type": "Person", name: coin.designer } : undefined,
+    publisher: coin.producer ? { "@type": "Organization", name: coin.producer } : undefined,
+    dateCreated: coin.releaseYear ? String(coin.releaseYear) : undefined,
+    keywords: coin.tags.length > 0 ? coin.tags.join(", ") : undefined,
+  };
+
   return (
     <div className="flex flex-col gap-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(coinJsonLd) }}
+      />
       <div className="flex items-center justify-between">
         <BackLink fallbackHref="/coins">← Back to coins</BackLink>
         {isAuthenticated && (

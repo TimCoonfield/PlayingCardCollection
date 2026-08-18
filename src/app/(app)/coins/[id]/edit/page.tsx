@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { CoinForm } from "@/components/coin-form";
 import { updateCoin } from "../../actions";
+
+export const metadata: Metadata = {
+  title: "Edit Coin",
+  robots: { index: false, follow: false },
+};
 
 export default async function EditCoinPage({
   params,

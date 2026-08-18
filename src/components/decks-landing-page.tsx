@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { getSession } from "@/lib/auth";
+import { SITE_URL } from "@/lib/site";
 import { DeckCard, type DeckCardData } from "./deck-card";
 import { DeckSpotlightCard } from "./deck-spotlight-card";
 import type { CoinCardData } from "./coin-card";
@@ -23,6 +24,8 @@ export async function DecksLandingPage({
   title,
   tagline,
   blurb,
+  description,
+  path,
   heroImageUrl,
   heroObjectRight = false,
   heroSvg,
@@ -37,6 +40,10 @@ export async function DecksLandingPage({
   title: string;
   tagline?: string;
   blurb: ReactNode;
+  /** Plain-text summary for JSON-LD (blurb is often rich JSX). Falls back to tagline. */
+  description?: string;
+  /** Canonical route for this page, e.g. "/white-whales" — used to build the JSON-LD url. */
+  path: string;
   heroImageUrl?: string;
   heroObjectRight?: boolean;
   heroSvg?: ReactNode;
@@ -51,8 +58,31 @@ export async function DecksLandingPage({
   const isAuthenticated = showFilters && Boolean((await getSession()).authenticated);
   const favoriteDecks = decks.filter((d) => d.favorite).slice(0, 3);
 
+  const landingJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: title,
+    description: description ?? tagline,
+    url: `${SITE_URL}${path}`,
+    isPartOf: { "@type": "WebSite", name: "Card Guy Archive", url: SITE_URL },
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: decks.length,
+      itemListElement: decks.slice(0, 50).map((deck, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: `${SITE_URL}/decks/${deck.id}`,
+        name: deck.name,
+      })),
+    },
+  };
+
   return (
     <div className="flex flex-col gap-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(landingJsonLd) }}
+      />
       <div className="relative overflow-hidden rounded-lg border border-felt-line bg-felt-surface">
         {heroImageUrl && (
           <Image

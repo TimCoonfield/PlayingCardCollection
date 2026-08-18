@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { CoinForm } from "@/components/coin-form";
 import { createCoin } from "../actions";
+
+export const metadata: Metadata = {
+  title: "Add Coin",
+  robots: { index: false, follow: false },
+};
 
 export default async function NewCoinPage() {
   const [designers, producers] = await Promise.all([

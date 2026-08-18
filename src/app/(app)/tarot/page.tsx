@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import { getTaggedLandingCatalog } from "@/lib/catalog-browse";
 import { DecksLandingPage } from "@/components/decks-landing-page";
+
+export const metadata: Metadata = {
+  title: "Tarot Decks",
+  description: "Tarot decks in the Card Guy Archive collection.",
+};
 
 // Placeholder hero art (crystal ball, crescent moon, stars) until a real photo replaces it —
 // see the docs at the bottom of this file for how to swap it out.
@@ -24,14 +30,19 @@ const TAROT_HERO_SVG = (
   </g>
 );
 
+const TAROT_BLURB =
+  "Tarot decks sit at an interesting intersection for me: illustration-heavy, symbol-dense, and built around a fixed 78-card structure that still leaves enormous room for a designer’s voice. I’m not drawn to them for divination—I’m drawn to them as some of the most ambitious, cohesive art projects in the whole hobby, where every single card has to pull its narrative weight. A strong tarot deck tells you who its Major Arcana are before you’ve read a single word. This is where I’m collecting the ones that do that best.";
+
 export default async function TarotDecksPage() {
   const { decks, coins } = await getTaggedLandingCatalog("Tarot");
 
   return (
     <DecksLandingPage
       title="Tarot Decks"
+      path="/tarot"
       heroSvg={TAROT_HERO_SVG}
-      blurb="Tarot decks sit at an interesting intersection for me: illustration-heavy, symbol-dense, and built around a fixed 78-card structure that still leaves enormous room for a designer’s voice. I’m not drawn to them for divination—I’m drawn to them as some of the most ambitious, cohesive art projects in the whole hobby, where every single card has to pull its narrative weight. A strong tarot deck tells you who its Major Arcana are before you’ve read a single word. This is where I’m collecting the ones that do that best."
+      blurb={TAROT_BLURB}
+      description={TAROT_BLURB}
       decks={decks}
       coins={coins}
       showFilters

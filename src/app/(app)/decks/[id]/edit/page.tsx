@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { DeckForm } from "@/components/deck-form";
 import { updateDeck } from "../../actions";
+
+export const metadata: Metadata = {
+  title: "Edit Deck",
+  robots: { index: false, follow: false },
+};
 
 export default async function EditDeckPage({
   params,

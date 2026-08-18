@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { StatTile } from "@/components/stat-tile";
 import { HorizontalRankedChart, PieBreakdownChart, YearHistogramChart } from "@/components/stats-charts";
 import { SeriesShowcase, type SeriesSpotlightDatum } from "@/components/series-showcase";
@@ -28,6 +29,12 @@ function bucketReleaseYear(year: number): { label: string; sortKey: number } {
 
 // Modern, Vintage, Antique — validated against the felt surface (#234f3a)
 const ERA_COLORS = ["#b58a35", "#8266b3", "#b1473f"];
+
+export const metadata: Metadata = {
+  title: "Stats",
+  description:
+    "Aggregate statistics for the Card Guy Archive collection — totals, top designers, era breakdown, release-year history, and biggest series.",
+};
 
 export default async function StatsPage() {
   const session = await getSession();

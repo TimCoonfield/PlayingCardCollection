@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Spectral } from "next/font/google";
 import { ArchiveSpotlight } from "@/components/archive-spotlight";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,9 +21,35 @@ const spectral = Spectral({
   subsets: ["latin"],
 });
 
+const DEFAULT_DESCRIPTION =
+  "A visual archive of a personal playing card and coin collection — decks, series, creators, and the stories behind them.";
+
 export const metadata: Metadata = {
-  title: "Card Guy Archive",
-  description: "A visual tracker for a playing card collection.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: DEFAULT_DESCRIPTION,
+  openGraph: {
+    siteName: SITE_NAME,
+    type: "website",
+    title: SITE_NAME,
+    description: DEFAULT_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: DEFAULT_DESCRIPTION,
+  },
+};
+
+const WEBSITE_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITE_NAME,
+  url: SITE_URL,
+  description: DEFAULT_DESCRIPTION,
 };
 
 export default function RootLayout({
@@ -36,6 +63,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${spectral.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_JSON_LD) }}
+        />
         <ArchiveSpotlight />
         {children}
       </body>

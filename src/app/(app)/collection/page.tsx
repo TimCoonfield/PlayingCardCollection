@@ -1,6 +1,8 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
+import { SITE_URL } from "@/lib/site";
 import { DeckCard, type DeckCardData } from "@/components/deck-card";
 import { CoinCard, type CoinCardData } from "@/components/coin-card";
 import { CollectionFilters } from "@/components/collection-filters";
@@ -35,6 +37,35 @@ function toOptionalNumberParam(value: string | string[] | undefined): number | n
   if (!raw) return null;
   const parsed = Number(raw);
   return Number.isInteger(parsed) ? parsed : null;
+}
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  const q = toParam(params.q).trim();
+  const typeParam = toParam(params.type);
+  const type: "all" | "deck" | "coin" = typeParam === "deck" || typeParam === "coin" ? typeParam : "all";
+  const typeLabel = type === "deck" ? "Decks" : type === "coin" ? "Coins" : "Collection";
+
+  if (q) {
+    return {
+      title: `“${q}” — ${typeLabel}`,
+      description: `Search results for "${q}" across the Card Guy Archive collection.`,
+    };
+  }
+
+  return {
+    title: typeLabel,
+    description:
+      type === "deck"
+        ? "Browse and filter every playing card deck in the Card Guy Archive collection."
+        : type === "coin"
+          ? "Browse and filter every coin in the Card Guy Archive collection."
+          : "Browse and search the full Card Guy Archive collection of playing card decks and coins.",
+  };
 }
 
 export default async function CollectionPage({
@@ -171,8 +202,21 @@ export default async function CollectionPage({
     currentSearchParams.set("maxYear", String(maxYear));
   }
 
+  const collectionJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: type === "deck" ? "Decks" : type === "coin" ? "Coins" : "Collection",
+    url: `${SITE_URL}/collection${type !== "all" ? `?type=${type}` : ""}`,
+    isPartOf: { "@type": "WebSite", name: "Card Guy Archive", url: SITE_URL },
+    mainEntity: { "@type": "ItemList", numberOfItems: total },
+  };
+
   return (
     <div className="flex flex-col gap-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
+      />
       <div className="flex items-center justify-between">
         <h1 className="font-display text-xl font-semibold text-felt-ink">
           Collection <span className="font-sans text-base font-normal text-felt-sub">({total})</span>

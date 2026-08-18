@@ -1,3 +1,5 @@
+import { cache } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { notFound } from "next/navigation";
@@ -13,10 +15,52 @@ import { SeriesDeckNavigation } from "@/components/series-deck-navigation";
 import { getSession } from "@/lib/auth";
 import { deleteDeck } from "../actions";
 import { sortSeriesDecks } from "@/lib/series-order";
+import { SITE_URL } from "@/lib/site";
 import {
   COLLECTION_REASON_DETAILS,
   type CollectionReasonValue,
 } from "@/lib/collection-reasons";
+
+// Wrapped in React's cache() so generateMetadata and the page body share one query per request.
+const getDeck = cache((id: string) =>
+  prisma.deck.findUnique({
+    where: { id },
+    include: {
+      images: { orderBy: { sortOrder: "asc" } },
+      editions: { orderBy: { deckNumber: "asc" } },
+      series: {
+        include: {
+          decks: {
+            select: { id: true, name: true, seriesOrder: true, releaseYear: true },
+          },
+        },
+      },
+    },
+  })
+);
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const deck = await getDeck(id);
+  if (!deck) return { title: "Deck Not Found" };
+
+  const credit = [deck.designer, deck.producer].filter(Boolean).join(" / ");
+  const description =
+    deck.hook ??
+    deck.notes ??
+    [deck.name, credit, deck.releaseYear].filter(Boolean).join(" — ");
+  const image = deck.images[0]?.url;
+
+  return {
+    title: deck.name,
+    description,
+    openGraph: image ? { images: [{ url: image }] } : undefined,
+  };
+}
 
 export default async function DeckDetailPage({
   params,
@@ -25,20 +69,7 @@ export default async function DeckDetailPage({
 }) {
   const { id } = await params;
   const [deck, session] = await Promise.all([
-    prisma.deck.findUnique({
-      where: { id },
-      include: {
-        images: { orderBy: { sortOrder: "asc" } },
-        editions: { orderBy: { deckNumber: "asc" } },
-        series: {
-          include: {
-            decks: {
-              select: { id: true, name: true, seriesOrder: true, releaseYear: true },
-            },
-          },
-        },
-      },
-    }),
+    getDeck(id),
     getSession(),
   ]);
 
@@ -57,8 +88,28 @@ export default async function DeckDetailPage({
     deck.collectionReasonSecondary,
   ].filter((reason): reason is CollectionReasonValue => reason !== null);
 
+  const deckJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    name: deck.name,
+    description: deck.hook ?? deck.notes ?? undefined,
+    url: `${SITE_URL}/decks/${deck.id}`,
+    image: deck.images.map((image) => image.url),
+    creator: deck.designer ? { "@type": "Person", name: deck.designer } : undefined,
+    publisher: deck.producer ? { "@type": "Organization", name: deck.producer } : undefined,
+    dateCreated: deck.releaseYear ? String(deck.releaseYear) : undefined,
+    keywords: deck.tags.length > 0 ? deck.tags.join(", ") : undefined,
+    isPartOf: deck.series
+      ? { "@type": "CollectionPage", name: deck.series.name, url: `${SITE_URL}/series/${deck.series.slug}` }
+      : undefined,
+  };
+
   return (
     <div className="flex flex-col gap-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(deckJsonLd) }}
+      />
       {deck.series && (
         <SeriesDeckNavigation
           series={deck.series}
