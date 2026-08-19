@@ -243,7 +243,7 @@ export default async function DeckDetailPage({
           ) : (
             deck.productionRun && (
               <div className="flex flex-wrap gap-3">
-                <StatTile label="Edition" value={`XX/${deck.productionRun}`} />
+                <StatTile label="Edition" value={`—/${deck.productionRun}`} />
               </div>
             )
           )}
