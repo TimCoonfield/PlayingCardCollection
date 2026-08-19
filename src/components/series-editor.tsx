@@ -35,6 +35,17 @@ export function SeriesEditor({
     currentHeroUrl.current = heroImageUrl;
   }, [heroImageUrl]);
 
+  // Without this, touch-dragging inside the modal on mobile can scroll the page behind it
+  // instead of the modal itself, especially once the body is taller than the viewport.
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
   useEffect(() => {
     function cleanupUnsavedHero() {
       if (currentHeroUrl.current && currentHeroUrl.current !== persistedHeroUrlRef.current) {
@@ -90,14 +101,14 @@ export function SeriesEditor({
       role="dialog"
       aria-modal="true"
       aria-label="Edit Series"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-[6vh] backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
     >
     <form
       action={formAction}
       onSubmit={() => {
         submittedHeroUrl.current = heroImageUrl;
       }}
-      className="flex w-full max-w-2xl max-h-full flex-col gap-4 overflow-y-auto overscroll-contain rounded-lg border border-brass/35 bg-felt-surface p-4 shadow-2xl"
+      className="flex max-h-[85dvh] w-full max-w-2xl flex-col gap-4 overflow-y-auto overscroll-contain rounded-lg border border-brass/35 bg-felt-surface p-4 shadow-2xl"
     >
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-display text-lg font-semibold text-felt-ink">Edit Series</h2>
