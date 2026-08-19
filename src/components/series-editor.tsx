@@ -54,6 +54,7 @@ export function SeriesEditor({
     persistedHeroUrlRef.current = submittedHeroUrl.current;
     setPersistedHeroUrl(submittedHeroUrl.current);
     submittedHeroUrl.current = undefined;
+    setOpen(false);
   }, [state]);
 
   function openEditor() {
@@ -89,14 +90,14 @@ export function SeriesEditor({
       role="dialog"
       aria-modal="true"
       aria-label="Edit Series"
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 px-4 py-[8vh] backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-[6vh] backdrop-blur-sm"
     >
     <form
       action={formAction}
       onSubmit={() => {
         submittedHeroUrl.current = heroImageUrl;
       }}
-      className="flex w-full max-w-2xl flex-col gap-4 rounded-lg border border-brass/35 bg-felt-surface p-4 shadow-2xl"
+      className="flex w-full max-w-2xl max-h-full flex-col gap-4 overflow-y-auto overscroll-contain rounded-lg border border-brass/35 bg-felt-surface p-4 shadow-2xl"
     >
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-display text-lg font-semibold text-felt-ink">Edit Series</h2>
