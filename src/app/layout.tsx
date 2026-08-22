@@ -24,6 +24,13 @@ const spectral = Spectral({
 const DEFAULT_DESCRIPTION =
   "A visual archive of a personal playing card and coin collection — decks, series, creators, and the stories behind them.";
 
+const DEFAULT_SOCIAL_IMAGE = {
+  url: "/images/home/archive-hero-desktop.webp",
+  width: 1042,
+  height: 746,
+  alt: "The Card Guy Archive displayed with playing cards and collector coins",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
@@ -36,11 +43,13 @@ export const metadata: Metadata = {
     type: "website",
     title: SITE_NAME,
     description: DEFAULT_DESCRIPTION,
+    images: [DEFAULT_SOCIAL_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
     title: SITE_NAME,
     description: DEFAULT_DESCRIPTION,
+    images: [DEFAULT_SOCIAL_IMAGE],
   },
 };
 
