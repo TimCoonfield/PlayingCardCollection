@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { StatTile } from "@/components/stat-tile";
 import { HorizontalRankedChart, PieBreakdownChart, YearHistogramChart } from "@/components/stats-charts";
 import { SeriesShowcase, type SeriesSpotlightDatum } from "@/components/series-showcase";
@@ -18,13 +19,27 @@ const CHART_COLORS = {
 
 // Buckets a release year into the histogram's x-axis label: one bar per year from 2000 on,
 // one bar per decade for 1900-1999, and a single catch-all bar for anything before 1900.
-function bucketReleaseYear(year: number): { label: string; sortKey: number } {
-  if (year >= 2000) return { label: String(year), sortKey: year };
+function bucketReleaseYear(year: number): { label: string; sortKey: number; href: string } {
+  if (year >= 2000) {
+    return {
+      label: String(year),
+      sortKey: year,
+      href: `/collection?type=deck&minYear=${year}&maxYear=${year}`,
+    };
+  }
   if (year >= 1900) {
     const decade = Math.floor(year / 10) * 10;
-    return { label: `${decade}s`, sortKey: decade };
+    return {
+      label: `${decade}s`,
+      sortKey: decade,
+      href: `/collection?type=deck&minYear=${decade}&maxYear=${decade + 9}`,
+    };
   }
-  return { label: "Before 1900", sortKey: 0 };
+  return {
+    label: "Before 1900",
+    sortKey: 0,
+    href: "/collection?type=deck&maxYear=1899",
+  };
 }
 
 // Modern, Vintage, Antique — validated against the felt surface (#234f3a)
@@ -59,15 +74,15 @@ export default async function StatsPage() {
     { label: "Antique", count: summaryMetadata.antiqueCount },
   ];
 
-  const yearBuckets = new Map<string, { count: number; sortKey: number }>();
+  const yearBuckets = new Map<string, { count: number; sortKey: number; href: string }>();
   for (const g of releaseYearGroups) {
-    const { label, sortKey } = bucketReleaseYear(g.releaseYear!);
+    const { label, sortKey, href } = bucketReleaseYear(g.releaseYear!);
     const existing = yearBuckets.get(label);
     if (existing) existing.count += g._count._all;
-    else yearBuckets.set(label, { count: g._count._all, sortKey });
+    else yearBuckets.set(label, { count: g._count._all, sortKey, href });
   }
   const yearData = Array.from(yearBuckets.entries())
-    .map(([label, { count, sortKey }]) => ({ label, count, sortKey }))
+    .map(([label, { count, sortKey, href }]) => ({ label, count, sortKey, href }))
     .sort((a, b) => a.sortKey - b.sortKey);
 
   const spotlightDecks = await getSeriesSpotlightDecks(topSeriesGroups.map((series) => series.id));
@@ -88,11 +103,11 @@ export default async function StatsPage() {
       <h1 className="font-display text-xl font-semibold text-felt-ink">Collection Stats</h1>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        <StatTile icon={<CardsIcon className="h-6 w-6" />} label="Total unique decks" value={metadata.totalDecks} />
-        <StatTile icon={<CardsIcon className="h-6 w-6" />} label="Total decks" value={summaryMetadata.totalQuantity} />
-        <StatTile icon={<PaletteIcon className="h-6 w-6" />} label="Designers" value={metadata.designerCount} />
-        <StatTile icon={<CoinIcon className="h-6 w-6" />} label="Coins" value={metadata.coinCount} />
-        <StatTile icon={<LayersIcon className="h-6 w-6" />} label="Series" value={metadata.seriesCount} />
+        <StatTile icon={<CardsIcon className="h-6 w-6" />} label="Total unique decks" value={metadata.totalDecks} href="/collection?type=deck" />
+        <StatTile icon={<CardsIcon className="h-6 w-6" />} label="Total decks" value={summaryMetadata.totalQuantity} href="/collection?type=deck" />
+        <StatTile icon={<PaletteIcon className="h-6 w-6" />} label="Designers" value={metadata.designerCount} href="#top-designers" />
+        <StatTile icon={<CoinIcon className="h-6 w-6" />} label="Coins" value={metadata.coinCount} href="/collection?type=coin" />
+        <StatTile icon={<LayersIcon className="h-6 w-6" />} label="Series" value={metadata.seriesCount} href="#biggest-series" />
       </div>
 
       {workCounts && (
@@ -118,7 +133,7 @@ export default async function StatsPage() {
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <ChartCard title="Top designers by deck count">
+        <ChartCard id="top-designers" title="Top designers by deck count">
           <HorizontalRankedChart
             data={designerData}
             color={CHART_COLORS.designer}
@@ -140,12 +155,16 @@ export default async function StatsPage() {
         </ChartCard>
       )}
 
-      <ChartCard title="Biggest series in the collection">
+      <ChartCard id="biggest-series" title="Biggest series in the collection">
         <SeriesShowcase items={seriesShowcase} />
       </ChartCard>
 
       <div className="flex flex-col gap-3">
-        <h2 className="font-display text-base font-semibold tracking-wide text-brass">Recently added</h2>
+        <h2 className="font-display text-base font-semibold tracking-wide text-brass">
+          <Link href="/collection?type=deck&sort=recent" className="hover:text-brass-deep">
+            Recently added
+          </Link>
+        </h2>
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10">
           {recentDecks.map((deck) => (
             <DeckCard
@@ -160,9 +179,17 @@ export default async function StatsPage() {
   );
 }
 
-function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
+function ChartCard({
+  id,
+  title,
+  children,
+}: {
+  id?: string;
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-felt-line bg-felt-surface p-4">
+    <div id={id} className="scroll-mt-24 flex flex-col gap-3 rounded-lg border border-felt-line bg-felt-surface p-4">
       <h2 className="font-display text-base font-semibold tracking-wide text-brass">{title}</h2>
       {children}
     </div>

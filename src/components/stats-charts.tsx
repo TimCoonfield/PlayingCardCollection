@@ -19,6 +19,7 @@ import {
 export interface RankedDatum {
   label: string;
   count: number;
+  href?: string;
 }
 
 const tooltipStyle = {
@@ -35,9 +36,14 @@ interface TickProps {
   payload?: { value?: number | string };
 }
 
+function isActivationKey(key: string) {
+  return key === "Enter" || key === " ";
+}
+
 function makeClickableTick(onLabelClick: (label: string) => void) {
   function ClickableTick({ x = 0, y = 0, payload }: TickProps) {
     if (!payload || payload.value === undefined) return null;
+    const label = String(payload.value);
     return (
       <text
         x={x}
@@ -47,13 +53,53 @@ function makeClickableTick(onLabelClick: (label: string) => void) {
         fill="#b9c9ba"
         fontSize={12}
         cursor="pointer"
-        onClick={() => onLabelClick(String(payload.value))}
+        role="link"
+        tabIndex={0}
+        aria-label={`Browse decks by ${label}`}
+        onClick={() => onLabelClick(label)}
+        onKeyDown={(event) => {
+          if (isActivationKey(event.key)) onLabelClick(label);
+        }}
       >
         {payload.value}
       </text>
     );
   }
   return ClickableTick;
+}
+
+function makeClickableYearTick(
+  data: RankedDatum[],
+  onLabelClick: (label: string) => void
+) {
+  function ClickableYearTick({ x = 0, y = 0, payload }: TickProps) {
+    if (!payload || payload.value === undefined) return null;
+    const label = String(payload.value);
+    const isNavigable = Boolean(data.find((item) => item.label === label)?.href);
+
+    return (
+      <text
+        x={x}
+        y={y}
+        dy={10}
+        transform={`rotate(-45 ${x} ${y})`}
+        textAnchor="end"
+        fill="#b9c9ba"
+        fontSize={11}
+        cursor={isNavigable ? "pointer" : undefined}
+        role={isNavigable ? "link" : undefined}
+        tabIndex={isNavigable ? 0 : undefined}
+        aria-label={isNavigable ? `Browse decks released ${label}` : undefined}
+        onClick={isNavigable ? () => onLabelClick(label) : undefined}
+        onKeyDown={isNavigable ? (event) => {
+          if (isActivationKey(event.key)) onLabelClick(label);
+        } : undefined}
+      >
+        {label}
+      </text>
+    );
+  }
+  return ClickableYearTick;
 }
 
 export function HorizontalRankedChart({
@@ -71,8 +117,13 @@ export function HorizontalRankedChart({
   const router = useRouter();
 
   function handleClick(label: string) {
-    if (linkParam) router.push(`/collection?${linkParam}=${encodeURIComponent(label)}`);
+    const datum = data.find((item) => item.label === label);
+    const href = datum?.href ??
+      (linkParam ? `/collection?${linkParam}=${encodeURIComponent(label)}` : undefined);
+    if (href) router.push(href);
   }
+
+  const isNavigable = Boolean(linkParam || data.some((item) => item.href));
 
   return (
     <ResponsiveContainer width="100%" height={height}>
@@ -83,7 +134,7 @@ export function HorizontalRankedChart({
           type="category"
           dataKey="label"
           width={140}
-          tick={linkParam ? makeClickableTick(handleClick) : { fill: "#b9c9ba", fontSize: 12 }}
+          tick={isNavigable ? makeClickableTick(handleClick) : { fill: "#b9c9ba", fontSize: 12 }}
           axisLine={false}
           tickLine={false}
         />
@@ -97,8 +148,8 @@ export function HorizontalRankedChart({
           radius={[0, 4, 4, 0]}
           maxBarSize={20}
           isAnimationActive={false}
-          cursor={linkParam ? "pointer" : undefined}
-          onClick={linkParam ? (_, index) => handleClick(data[index].label) : undefined}
+          cursor={isNavigable ? "pointer" : undefined}
+          onClick={isNavigable ? (_, index) => handleClick(data[index].label) : undefined}
         >
           {data.map((d) => (
             <Cell key={d.label} fill={color} />
@@ -119,6 +170,13 @@ export function YearHistogramChart({
   color: string;
   height?: number;
 }) {
+  const router = useRouter();
+
+  function handleClick(label: string) {
+    const href = data.find((item) => item.label === label)?.href;
+    if (href) router.push(href);
+  }
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ left: 4, right: 4, top: 16, bottom: 36 }}>
@@ -126,10 +184,8 @@ export function YearHistogramChart({
         <XAxis
           dataKey="label"
           interval={0}
-          angle={-45}
-          textAnchor="end"
           height={50}
-          tick={{ fill: "#b9c9ba", fontSize: 11 }}
+          tick={makeClickableYearTick(data, handleClick)}
           axisLine={false}
           tickLine={false}
         />
@@ -145,6 +201,8 @@ export function YearHistogramChart({
           radius={[4, 4, 0, 0]}
           maxBarSize={28}
           isAnimationActive={false}
+          cursor="pointer"
+          onClick={(_, index) => handleClick(data[index].label)}
         />
       </BarChart>
     </ResponsiveContainer>
@@ -184,7 +242,13 @@ function makePieLabelRenderer(onLabelClick?: (label: string) => void) {
         textAnchor={x > cx ? "start" : "end"}
         dominantBaseline="central"
         cursor={onLabelClick ? "pointer" : undefined}
+        role={onLabelClick ? "link" : undefined}
+        tabIndex={onLabelClick ? 0 : undefined}
+        aria-label={onLabelClick ? `Browse ${name} decks` : undefined}
         onClick={onLabelClick ? () => onLabelClick(String(name)) : undefined}
+        onKeyDown={onLabelClick ? (event) => {
+          if (isActivationKey(event.key)) onLabelClick(String(name));
+        } : undefined}
       >
         {`${name}: ${value} (${Math.round(percent * 100)}%)`}
       </text>
@@ -207,8 +271,13 @@ export function PieBreakdownChart({
   const router = useRouter();
 
   function handleClick(label: string) {
-    if (linkParam) router.push(`/collection?${linkParam}=${encodeURIComponent(label)}`);
+    const datum = data.find((item) => item.label === label);
+    const href = datum?.href ??
+      (linkParam ? `/collection?${linkParam}=${encodeURIComponent(label)}` : undefined);
+    if (href) router.push(href);
   }
+
+  const isNavigable = Boolean(linkParam || data.some((item) => item.href));
 
   return (
     <ResponsiveContainer width="100%" height={height}>
@@ -221,12 +290,12 @@ export function PieBreakdownChart({
           cy="50%"
           outerRadius={Math.round(height * 0.28)}
           isAnimationActive={false}
-          label={makePieLabelRenderer(linkParam ? handleClick : undefined)}
+          label={makePieLabelRenderer(isNavigable ? handleClick : undefined)}
           labelLine
           stroke="#234f3a"
           strokeWidth={2}
-          cursor={linkParam ? "pointer" : undefined}
-          onClick={linkParam ? (entry) => handleClick(String(entry.name)) : undefined}
+          cursor={isNavigable ? "pointer" : undefined}
+          onClick={isNavigable ? (entry) => handleClick(String(entry.name)) : undefined}
         >
           {data.map((d, i) => (
             <Cell key={d.label} fill={colors[i % colors.length]} />
@@ -239,9 +308,9 @@ export function PieBreakdownChart({
         <Legend
           verticalAlign="bottom"
           height={32}
-          onClick={linkParam ? (entry) => handleClick(String(entry.value)) : undefined}
+          onClick={isNavigable ? (entry) => handleClick(String(entry.value)) : undefined}
           formatter={(value) => (
-            <span className={linkParam ? "cursor-pointer text-felt-sub" : "text-felt-sub"}>
+            <span className={isNavigable ? "cursor-pointer text-felt-sub" : "text-felt-sub"}>
               {value}
             </span>
           )}
