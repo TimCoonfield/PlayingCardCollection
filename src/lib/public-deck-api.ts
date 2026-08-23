@@ -2,7 +2,8 @@ import { unstable_cache } from "next/cache";
 import { getBrowseDeckCards } from "@/lib/catalog-browse";
 import {
   CATALOG_CACHE_REVALIDATE_SECONDS,
-  CATALOG_CACHE_TAG,
+  PUBLIC_DECK_DETAILS_CACHE_TAG,
+  publicDeckDetailCacheTag,
 } from "@/lib/catalog-cache";
 import { prisma } from "@/lib/prisma";
 
@@ -139,51 +140,56 @@ function relevanceRank(deck: BrowseDeck, query: string) {
   return 6;
 }
 
-export const getPublicDeckDetail = unstable_cache(
-  async (id: string) =>
-    prisma.deck.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        name: true,
-        designer: true,
-        producer: true,
-        ownershipStatus: true,
-        qty: true,
-        productionRun: true,
-        releaseYear: true,
-        seriesOrder: true,
-        variantNote: true,
-        tags: true,
-        collectionReasonPrimary: true,
-        collectionReasonSecondary: true,
-        hook: true,
-        notes: true,
-        essay: true,
-        notesReviewedAt: true,
-        catalogNumber: true,
-        favorite: true,
-        whiteWhale: true,
-        createdAt: true,
-        updatedAt: true,
-        series: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            subtitle: true,
+export function getPublicDeckDetail(id: string) {
+  return unstable_cache(
+    async () =>
+      prisma.deck.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          name: true,
+          designer: true,
+          producer: true,
+          ownershipStatus: true,
+          qty: true,
+          productionRun: true,
+          releaseYear: true,
+          seriesOrder: true,
+          variantNote: true,
+          tags: true,
+          collectionReasonPrimary: true,
+          collectionReasonSecondary: true,
+          hook: true,
+          notes: true,
+          essay: true,
+          notesReviewedAt: true,
+          catalogNumber: true,
+          favorite: true,
+          whiteWhale: true,
+          createdAt: true,
+          updatedAt: true,
+          series: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              subtitle: true,
+            },
+          },
+          images: {
+            orderBy: { sortOrder: "asc" },
+            select: { url: true, sortOrder: true },
+          },
+          editions: {
+            orderBy: { deckNumber: "asc" },
+            select: { deckNumber: true },
           },
         },
-        images: {
-          orderBy: { sortOrder: "asc" },
-          select: { url: true, sortOrder: true },
-        },
-        editions: {
-          orderBy: { deckNumber: "asc" },
-          select: { deckNumber: true },
-        },
-      },
-    }),
-  ["public-deck-detail-v1"],
-  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
-);
+      }),
+    ["public-deck-detail-v2", id],
+    {
+      tags: [PUBLIC_DECK_DETAILS_CACHE_TAG, publicDeckDetailCacheTag(id)],
+      revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
+    }
+  )();
+}

@@ -131,7 +131,7 @@ src/
     public-deck-api.ts         # read-only agent-facing Deck search + cached detail query
     catalog-browse.ts          # cached, paged deck/coin "browse" snapshots powering /collection + all landing pages
     catalog-metadata.ts        # cached aggregate counts/facets (home stats, /stats charts, filter dropdowns, creator counts)
-    catalog-cache.ts           # CATALOG_CACHE_TAG + invalidateCatalogCaches(), called by every write action
+    catalog-cache.ts           # purpose-specific cache tags + mutation-scoped invalidation helpers
     series-data.ts             # cached per-Series page query
     anthropic.ts               # Claude vision deck-identification call
   components/               # shared UI — see §10 for which ones to reuse
@@ -399,10 +399,12 @@ delete form submits — purely a UI courtesy, not enforced server-side.
 - **Delete**: a trash-icon button wrapped in `ConfirmSubmitButton`
   (`src/components/confirm-submit-button.tsx`) on both deck and coin detail pages — confirms via
   `window.confirm()` before the delete form submits.
-- **Propagation to the public site**: purely via Next's cache revalidation
-  (`revalidatePath(...)` calls at the end of each action, plus `invalidateCatalogCaches()` in
-  `src/lib/catalog-cache.ts` to bust the cached browse/metadata snapshots described in §9) — there
-  is no separate publish step, draft state, or review queue. A save is live immediately.
+- **Propagation to the public site**: purely via Next's cache revalidation. Purpose-specific
+  `updateTag` helpers in `src/lib/catalog-cache.ts` expire only the affected browse page(s),
+  detail, imagery, and metadata snapshots; Server Actions use redirects or `refresh()` for the
+  current screen. Avoid broad `revalidatePath("/", "layout")` calls here because Next 16 treats
+  that as an invalidation of all cached data, defeating the granular catalog tags. There is no
+  separate publish step, draft state, or review queue. A save is live immediately.
 - **Cross-screen consistency to watch**: `ALL_TAGS` (deck tags, `lib/schemas.ts`) is
   hand-duplicated as `ALL_COLLECTION_TAGS` in `src/components/collection-filter-controls.tsx` for
   the filter checkboxes — if you add/remove a deck tag, update both places. Coin tags

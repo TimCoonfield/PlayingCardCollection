@@ -1,13 +1,28 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { refresh } from "next/cache";
 import { z, type ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
 import { getSession } from "@/lib/auth";
 import { deleteUnreferencedBlobUrls } from "@/lib/blob-cleanup";
-import { invalidateCatalogCaches } from "@/lib/catalog-cache";
+import {
+  DECK_BROWSE_CACHE_PAGE_SIZE,
+  invalidateAllDeckBrowsePages,
+  invalidateAllCatalogMetadataCaches,
+  invalidateArchiveSeriesMetadataCache,
+  invalidateCollectionCatalogMetadataCache,
+  invalidateCoreCatalogMetadataCache,
+  invalidateCreatorCatalogMetadataCache,
+  invalidateDeckBrowsePage,
+  invalidateFavoriteDeckImagesCache,
+  invalidateHomeCatalogMetadataCache,
+  invalidatePublicDeckDetail,
+  invalidateRecentDecksCache,
+  invalidateSeriesSpotlightCache,
+  invalidateStatsCatalogMetadataCache,
+} from "@/lib/catalog-cache";
 import { parseDeckFormData, type DeckFormValues } from "@/lib/schemas";
 import { seriesCollisionSlug, seriesSlugBase } from "@/lib/series-slug";
 
@@ -34,6 +49,22 @@ const quickReleaseYearSchema = z.coerce
 async function isAuthenticated() {
   const session = await getSession();
   return Boolean(session.authenticated);
+}
+
+async function getDeckBrowsePageIndex(name: string, id: string) {
+  const precedingDecks = await prisma.deck.count({
+    where: {
+      OR: [
+        { name: { lt: name } },
+        { name, id: { lt: id } },
+      ],
+    },
+  });
+  return Math.floor(precedingDecks / DECK_BROWSE_CACHE_PAGE_SIZE);
+}
+
+function sameStrings(left: string[], right: string[]) {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
 function toDeckData(
@@ -73,14 +104,14 @@ class SeriesSelectionError extends Error {}
 async function resolveSeries(
   tx: Prisma.TransactionClient,
   values: DeckFormValues
-): Promise<{ id: string; name: string } | null> {
+): Promise<{ id: string; name: string; isNew: boolean } | null> {
   if (values.seriesId) {
     const selected = await tx.series.findUnique({
       where: { id: values.seriesId },
       select: { id: true, name: true },
     });
     if (!selected) throw new SeriesSelectionError("The selected Series no longer exists.");
-    return selected;
+    return { ...selected, isNew: false };
   }
 
   if (!values.newSeriesName) return null;
@@ -89,7 +120,7 @@ async function resolveSeries(
     where: { name: values.newSeriesName },
     select: { id: true, name: true },
   });
-  if (existing) return existing;
+  if (existing) return { ...existing, isNew: false };
 
   const base = seriesSlugBase(values.newSeriesName);
   const candidates = base
@@ -99,10 +130,11 @@ async function resolveSeries(
   for (const slug of candidates) {
     const occupied = await tx.series.findUnique({ where: { slug }, select: { id: true } });
     if (!occupied) {
-      return tx.series.create({
+      const created = await tx.series.create({
         data: { name: values.newSeriesName, slug },
         select: { id: true, name: true },
       });
+      return { ...created, isNew: true };
     }
   }
 
@@ -146,8 +178,11 @@ export async function createDeck(
     throw error;
   }
 
-  invalidateCatalogCaches();
-  revalidatePath("/collection");
+  invalidateAllDeckBrowsePages();
+  invalidateAllCatalogMetadataCaches();
+  invalidateRecentDecksCache();
+  invalidateSeriesSpotlightCache();
+  invalidatePublicDeckDetail(deck.id);
   redirect(`/decks/${deck.id}`);
 }
 
@@ -165,19 +200,34 @@ export async function updateDeck(
     return { error: "Please fix the errors below.", fieldErrors: flatten(parsed.error) };
   }
 
-  const [existingImages, existingDeck] = await Promise.all([
-    prisma.deckImage.findMany({
-      where: { deckId },
-      select: { url: true },
-    }),
-    prisma.deck.findUnique({
-      where: { id: deckId },
-      select: { notesReviewedAt: true },
-    }),
-  ]);
+  const existingDeck = await prisma.deck.findUnique({
+    where: { id: deckId },
+    select: {
+      name: true,
+      seriesId: true,
+      designer: true,
+      producer: true,
+      qty: true,
+      releaseYear: true,
+      notes: true,
+      tags: true,
+      collectionReasonPrimary: true,
+      collectionReasonSecondary: true,
+      favorite: true,
+      notesReviewedAt: true,
+      images: {
+        orderBy: { sortOrder: "asc" },
+        select: { url: true },
+      },
+    },
+  });
+  if (!existingDeck) return { error: "This deck no longer exists." };
 
+  const existingBrowsePage = await getDeckBrowsePageIndex(existingDeck.name, deckId);
+
+  let savedSeries = { id: null as string | null, isNew: false };
   try {
-    await prisma.$transaction(async (tx) => {
+    savedSeries = await prisma.$transaction(async (tx) => {
       const series = await resolveSeries(tx, parsed.data);
       await tx.deckImage.deleteMany({ where: { deckId } });
       await tx.deckEdition.deleteMany({ where: { deckId } });
@@ -197,6 +247,7 @@ export async function updateDeck(
           },
         },
       });
+      return { id: series?.id ?? null, isNew: series?.isNew ?? false };
     });
   } catch (error) {
     if (error instanceof SeriesSelectionError) {
@@ -207,12 +258,52 @@ export async function updateDeck(
 
   const retainedUrls = new Set(parsed.data.imageUrls);
   await deleteUnreferencedBlobUrls(
-    existingImages.map(({ url }) => url).filter((url) => !retainedUrls.has(url))
+    existingDeck.images.map(({ url }) => url).filter((url) => !retainedUrls.has(url))
   );
 
-  invalidateCatalogCaches();
-  revalidatePath("/collection");
-  revalidatePath(`/decks/${deckId}`);
+  const previousImageUrls = existingDeck.images.map(({ url }) => url);
+  const imagesChanged = !sameStrings(previousImageUrls, parsed.data.imageUrls);
+  const nameChanged = existingDeck.name !== parsed.data.name;
+  const seriesChanged = existingDeck.seriesId !== savedSeries.id;
+  const designerChanged = existingDeck.designer !== (parsed.data.designer ?? null);
+  const producerChanged = existingDeck.producer !== (parsed.data.producer ?? null);
+  const quantityChanged = existingDeck.qty !== parsed.data.qty;
+  const releaseYearChanged = existingDeck.releaseYear !== (parsed.data.releaseYear ?? null);
+  const tagsChanged = !sameStrings(existingDeck.tags, parsed.data.tags);
+  const browseChanged = nameChanged ||
+    seriesChanged ||
+    designerChanged ||
+    producerChanged ||
+    quantityChanged ||
+    releaseYearChanged ||
+    existingDeck.notes !== (parsed.data.notes ?? null) ||
+    tagsChanged ||
+    existingDeck.collectionReasonPrimary !== (parsed.data.collectionReasonPrimary ?? null) ||
+    existingDeck.collectionReasonSecondary !== (parsed.data.collectionReasonSecondary ?? null) ||
+    imagesChanged;
+
+  invalidatePublicDeckDetail(deckId);
+  if (browseChanged) {
+    if (nameChanged) invalidateAllDeckBrowsePages();
+    else invalidateDeckBrowsePage(existingBrowsePage);
+    invalidateRecentDecksCache();
+  }
+  if (designerChanged || savedSeries.isNew) invalidateCoreCatalogMetadataCache();
+  if (designerChanged || producerChanged || releaseYearChanged || savedSeries.isNew) {
+    invalidateCollectionCatalogMetadataCache();
+  }
+  if (designerChanged || producerChanged || nameChanged || imagesChanged) {
+    invalidateCreatorCatalogMetadataCache();
+  }
+  if (tagsChanged || seriesChanged) invalidateHomeCatalogMetadataCache();
+  if (designerChanged || quantityChanged || releaseYearChanged || tagsChanged || seriesChanged) {
+    invalidateStatsCatalogMetadataCache();
+  }
+  if (seriesChanged || savedSeries.isNew) invalidateArchiveSeriesMetadataCache();
+  if (imagesChanged && existingDeck.favorite) invalidateFavoriteDeckImagesCache();
+  if (nameChanged || seriesChanged || tagsChanged || imagesChanged) {
+    invalidateSeriesSpotlightCache();
+  }
   redirect(`/decks/${deckId}`);
 }
 
@@ -230,6 +321,10 @@ export async function updateDeckReleaseYear(
     return { status: "error", message: parsed.error.issues[0]?.message ?? "Enter a valid year" };
   }
 
+  const deck = await prisma.deck.findUnique({ where: { id: deckId }, select: { name: true } });
+  if (!deck) return { status: "error", message: "This deck no longer exists." };
+  const browsePage = await getDeckBrowsePageIndex(deck.name, deckId);
+
   const result = await prisma.deck.updateMany({
     where: { id: deckId },
     data: { releaseYear: parsed.data },
@@ -238,10 +333,10 @@ export async function updateDeckReleaseYear(
     return { status: "error", message: "This deck no longer exists." };
   }
 
-  invalidateCatalogCaches();
-  revalidatePath("/collection");
-  revalidatePath("/stats");
-  revalidatePath(`/decks/${deckId}`);
+  invalidateDeckBrowsePage(browsePage);
+  invalidateCollectionCatalogMetadataCache();
+  invalidateStatsCatalogMetadataCache();
+  invalidatePublicDeckDetail(deckId);
   return { status: "saved", message: "Saved", savedYear: parsed.data };
 }
 
@@ -252,26 +347,35 @@ export async function deleteDeck(deckId: string) {
 
   const deck = await prisma.deck.findUnique({
     where: { id: deckId },
-    select: { images: { select: { url: true } } },
+    select: { favorite: true, images: { select: { url: true } } },
   });
   await prisma.deck.delete({ where: { id: deckId } });
   await deleteUnreferencedBlobUrls(deck?.images.map(({ url }) => url) ?? []);
-  invalidateCatalogCaches();
-  revalidatePath("/collection");
+  invalidateAllDeckBrowsePages();
+  invalidateAllCatalogMetadataCaches();
+  invalidateRecentDecksCache();
+  invalidateSeriesSpotlightCache();
+  invalidatePublicDeckDetail(deckId);
+  if (deck?.favorite) invalidateFavoriteDeckImagesCache();
   redirect("/collection");
 }
 
 export async function toggleFavorite(deckId: string) {
   if (!(await isAuthenticated())) return;
 
-  const deck = await prisma.deck.findUnique({ where: { id: deckId }, select: { favorite: true } });
+  const deck = await prisma.deck.findUnique({
+    where: { id: deckId },
+    select: { favorite: true, name: true },
+  });
   if (!deck) return;
 
+  const browsePage = await getDeckBrowsePageIndex(deck.name, deckId);
   await prisma.deck.update({ where: { id: deckId }, data: { favorite: !deck.favorite } });
-  invalidateCatalogCaches();
-  // Favorites affect sort order/spotlights on the collection page and every landing page, so
-  // just revalidate everything under the app layout rather than tracking each one individually.
-  revalidatePath("/", "layout");
+  invalidateDeckBrowsePage(browsePage);
+  invalidateFavoriteDeckImagesCache();
+  invalidateRecentDecksCache();
+  invalidatePublicDeckDetail(deckId);
+  refresh();
 }
 
 export async function toggleWhiteWhale(deckId: string) {
@@ -279,16 +383,20 @@ export async function toggleWhiteWhale(deckId: string) {
 
   const deck = await prisma.deck.findUnique({
     where: { id: deckId },
-    select: { whiteWhale: true },
+    select: { whiteWhale: true, name: true },
   });
   if (!deck) return;
 
+  const browsePage = await getDeckBrowsePageIndex(deck.name, deckId);
   await prisma.deck.update({
     where: { id: deckId },
     data: { whiteWhale: !deck.whiteWhale },
   });
-  invalidateCatalogCaches();
-  revalidatePath("/", "layout");
+  invalidateDeckBrowsePage(browsePage);
+  invalidateHomeCatalogMetadataCache();
+  invalidateRecentDecksCache();
+  invalidatePublicDeckDetail(deckId);
+  refresh();
 }
 
 function flatten(error: ZodError) {

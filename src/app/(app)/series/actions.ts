@@ -1,10 +1,16 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { refresh } from "next/cache";
 import type { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { invalidateCatalogCaches } from "@/lib/catalog-cache";
+import {
+  invalidateAllDeckBrowsePages,
+  invalidateAllPublicDeckDetails,
+  invalidateArchiveSeriesMetadataCache,
+  invalidateCollectionCatalogMetadataCache,
+  invalidateStatsCatalogMetadataCache,
+} from "@/lib/catalog-cache";
 import { deleteUnreferencedBlobUrls } from "@/lib/blob-cleanup";
 import { parseSeriesFormData } from "@/lib/series-schemas";
 
@@ -29,7 +35,7 @@ export async function updateSeries(
 
   const current = await prisma.series.findUnique({
     where: { id: seriesId },
-    select: { name: true, slug: true, heroImageUrl: true },
+    select: { name: true, slug: true, subtitle: true, heroImageUrl: true },
   });
   if (!current) return { error: "This Series no longer exists." };
 
@@ -69,9 +75,16 @@ export async function updateSeries(
     await deleteUnreferencedBlobUrls([current.heroImageUrl]);
   }
 
-  invalidateCatalogCaches();
-  revalidatePath(`/series/${current.slug}`);
-  revalidatePath("/", "layout");
+  const nameChanged = parsed.data.name !== current.name;
+  const subtitleChanged = (parsed.data.subtitle ?? null) !== current.subtitle;
+  if (nameChanged) {
+    invalidateAllDeckBrowsePages();
+    invalidateCollectionCatalogMetadataCache();
+    invalidateStatsCatalogMetadataCache();
+    invalidateArchiveSeriesMetadataCache();
+  }
+  if (nameChanged || subtitleChanged) invalidateAllPublicDeckDetails();
+  refresh();
   return { saved: true };
 }
 

@@ -1,7 +1,15 @@
 import { unstable_cache } from "next/cache";
 import { CREATORS } from "@/lib/featured-creators";
 import { prisma } from "@/lib/prisma";
-import { CATALOG_CACHE_REVALIDATE_SECONDS, CATALOG_CACHE_TAG } from "@/lib/catalog-cache";
+import {
+  ARCHIVE_SERIES_METADATA_CACHE_TAG,
+  CATALOG_CACHE_REVALIDATE_SECONDS,
+  COLLECTION_CATALOG_METADATA_CACHE_TAG,
+  CORE_CATALOG_METADATA_CACHE_TAG,
+  CREATOR_CATALOG_METADATA_CACHE_TAG,
+  HOME_CATALOG_METADATA_CACHE_TAG,
+  STATS_CATALOG_METADATA_CACHE_TAG,
+} from "@/lib/catalog-cache";
 
 // Writes invalidate these snapshots immediately. The one-day lifetime is only a safety net for
 // out-of-band database changes, not the normal freshness mechanism.
@@ -28,7 +36,7 @@ export const getCoreCatalogMetadata = unstable_cache(
     };
   },
   ["core-catalog-metadata-v2"],
-  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
+  { tags: [CORE_CATALOG_METADATA_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
 export const getHomePageMetadata = unstable_cache(
@@ -43,7 +51,7 @@ export const getHomePageMetadata = unstable_cache(
     return { miniCount, tarotCount, souvenirCount, whiteWhaleCount };
   },
   ["home-page-metadata-v2"],
-  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
+  { tags: [HOME_CATALOG_METADATA_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
 export const getStatsSummaryMetadata = unstable_cache(
@@ -63,7 +71,7 @@ export const getStatsSummaryMetadata = unstable_cache(
     };
   },
   ["stats-summary-metadata-v2"],
-  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
+  { tags: [STATS_CATALOG_METADATA_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
 export const getCollectionMetadata = unstable_cache(
@@ -155,7 +163,7 @@ export const getCollectionMetadata = unstable_cache(
     };
   },
   ["collection-metadata-v2"],
-  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
+  { tags: [COLLECTION_CATALOG_METADATA_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
 export const getStatsChartMetadata = unstable_cache(
@@ -183,7 +191,7 @@ export const getStatsChartMetadata = unstable_cache(
     return { designerGroups, topSeriesGroups, releaseYearGroups };
   },
   ["stats-chart-metadata-v2"],
-  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
+  { tags: [STATS_CATALOG_METADATA_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
 export const getCreatorCounts = unstable_cache(
@@ -218,7 +226,7 @@ export const getCreatorCounts = unstable_cache(
       ...(creator.collectionDesigners ?? []),
     ]),
   ],
-  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
+  { tags: [CREATOR_CATALOG_METADATA_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
 export const getCreatorRepresentativeImages = unstable_cache(
@@ -258,7 +266,7 @@ export const getCreatorRepresentativeImages = unstable_cache(
       ...(creator.collectionDesigners ?? []),
     ]),
   ],
-  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
+  { tags: [CREATOR_CATALOG_METADATA_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
 export const getArchiveSearchSeries = unstable_cache(
@@ -267,5 +275,5 @@ export const getArchiveSearchSeries = unstable_cache(
       select: { name: true, slug: true, _count: { select: { decks: true } } },
     }),
   ["archive-search-series-v1"],
-  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
+  { tags: [ARCHIVE_SERIES_METADATA_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );

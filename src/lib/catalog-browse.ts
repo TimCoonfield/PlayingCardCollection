@@ -1,52 +1,64 @@
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { CATALOG_CACHE_REVALIDATE_SECONDS, CATALOG_CACHE_TAG } from "@/lib/catalog-cache";
+import {
+  CATALOG_CACHE_REVALIDATE_SECONDS,
+  COIN_BROWSE_CACHE_TAG,
+  DECK_BROWSE_CACHE_PAGE_SIZE,
+  DECK_BROWSE_CACHE_TAG,
+  FAVORITE_DECK_IMAGES_CACHE_TAG,
+  RECENT_DECKS_CACHE_TAG,
+  SERIES_SPOTLIGHT_CACHE_TAG,
+  deckBrowsePageCacheTag,
+} from "@/lib/catalog-cache";
 import { getCoreCatalogMetadata } from "@/lib/catalog-metadata";
-
-const DECK_CACHE_PAGE_SIZE = 400;
 
 // Vercel cache entries have a 2 MB ceiling. Paging the archive keeps each entry comfortably
 // below it as notes and image URLs accumulate, while still hydrating Neon only once per write.
-const getBrowseDeckPage = unstable_cache(
-  async (page: number) => {
-    const rows = await prisma.deck.findMany({
-      select: {
-        id: true,
-        name: true,
-        seriesRaw: true,
-        seriesLegacy: true,
-        series: { select: { name: true, slug: true } },
-        designer: true,
-        producer: true,
-        qty: true,
-        tags: true,
-        favorite: true,
-        whiteWhale: true,
-        releaseYear: true,
-        collectionReasonPrimary: true,
-        collectionReasonSecondary: true,
-        notes: true,
-        createdAt: true,
-        images: {
-          orderBy: { sortOrder: "asc" },
-          take: 1,
-          select: { url: true },
+function getBrowseDeckPage(page: number) {
+  return unstable_cache(
+    async () => {
+      const rows = await prisma.deck.findMany({
+        select: {
+          id: true,
+          name: true,
+          seriesRaw: true,
+          seriesLegacy: true,
+          series: { select: { name: true, slug: true } },
+          designer: true,
+          producer: true,
+          qty: true,
+          tags: true,
+          favorite: true,
+          whiteWhale: true,
+          releaseYear: true,
+          collectionReasonPrimary: true,
+          collectionReasonSecondary: true,
+          notes: true,
+          createdAt: true,
+          images: {
+            orderBy: { sortOrder: "asc" },
+            take: 1,
+            select: { url: true },
+          },
         },
-      },
-      orderBy: [{ name: "asc" }, { id: "asc" }],
-      skip: page * DECK_CACHE_PAGE_SIZE,
-      take: DECK_CACHE_PAGE_SIZE,
-    });
-    return rows.map(({ series, seriesRaw, seriesLegacy, ...deck }) => ({
-      ...deck,
-      series: series?.name ?? seriesRaw?.trim() ?? seriesLegacy?.trim() ?? null,
-      seriesSlug: series?.slug ?? null,
-      seriesRaw,
-    }));
-  },
-  ["browse-deck-page-v3"],
-  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
-);
+        orderBy: [{ name: "asc" }, { id: "asc" }],
+        skip: page * DECK_BROWSE_CACHE_PAGE_SIZE,
+        take: DECK_BROWSE_CACHE_PAGE_SIZE,
+      });
+      return rows.map(({ series, seriesRaw, seriesLegacy, ...deck }) => ({
+        ...deck,
+        series: series?.name ?? seriesRaw?.trim() ?? seriesLegacy?.trim() ?? null,
+        seriesSlug: series?.slug ?? null,
+        seriesRaw,
+      }));
+    },
+    ["browse-deck-page-v4", String(page)],
+    {
+      tags: [DECK_BROWSE_CACHE_TAG, deckBrowsePageCacheTag(page)],
+      revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
+    }
+  )();
+}
 
 const getBrowseCoins = unstable_cache(
   async () =>
@@ -68,7 +80,7 @@ const getBrowseCoins = unstable_cache(
       orderBy: [{ name: "asc" }, { id: "asc" }],
     }),
   ["browse-coins-v1"],
-  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
+  { tags: [COIN_BROWSE_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
 const getFavoriteDeckImages = unstable_cache(
@@ -84,7 +96,7 @@ const getFavoriteDeckImages = unstable_cache(
       },
     }),
   ["favorite-deck-images-v1"],
-  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
+  { tags: [FAVORITE_DECK_IMAGES_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
 export const getRecentDecks = unstable_cache(
@@ -106,7 +118,7 @@ export const getRecentDecks = unstable_cache(
       },
     }),
   ["recent-decks-v1"],
-  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
+  { tags: [RECENT_DECKS_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
 const getSeriesSpotlightRows = unstable_cache(
@@ -123,7 +135,7 @@ const getSeriesSpotlightRows = unstable_cache(
       },
     }),
   ["series-spotlight-rows-v1"],
-  { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
+  { tags: [SERIES_SPOTLIGHT_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
 export async function getSeriesSpotlightDecks(seriesIds: string[]) {
@@ -139,7 +151,7 @@ export async function getSeriesSpotlightDecks(seriesIds: string[]) {
 /** Lightweight deck cards for the full archive: one image URL per deck. */
 export async function getBrowseDeckCards() {
   const { totalDecks } = await getCoreCatalogMetadata();
-  const pageCount = Math.ceil(totalDecks / DECK_CACHE_PAGE_SIZE);
+  const pageCount = Math.ceil(totalDecks / DECK_BROWSE_CACHE_PAGE_SIZE);
   const deckPages = await Promise.all(
     Array.from({ length: pageCount }, (_, page) => getBrowseDeckPage(page))
   );

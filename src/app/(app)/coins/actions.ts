@@ -1,12 +1,15 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
 import type { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { deleteUnreferencedBlobUrls } from "@/lib/blob-cleanup";
-import { invalidateCatalogCaches } from "@/lib/catalog-cache";
+import {
+  invalidateCollectionCatalogMetadataCache,
+  invalidateCoinBrowseCache,
+  invalidateCoreCatalogMetadataCache,
+} from "@/lib/catalog-cache";
 import { parseCoinFormData, type CoinFormValues } from "@/lib/coin-schemas";
 
 export interface CoinFormState {
@@ -58,8 +61,9 @@ export async function createCoin(
     data: toCoinData(parsed.data),
   });
 
-  invalidateCatalogCaches();
-  revalidatePath("/coins");
+  invalidateCoinBrowseCache();
+  invalidateCoreCatalogMetadataCache();
+  invalidateCollectionCatalogMetadataCache();
   redirect(`/coins/${coin.id}`);
 }
 
@@ -99,9 +103,8 @@ export async function updateCoin(
     previousUrls.filter((url) => !retainedUrls.has(url))
   );
 
-  invalidateCatalogCaches();
-  revalidatePath("/coins");
-  revalidatePath(`/coins/${coinId}`);
+  invalidateCoinBrowseCache();
+  invalidateCollectionCatalogMetadataCache();
   redirect(`/coins/${coinId}`);
 }
 
@@ -120,8 +123,9 @@ export async function deleteCoin(coinId: string) {
       (url): url is string => Boolean(url)
     )
   );
-  invalidateCatalogCaches();
-  revalidatePath("/coins");
+  invalidateCoinBrowseCache();
+  invalidateCoreCatalogMetadataCache();
+  invalidateCollectionCatalogMetadataCache();
   redirect("/coins");
 }
 
