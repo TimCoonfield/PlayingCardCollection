@@ -30,8 +30,8 @@ Major content types (see [§6 Data model](#6-data-model) for details):
   (exactly two photos: obverse/reverse; no edition-number concept).
 - **Creators** — a small, hand-curated list of favorite designers (`src/lib/featured-creators.ts`),
   **not a database table**. Matched to decks purely by string equality on `designer`/`producer`.
-- **Specialty/creator landing pages** — 10 dedicated pages (White Whales, Souvenir, Mini, Tarot,
-  and 7 creator pages) built from one shared layout component.
+- **Specialty/creator landing pages** — 12 dedicated pages (White Whales, Souvenir, Mini, Tarot,
+  and 8 creator pages) built from one shared layout component.
 - **Favorites** and **White Whales** — two independent boolean flags on decks (decks only, not
   coins). Favorite drives `/collection` sort order and the "Featured Decks" spotlight treatment
   on landing pages; White Whale marks the rarest/hardest-won pieces and powers the dedicated
@@ -128,6 +128,7 @@ src/
     collection-reasons.ts      # CollectionReason enum values, labels, and descriptions
     collection-sort.ts         # shared sort-mode logic (featured/alpha/year/recent/random) for /collection + landing pages
     archive-search.ts          # ArchiveSearchScope type shared by the search API and the spotlight UI
+    public-deck-api.ts         # read-only agent-facing Deck search + cached detail query
     catalog-browse.ts          # cached, paged deck/coin "browse" snapshots powering /collection + all landing pages
     catalog-metadata.ts        # cached aggregate counts/facets (home stats, /stats charts, filter dropdowns, creator counts)
     catalog-cache.ts           # CATALOG_CACHE_TAG + invalidateCatalogCaches(), called by every write action
@@ -137,11 +138,13 @@ src/
   app/
     layout.tsx               # root HTML layout, fonts, metadata
     globals.css               # the entire design-token / Tailwind theme (see §10)
+    llms.txt/route.ts          # agent-readable site map and public catalog API instructions
     login/                    # public login page + server action
     api/
       upload/route.ts          # Vercel Blob client-upload token endpoint (session-gated)
       ai/identify/route.ts      # Claude deck-identification endpoint (session-gated)
       archive-search/route.ts   # global search endpoint (decks/creators/series/producers/archives) behind the nav-bar spotlight
+      catalog/decks/            # public, read-only agent API: paged search + single-Deck detail JSON
     (app)/                    # the route group for the whole authenticated-and-public app shell
       layout.tsx                # NavBar + page shell, reads session for isAuthenticated
       page.tsx                   # homepage: hero, featured creators, specialty tiles, recent decks
@@ -153,7 +156,7 @@ src/
       decks/                       # deck CRUD: new/, [id]/, [id]/edit/, missing-years/, actions.ts
       coins/                       # coin CRUD: new/, [id]/, [id]/edit/, actions.ts, page.tsx (redirects to /collection)
       white-whales/, souvenir/, mini/, tarot/  # 4 specialty-collection landing pages (thin wrappers)
-      creators/{name}/              # 7 creator landing pages (thin wrappers), one dir per person
+      creators/{name}/              # 8 creator landing pages (thin wrappers), one dir per person
 ```
 
 **Generated/do-not-hand-edit**: `src/generated/prisma/**`, `.next/`, `next-env.d.ts`,
@@ -163,9 +166,9 @@ src/
 
 - **Server Components by default.** Every `page.tsx` under `src/app/(app)/` is an async Server
   Component that queries Prisma directly and renders server-side — there is no client-side data
-  fetching layer (no SWR/React Query, no `/api` routes for reading data). The only two `api/`
-  routes exist because their work (Blob upload tokens, Claude calls) *must* run server-side and
-  be called from client code.
+  fetching layer (no SWR/React Query). API routes are reserved for client-required server work
+  (Blob upload tokens and Claude calls), the nav search palette, and the intentionally public,
+  read-only agent catalog described by `/llms.txt`.
 - **Mutations are Server Actions**, defined in `actions.ts` files colocated with each resource
   (`src/app/(app)/decks/actions.ts`, `src/app/(app)/coins/actions.ts`), wired to forms via
   `useActionState` in client form components (`deck-form.tsx`, `coin-form.tsx`) or plain
@@ -387,7 +390,7 @@ delete form submits — purely a UI courtesy, not enforced server-side.
   only (not on edit/new forms, not on coins) — `FavoriteButton`/`WhiteWhaleButton` (client) +
   `toggleFavorite`/`toggleWhiteWhale` (server actions in `decks/actions.ts`), optimistic UI update,
   broad `revalidatePath("/", "layout")` afterward since either flag can affect many pages at once
-  (collection sort order + up to 10 landing pages' featured/filtered sections).
+  (collection sort order + up to 12 landing pages' featured/filtered sections).
 - **Missing-years workbench** (`/decks/missing-years`, session-gated in `src/proxy.ts`) →
   `MissingYearsWorkbench` (`src/components/missing-years-workbench.tsx`). An admin-only bulk-entry
   table listing every deck with `releaseYear: null`; typing a 4-digit year into a row and blurring
@@ -434,6 +437,12 @@ delete form submits — purely a UI courtesy, not enforced server-side.
   Mini, Tarot, Souvenir, Coins) in one request, scoped by `src/lib/archive-search.ts`'s
   `ArchiveSearchScope` (`all`/`name`/`creator`/`series`/`producer`/`notes`). Reuses the same
   cached `getBrowseDeckCards()` snapshot as `/collection` — no separate search index.
+- **Agent catalog access**: `/llms.txt` is a concise, Markdown discovery map intended for an
+  owner to give directly to an AI agent. It documents `GET /api/catalog/decks` (public paged
+  Deck search/browse with exact facets) and `GET /api/catalog/decks/[id]` (complete public Deck
+  detail JSON). Both are read-only, CORS-enabled, and reuse catalog-tag invalidation; no mutation
+  capability is advertised or exposed. The list endpoint uses the same paged browse snapshot as
+  `/collection`, while detail records use a separately cached Prisma query.
 - **`/stats`**: aggregate dashboard — totals, top designers, Modern/Vintage/Antique era
   breakdown (era = tag membership, not a separate column), release-year histogram, "Biggest
   series" (top 5 by Deck count, each linking to its first-class Series page and showing one
@@ -545,7 +554,7 @@ not a guarantee already verified.
 - **Duplication over premature abstraction**: this codebase intentionally tolerates some small
   duplication (e.g. the two nearly-identical gallery components, the duplicated tag list in
   `collection-filter-controls.tsx`) rather than introducing shared abstractions for two-off cases
-  — but the (now 10) landing pages crossed the threshold where duplication became a real
+  — but the (now 12) landing pages crossed the threshold where duplication became a real
   maintenance cost and were consolidated (§4, §10). Use judgment: two similar things can stay
   separate; ten copies of the same thing should not.
 - **No logging framework** — no `console.log` debugging statements are left in shipped code
@@ -738,7 +747,7 @@ Confirmed present in the codebase as of this writing:
   Coins, Souvenir), and a "Recently added" strip.
 - Stats dashboard: totals, top designers, era pie chart, release-year histogram, biggest-series
   showcase, photo-coverage percentage, recently added.
-- 10 dedicated landing pages (White Whales, Souvenir Decks, Mini Decks, Tarot Decks, and 7
+- 12 dedicated landing pages (White Whales, Souvenir Decks, Mini Decks, Tarot Decks, and 8
   individual featured creators), all built from one shared layout component with photo or
   inline-SVG hero art, gradient text-legibility overlay, and — for most pages — the full
   in-page sort/filter experience (`ScopedCollectionBrowser`) rather than a static grid.

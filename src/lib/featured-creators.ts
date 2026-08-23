@@ -149,6 +149,17 @@ export const CREATORS: CreatorProfile[] = [
     spotlightImageUrl: JACK_BRUTUS_PENNY_IMAGE_URL,
     spotlightImageAlt: "Gold-foiled Culturae Animalis deck boxes with Jack Brutus Penny's logo",
   },
+  {
+    designer: "Steve Minty",
+    landingPageHref: "/creators/steve-minty",
+    featuredOnHomepage: false,
+    featuredInNavigation: false,
+    producer: "Steve Minty",
+    bio: "Steve Minty reimagines well-known mythologies and cultural traditions through story-rich illustration, vibrant color, and unmistakably lavish production. His Signature Series pushes deck presentation into sculpture, with extravagant cases designed to be impossible to ignore.",
+    accent: "brass",
+    initials: "SM",
+    tagline: "The Gilded Storyteller",
+  },
 ];
 
 export const HOMEPAGE_CREATORS = CREATORS.filter((creator) => creator.featuredOnHomepage);

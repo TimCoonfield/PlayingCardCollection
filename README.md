@@ -55,6 +55,8 @@ Fill these into `.env.local` (local) and as Vercel project env vars (prod):
 - `scripts/seed.ts` + `scripts/seed-data.json` — one-time import of the original
   spreadsheet's 2,528 rows.
 - `src/proxy.ts` — password-gate check (Next 16 renamed `middleware.ts` → `proxy.ts`).
-- `src/app/(app)/` — the authenticated app (collection, deck detail/add/edit, stats).
+- `src/app/(app)/` — the public archive shell plus authenticated editing routes.
 - `src/app/api/upload` — Vercel Blob client-upload token route.
 - `src/app/api/ai/identify` — Claude vision deck identification.
+- `src/app/llms.txt` — AI-agent discovery map for the public catalog capabilities.
+- `src/app/api/catalog/decks` — public, read-only deck search and detail JSON API.

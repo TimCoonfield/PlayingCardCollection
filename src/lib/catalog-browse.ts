@@ -44,7 +44,7 @@ const getBrowseDeckPage = unstable_cache(
       seriesRaw,
     }));
   },
-  ["browse-deck-page-v2"],
+  ["browse-deck-page-v3"],
   { tags: [CATALOG_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
