@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { COLLECTION_REASON_VALUES } from "@/lib/collection-reasons";
+import { uniqueDesignerNames } from "@/lib/designers";
 
 const optionalString = z
   .string()
@@ -42,7 +43,11 @@ export const deckFormSchema = z
     newSeriesName: optionalBoundedString(200),
     seriesOrder: optionalInt,
     variantNote: optionalBoundedString(300),
-    designer: optionalString,
+    designerNames: z
+      .array(z.string().trim().min(1, "Designer name cannot be blank"))
+      .max(20, "A deck can have at most 20 designer credits")
+      .transform(uniqueDesignerNames)
+      .default([]),
     producer: optionalString,
     ownershipStatus: z.string().trim().min(1).default("Owned"),
     qty: z
@@ -120,7 +125,7 @@ export function parseDeckFormData(formData: FormData) {
     newSeriesName: formData.get("newSeriesName") ?? "",
     seriesOrder: formData.get("seriesOrder") ?? "",
     variantNote: formData.get("variantNote") ?? "",
-    designer: formData.get("designer") ?? "",
+    designerNames: formData.getAll("designerNames").map(String),
     producer: formData.get("producer") ?? "",
     ownershipStatus: formData.get("ownershipStatus") || "Owned",
     qty: formData.get("qty") ?? "",

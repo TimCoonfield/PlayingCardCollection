@@ -35,6 +35,7 @@ export async function GET(
         id: deck.id,
         name: deck.name,
         pageUrl: new URL(`/decks/${deck.id}`, origin).toString(),
+        designers: deck.designers,
         designer: deck.designer,
         producer: deck.producer,
         series: deck.series

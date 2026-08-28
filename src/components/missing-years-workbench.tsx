@@ -14,7 +14,7 @@ interface MissingYearDeck {
   name: string;
   series: string | null;
   producer: string | null;
-  designer: string | null;
+  designers: string[];
 }
 
 export function MissingYearsWorkbench({ initialDecks }: { initialDecks: MissingYearDeck[] }) {
@@ -30,7 +30,7 @@ export function MissingYearsWorkbench({ initialDecks }: { initialDecks: MissingY
     () => ({
       series: uniqueSorted(decks.map((deck) => deck.series)),
       producers: uniqueSorted(decks.map((deck) => deck.producer)),
-      artists: uniqueSorted(decks.map((deck) => deck.designer)),
+      artists: uniqueSorted(decks.flatMap((deck) => deck.designers)),
     }),
     [decks]
   );
@@ -38,12 +38,12 @@ export function MissingYearsWorkbench({ initialDecks }: { initialDecks: MissingY
   const visibleDecks = decks.filter(
     (deck) =>
       (!normalizedQuery ||
-        [deck.name, deck.series, deck.producer, deck.designer].some((value) =>
+        [deck.name, deck.series, deck.producer, ...deck.designers].some((value) =>
           value?.toLocaleLowerCase().includes(normalizedQuery)
         )) &&
       (!series || deck.series === series) &&
       (!producer || deck.producer === producer) &&
-      (!artist || deck.designer === artist)
+      (!artist || deck.designers.includes(artist))
   );
   const activeFilterCount = Number(Boolean(series)) + Number(Boolean(producer)) + Number(Boolean(artist));
   const hasFilters = Boolean(query || activeFilterCount);
@@ -117,7 +117,7 @@ export function MissingYearsWorkbench({ initialDecks }: { initialDecks: MissingY
                 </td>
                 <td className="px-4 py-3 text-felt-sub">{deck.series ?? "—"}</td>
                 <td className="px-4 py-3 text-felt-sub">{deck.producer ?? "—"}</td>
-                <td className="px-4 py-3 text-felt-sub">{deck.designer ?? "—"}</td>
+                <td className="px-4 py-3 text-felt-sub">{deck.designers.join(" / ") || "—"}</td>
                 <td className="px-4 py-2.5"><QuickYearField deckId={deck.id} deckName={deck.name} /></td>
               </tr>
             ))}

@@ -7,7 +7,7 @@ export interface DeckCardData {
   id: string;
   name: string;
   series: string | null;
-  designer: string | null;
+  designers: string[];
   producer: string | null;
   qty: number;
   tags: string[];
@@ -79,8 +79,8 @@ export function DeckCard({
         <p className="line-clamp-2 font-display text-base font-semibold leading-snug text-felt-ink">
           {deck.name}
         </p>
-        {deck.designer && (
-          <p className="truncate text-xs text-felt-sub">{deck.designer}</p>
+        {deck.designers.length > 0 && (
+          <p className="truncate text-xs text-felt-sub">{deck.designers.join(" / ")}</p>
         )}
         {deck.producer && (
           <p className="truncate text-xs text-felt-sub/70">{deck.producer}</p>

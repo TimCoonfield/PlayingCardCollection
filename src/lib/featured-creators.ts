@@ -4,7 +4,7 @@ export const JACK_BRUTUS_PENNY_IMAGE_URL =
   "/images/creators/jack-brutus-penny.webp";
 
 export interface CreatorProfile {
-  /** Presentation-only title. `designer` remains the exact database attribution key. */
+  /** Presentation-only title. `designer` remains the exact normalized attribution name. */
   displayName?: string;
   designer: string;
   producer: string;

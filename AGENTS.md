@@ -24,12 +24,12 @@ is one collection, one owner, and one shared password for anyone who needs to ad
 
 Major content types (see [§6 Data model](#6-data-model) for details):
 
-- **Decks** — the primary entity (~2,500 seeded). Have photos, tags, a designer/producer,
+- **Decks** — the primary entity (~2,500 seeded). Have photos, tags, one or more designers, a producer,
   series, release year, ownership/quantity, and optionally numbered limited-edition copies.
 - **Coins** — a smaller secondary collectible type, structurally similar to decks but simpler
   (exactly two photos: obverse/reverse; no edition-number concept).
 - **Creators** — a small, hand-curated list of favorite designers (`src/lib/featured-creators.ts`),
-  **not a database table**. Matched to decks purely by string equality on `designer`/`producer`.
+  **not a database table**. Matched to normalized `Designer.name` values or the Deck's producer.
 - **Specialty/creator landing pages** — 12 dedicated pages (White Whales, Souvenir, Mini, Tarot,
   and 8 creator pages) built from one shared layout component.
 - **Favorites** and **White Whales** — two independent boolean flags on decks (decks only, not
@@ -227,11 +227,11 @@ src/
 ## 6. Data model
 
 Authoritative source: `prisma/schema.prisma` (kept intentionally short — read it directly rather
-than trusting a stale copy in this doc). Four write-through models: `Series`, `Deck`, `DeckImage`,
-`DeckEdition`, plus a standalone `Coin`.
+than trusting a stale copy in this doc). The write-through models are `Series`, `Designer`,
+`Deck`, `DeckDesigner`, `DeckImage`, and `DeckEdition`, plus a standalone `Coin`.
 
 ### Deck
-The primary entity. Key fields beyond the obvious (`name`, `designer`, `producer`,
+The primary entity. Key fields beyond the obvious (`name`, `designers`, `producer`,
 `notes`, `catalogNumber`, `releaseYear`): 
 - `seriesId: String?` — nullable FK to the one canonical `Series` a Deck belongs to.
   `seriesOrder` provides optional within-Series ordering and `variantNote` explains what
@@ -262,6 +262,12 @@ The primary entity. Key fields beyond the obvious (`name`, `designer`, `producer
   *specifically numbered* owned copy — **not** one row per unit of `qty`; a deck can have
   `qty: 3` and 0, 1, 2, or 3 `DeckEdition` rows depending on how many of those copies have a
   known number). The deck-form's zod schema enforces `editionNumbers.length <= qty`.
+- Designer attribution is normalized through ordered `DeckDesigner` join rows to reusable
+  `Designer` records. `designerLegacy` maps to the old physical `designer` column and is retained
+  as a joined compatibility mirror/audit trail; all browsing, filtering, and creator matching use
+  the normalized relation. The migration confidently splits spaced slashes, while ambiguous
+  ampersands and punctuation remain a single credit and are reported by
+  `scripts/designer-migration.ts` for manual review.
 - Detail-page display logic (see `src/app/(app)/decks/[id]/page.tsx`): if `editions.length > 0`,
   show one tile per edition as `"{deckNumber}/{productionRun}"`; else if `productionRun` is set
   but no editions are recorded, show a single placeholder tile `"XX/{productionRun}"`.
@@ -313,11 +319,11 @@ Structurally parallel to Deck (`name`, `series`, `designer`, `producer`, `tags`,
 ### Creators (not a table)
 `src/lib/featured-creators.ts` exports a hand-curated `FEATURED_CREATORS: FeaturedCreator[]`
 array — bios, taglines, Blob-hosted photo URLs, an accent color, and an optional
-`landingPageHref`. **A "creator" has no database row and no foreign key to any deck.** Matching
-is done at query time by exact string equality: `where: { designer: creator.designer }`, or
-`OR: [{ designer }, { producer }]` when `matchProducerToo: true` (for creators sometimes credited
-only as producer). **This is fragile** — a typo or a rename of a deck's `designer` string will
-silently stop that deck from appearing on the creator's page, with no error or warning anywhere.
+`landingPageHref`. **A curated creator profile has no database row or foreign key to a Designer.**
+Matching is done at query time by exact string equality against normalized `Designer.name`, or
+against the producer too when `matchProducerToo: true`. Designer attribution itself now has
+referential integrity; the remaining fragile boundary is the hand-authored profile key, whose
+typo or rename can silently stop decks from appearing on that curated profile.
 
 ### Deletion rules
 Hard deletes only, no soft-delete/undo anywhere in the schema or actions
@@ -701,8 +707,9 @@ beyond Vercel's own auto-detection) — verification is entirely manual/local ri
 - **Blob/image cache**: overwriting an image at an existing Blob URL leaves stale content served
   indefinitely by both the Blob CDN and Next's image optimizer — always use a new path for a
   replacement image (§7).
-- **Creator↔deck matching has no referential integrity** (§6) — a `designer` string typo or
-  rename silently breaks a creator's landing page with no error surfaced anywhere.
+- **Curated creator-profile matching is still string-keyed** (§6) — normalized Deck designer
+  relations have referential integrity, but a mismatch between `featured-creators.ts` and
+  `Designer.name` can still break a creator landing page with no error surfaced anywhere.
   `collection-filter-controls.tsx`'s duplicated tag list is a smaller version of the same risk
   class: two places that must be kept in sync by hand.
 - **`DeckGallery` and `CoinGallery` are near-duplicate components** (§7) — a bug fix or feature

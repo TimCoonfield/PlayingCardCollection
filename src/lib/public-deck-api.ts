@@ -51,7 +51,7 @@ export async function searchPublicDecks(options: PublicDeckSearchOptions) {
   const decks = await getBrowseDeckCards();
   const filtered = decks.filter((deck) => {
     if (normalizedQuery && !matchesQuery(deck, normalizedQuery, options.scope)) return false;
-    if (options.designers.length > 0 && !matchesExact(deck.designer, options.designers)) return false;
+    if (options.designers.length > 0 && !matchesAnyExact(deck.designers, options.designers)) return false;
     if (options.producers.length > 0 && !matchesExact(deck.producer, options.producers)) return false;
     if (
       options.series.length > 0 &&
@@ -89,19 +89,23 @@ function matchesExact(value: string | null | undefined, candidates: string[]) {
   return candidates.some((candidate) => candidate.trim().toLocaleLowerCase() === normalized);
 }
 
+function matchesAnyExact(values: string[], candidates: string[]) {
+  return values.some((value) => matchesExact(value, candidates));
+}
+
 function includes(value: string | null | undefined, query: string) {
   return value?.toLocaleLowerCase().includes(query) ?? false;
 }
 
 function matchesQuery(deck: BrowseDeck, query: string, scope: PublicDeckSearchScope) {
   if (scope === "name") return includes(deck.name, query);
-  if (scope === "creator") return includes(deck.designer, query) || includes(deck.producer, query);
+  if (scope === "creator") return deck.designers.some((name) => includes(name, query)) || includes(deck.producer, query);
   if (scope === "series") return includes(deck.series, query) || includes(deck.seriesRaw, query);
   if (scope === "producer") return includes(deck.producer, query);
   if (scope === "notes") return includes(deck.notes, query);
   return [
     deck.name,
-    deck.designer,
+    ...deck.designers,
     deck.producer,
     deck.series,
     deck.seriesRaw,
@@ -134,21 +138,24 @@ function relevanceRank(deck: BrowseDeck, query: string) {
   if (name === query) return 0;
   if (name.startsWith(query)) return 1;
   if (name.includes(query)) return 2;
-  if ([deck.designer, deck.producer].some((value) => value?.toLocaleLowerCase() === query)) return 3;
-  if ([deck.designer, deck.producer].some((value) => value?.toLocaleLowerCase().startsWith(query))) return 4;
+  if ([...deck.designers, deck.producer].some((value) => value?.toLocaleLowerCase() === query)) return 3;
+  if ([...deck.designers, deck.producer].some((value) => value?.toLocaleLowerCase().startsWith(query))) return 4;
   if ([deck.series, deck.seriesRaw].some((value) => value?.toLocaleLowerCase() === query)) return 5;
   return 6;
 }
 
 export function getPublicDeckDetail(id: string) {
   return unstable_cache(
-    async () =>
-      prisma.deck.findUnique({
+    async () => {
+      const deck = await prisma.deck.findUnique({
         where: { id },
         select: {
           id: true,
           name: true,
-          designer: true,
+          designers: {
+            orderBy: { sortOrder: "asc" },
+            select: { designer: { select: { name: true } } },
+          },
           producer: true,
           ownershipStatus: true,
           qty: true,
@@ -185,8 +192,13 @@ export function getPublicDeckDetail(id: string) {
             select: { deckNumber: true },
           },
         },
-      }),
-    ["public-deck-detail-v2", id],
+      });
+      if (!deck) return null;
+      const { designers, ...rest } = deck;
+      const names = designers.map(({ designer }) => designer.name);
+      return { ...rest, designers: names, designer: names.join(" / ") || null };
+    },
+    ["public-deck-detail-v3", id],
     {
       tags: [PUBLIC_DECK_DETAILS_CACHE_TAG, publicDeckDetailCacheTag(id)],
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,

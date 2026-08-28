@@ -9,6 +9,7 @@
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts",
     "series:migrate": "node --env-file=.env.local --import tsx scripts/series-migration.ts",
+    "designers:migrate": "node --env-file=.env.local --import tsx scripts/designer-migration.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

@@ -24,7 +24,10 @@ function getBrowseDeckPage(page: number) {
           seriesRaw: true,
           seriesLegacy: true,
           series: { select: { name: true, slug: true } },
-          designer: true,
+          designers: {
+            orderBy: { sortOrder: "asc" },
+            select: { designer: { select: { name: true } } },
+          },
           producer: true,
           qty: true,
           tags: true,
@@ -45,14 +48,16 @@ function getBrowseDeckPage(page: number) {
         skip: page * DECK_BROWSE_CACHE_PAGE_SIZE,
         take: DECK_BROWSE_CACHE_PAGE_SIZE,
       });
-      return rows.map(({ series, seriesRaw, seriesLegacy, ...deck }) => ({
+      return rows.map(({ series, seriesRaw, seriesLegacy, designers, ...deck }) => ({
         ...deck,
+        designers: designers.map(({ designer }) => designer.name),
+        designer: designers.map(({ designer }) => designer.name).join(" / ") || null,
         series: series?.name ?? seriesRaw?.trim() ?? seriesLegacy?.trim() ?? null,
         seriesSlug: series?.slug ?? null,
         seriesRaw,
       }));
     },
-    ["browse-deck-page-v4", String(page)],
+    ["browse-deck-page-v5", String(page)],
     {
       tags: [DECK_BROWSE_CACHE_TAG, deckBrowsePageCacheTag(page)],
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
@@ -61,8 +66,8 @@ function getBrowseDeckPage(page: number) {
 }
 
 const getBrowseCoins = unstable_cache(
-  async () =>
-    prisma.coin.findMany({
+  async () => {
+    const coins = await prisma.coin.findMany({
       select: {
         id: true,
         name: true,
@@ -78,8 +83,13 @@ const getBrowseCoins = unstable_cache(
         createdAt: true,
       },
       orderBy: [{ name: "asc" }, { id: "asc" }],
-    }),
-  ["browse-coins-v1"],
+    });
+    return coins.map((coin) => ({
+      ...coin,
+      designers: coin.designer ? [coin.designer] : [],
+    }));
+  },
+  ["browse-coins-v2"],
   { tags: [COIN_BROWSE_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
@@ -108,7 +118,10 @@ export const getRecentDecks = unstable_cache(
         id: true,
         name: true,
         series: { select: { name: true } },
-        designer: true,
+        designers: {
+          orderBy: { sortOrder: "asc" },
+          select: { designer: { select: { name: true } } },
+        },
         producer: true,
         qty: true,
         tags: true,
@@ -116,8 +129,12 @@ export const getRecentDecks = unstable_cache(
         whiteWhale: true,
         images: { orderBy: { sortOrder: "asc" }, take: 1, select: { url: true } },
       },
-    }),
-  ["recent-decks-v1"],
+    }).then((decks) => decks.map(({ designers, ...deck }) => ({
+      ...deck,
+      designers: designers.map(({ designer }) => designer.name),
+      designer: designers.map(({ designer }) => designer.name).join(" / ") || null,
+    }))),
+  ["recent-decks-v2"],
   { tags: [RECENT_DECKS_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
@@ -200,8 +217,8 @@ export async function getLandingPageCatalog() {
 
 export async function getCreatorLandingCatalog(name: string, matchProducerToo = false) {
   const catalog = await getLandingPageCatalog();
-  const matches = (item: { designer: string | null; producer: string | null }) =>
-    item.designer === name || (matchProducerToo && item.producer === name);
+  const matches = (item: { designers: string[]; producer: string | null }) =>
+    item.designers.includes(name) || (matchProducerToo && item.producer === name);
   return {
     decks: catalog.decks.filter(matches),
     coins: catalog.coins.filter(matches),
@@ -213,9 +230,9 @@ export async function getProducerOrDesignerLandingCatalog(
   designers: string[]
 ) {
   const catalog = await getLandingPageCatalog();
-  const matches = (item: { designer: string | null; producer: string | null }) =>
+  const matches = (item: { designers: string[]; producer: string | null }) =>
     item.producer === producer ||
-    (item.designer !== null && designers.includes(item.designer));
+    item.designers.some((designer) => designers.includes(designer));
   return {
     decks: catalog.decks.filter(matches),
     coins: catalog.coins.filter(matches),

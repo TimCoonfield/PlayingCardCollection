@@ -5,7 +5,7 @@ import { DeckPlaceholder } from "./deck-placeholder";
 export interface DeckSpotlightDatum {
   id: string;
   name: string;
-  designer: string | null;
+  designers: string[];
   tags: string[];
   images: { url: string }[];
 }
@@ -56,9 +56,9 @@ export function DeckSpotlightCard({ deck }: { deck: DeckSpotlightDatum }) {
           {deck.name}
         </p>
         <div className="flex items-end justify-between gap-3">
-          {deck.designer ? (
+          {deck.designers.length > 0 ? (
             <span className="truncate font-display text-sm italic text-felt-sub">
-              {deck.designer}
+              {deck.designers.join(" / ")}
             </span>
           ) : (
             <span />

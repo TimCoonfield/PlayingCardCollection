@@ -74,7 +74,7 @@ function findDecks(decks: SearchDeck[], query: string, scope: ArchiveSearchScope
       scope === "notes"
         ? includes(deck.notes)
         : scope === "creator"
-          ? includes(deck.designer) || includes(deck.producer)
+          ? deck.designers.some(includes) || includes(deck.producer)
           : scope === "series"
             ? includes(deck.series) || includes(deck.seriesRaw)
             : scope === "producer"
@@ -84,7 +84,7 @@ function findDecks(decks: SearchDeck[], query: string, scope: ArchiveSearchScope
     .map((deck) => {
       const name = deck.name.toLocaleLowerCase();
       const rank = name === normalized ? 0 : name.startsWith(normalized) ? 1 : name.includes(normalized) ? 2 : 3;
-      return { ...deck, rank, href: `/decks/${deck.id}`, meta: deck.designer ?? "Deck" };
+      return { ...deck, rank, href: `/decks/${deck.id}`, meta: deck.designers.join(" / ") || "Deck" };
     })
     .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name))
     .slice(0, 2)
@@ -92,7 +92,7 @@ function findDecks(decks: SearchDeck[], query: string, scope: ArchiveSearchScope
       id: deck.id,
       label: deck.name,
       name: deck.name,
-      designer: deck.designer,
+      designer: deck.designers.join(" / ") || null,
       href: deck.href,
       meta: deck.meta,
     }));
@@ -124,8 +124,8 @@ function findEntities(
 
   const counts = new Map<string, number>();
   for (const deck of decks) {
-    const label = field === "designer" ? deck.designer : deck.producer;
-    if (label) counts.set(label, (counts.get(label) ?? 0) + 1);
+    const labels = field === "designer" ? deck.designers : deck.producer ? [deck.producer] : [];
+    for (const label of labels) counts.set(label, (counts.get(label) ?? 0) + 1);
   }
   const labels = Array.from(counts.keys())
     .filter((label) => label.toLocaleLowerCase().includes(normalized))

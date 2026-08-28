@@ -18,24 +18,24 @@ export const getCoreCatalogMetadata = unstable_cache(
   async () => {
     const [
       totalDecks,
-      designerGroups,
+      designerCount,
       seriesCount,
       coinCount,
     ] = await Promise.all([
       prisma.deck.count(),
-      prisma.deck.groupBy({ by: ["designer"], where: { designer: { not: null } } }),
+      prisma.designer.count({ where: { decks: { some: {} } } }),
       prisma.series.count(),
       prisma.coin.count(),
     ]);
 
     return {
       totalDecks,
-      designerCount: designerGroups.length,
+      designerCount,
       seriesCount,
       coinCount,
     };
   },
-  ["core-catalog-metadata-v2"],
+  ["core-catalog-metadata-v3"],
   { tags: [CORE_CATALOG_METADATA_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
@@ -88,10 +88,9 @@ export const getCollectionMetadata = unstable_cache(
     ] = await Promise.all([
       prisma.deck.aggregate({ _min: { releaseYear: true }, _max: { releaseYear: true } }),
       prisma.coin.aggregate({ _min: { releaseYear: true }, _max: { releaseYear: true } }),
-      prisma.deck.findMany({
-        distinct: ["designer"],
-        where: { designer: { not: null } },
-        select: { designer: true },
+      prisma.designer.findMany({
+        where: { decks: { some: {} } },
+        select: { name: true },
       }),
       prisma.coin.findMany({
         distinct: ["designer"],
@@ -134,9 +133,7 @@ export const getCollectionMetadata = unstable_cache(
       availableMaxYear,
       designers: Array.from(
         new Set([
-          ...deckDesigners
-            .map(({ designer }) => designer)
-            .filter((value): value is string => Boolean(value)),
+          ...deckDesigners.map(({ name }) => name),
           ...coinDesigners
             .map(({ designer }) => designer)
             .filter((value): value is string => Boolean(value)),
@@ -162,18 +159,17 @@ export const getCollectionMetadata = unstable_cache(
       ).sort(),
     };
   },
-  ["collection-metadata-v2"],
+  ["collection-metadata-v3"],
   { tags: [COLLECTION_CATALOG_METADATA_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
 export const getStatsChartMetadata = unstable_cache(
   async () => {
     const [designerGroups, topSeriesGroups, releaseYearGroups] = await Promise.all([
-      prisma.deck.groupBy({
-        by: ["designer"],
-        where: { designer: { not: null } },
-        _count: { _all: true },
-        orderBy: { _count: { designer: "desc" } },
+      prisma.designer.findMany({
+        where: { decks: { some: {} } },
+        select: { name: true, _count: { select: { decks: true } } },
+        orderBy: { decks: { _count: "desc" } },
         take: 10,
       }),
       prisma.series.findMany({
@@ -188,9 +184,16 @@ export const getStatsChartMetadata = unstable_cache(
       }),
     ]);
 
-    return { designerGroups, topSeriesGroups, releaseYearGroups };
+    return {
+      designerGroups: designerGroups.map(({ name, _count }) => ({
+        designer: name,
+        _count: { _all: _count.decks },
+      })),
+      topSeriesGroups,
+      releaseYearGroups,
+    };
   },
-  ["stats-chart-metadata-v2"],
+  ["stats-chart-metadata-v3"],
   { tags: [STATS_CATALOG_METADATA_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
@@ -203,14 +206,19 @@ export const getCreatorCounts = unstable_cache(
             ? {
                 OR: [
                   { producer: creator.collectionProducer },
-                  { designer: { in: creator.collectionDesigners } },
+                  { designers: { some: { designer: { name: { in: creator.collectionDesigners } } } } },
                 ],
               }
             : creator.collectionProducer
               ? { producer: creator.collectionProducer }
             : creator.matchProducerToo
-              ? { OR: [{ designer: creator.designer }, { producer: creator.designer }] }
-              : { designer: creator.designer },
+              ? {
+                  OR: [
+                    { designers: { some: { designer: { name: creator.designer } } } },
+                    { producer: creator.designer },
+                  ],
+                }
+              : { designers: { some: { designer: { name: creator.designer } } } },
         })
       )
     );
@@ -220,7 +228,7 @@ export const getCreatorCounts = unstable_cache(
     );
   },
   [
-    "curated-creator-counts-v3",
+    "curated-creator-counts-v4",
     ...CREATORS.flatMap((creator) => [
       creator.collectionProducer ?? creator.designer,
       ...(creator.collectionDesigners ?? []),
@@ -238,7 +246,7 @@ export const getCreatorRepresentativeImages = unstable_cache(
       where: { images: { some: {} } },
       orderBy: [{ name: "asc" }, { id: "asc" }],
       select: {
-        designer: true,
+        designers: { select: { designer: { select: { name: true } } } },
         producer: true,
         images: { orderBy: { sortOrder: "asc" }, take: 1, select: { url: true } },
       },
@@ -246,21 +254,24 @@ export const getCreatorRepresentativeImages = unstable_cache(
 
     return Object.fromEntries(
       creatorsNeedingImages.map((creator) => {
-        const deck = decks.find(({ designer, producer }) =>
+        const deck = decks.find(({ designers, producer }) => {
+          const designerNames = designers.map(({ designer }) => designer.name);
+          return (
           creator.collectionProducer && creator.collectionDesigners
-            ? producer === creator.collectionProducer || creator.collectionDesigners.includes(designer ?? "")
+            ? producer === creator.collectionProducer || creator.collectionDesigners.some((name) => designerNames.includes(name))
             : creator.collectionProducer
               ? producer === creator.collectionProducer
               : creator.matchProducerToo
-                ? designer === creator.designer || producer === creator.designer
-                : designer === creator.designer
-        );
+                ? designerNames.includes(creator.designer) || producer === creator.designer
+                : designerNames.includes(creator.designer)
+          );
+        });
         return [creator.designer, deck?.images[0]?.url ?? null];
       })
     );
   },
   [
-    "curated-creator-representative-images-v1",
+    "curated-creator-representative-images-v2",
     ...CREATORS.flatMap((creator) => [
       creator.collectionProducer ?? creator.designer,
       ...(creator.collectionDesigners ?? []),

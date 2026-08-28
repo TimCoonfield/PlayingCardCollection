@@ -25,6 +25,7 @@ import {
 } from "@/lib/catalog-cache";
 import { parseDeckFormData, type DeckFormValues } from "@/lib/schemas";
 import { seriesCollisionSlug, seriesSlugBase } from "@/lib/series-slug";
+import { joinDesignerNames } from "@/lib/designers";
 
 export interface DeckFormState {
   error?: string;
@@ -77,7 +78,7 @@ function toDeckData(
     seriesLegacy: series?.name ?? null,
     seriesOrder: series ? values.seriesOrder ?? null : null,
     variantNote: series ? values.variantNote ?? null : null,
-    designer: values.designer ?? null,
+    designerLegacy: joinDesignerNames(values.designerNames),
     producer: values.producer ?? null,
     ownershipStatus: values.ownershipStatus,
     qty: values.qty,
@@ -87,6 +88,18 @@ function toDeckData(
     catalogNumber: values.catalogNumber ?? null,
     tags: values.tags,
   };
+}
+
+function toDesignerRelations(values: DeckFormValues) {
+  return values.designerNames.map((name, sortOrder) => ({
+    sortOrder,
+    designer: {
+      connectOrCreate: {
+        where: { name },
+        create: { name },
+      },
+    },
+  }));
 }
 
 function toEditorialDeckData(values: DeckFormValues) {
@@ -167,6 +180,7 @@ export async function createDeck(
           editions: {
             create: parsed.data.editionNumbers.map((deckNumber) => ({ deckNumber })),
           },
+          designers: { create: toDesignerRelations(parsed.data) },
         },
         select: { id: true },
       });
@@ -205,7 +219,10 @@ export async function updateDeck(
     select: {
       name: true,
       seriesId: true,
-      designer: true,
+      designers: {
+        orderBy: { sortOrder: "asc" },
+        select: { designer: { select: { name: true } } },
+      },
       producer: true,
       qty: true,
       releaseYear: true,
@@ -245,6 +262,10 @@ export async function updateDeck(
           editions: {
             create: parsed.data.editionNumbers.map((deckNumber) => ({ deckNumber })),
           },
+          designers: {
+            deleteMany: {},
+            create: toDesignerRelations(parsed.data),
+          },
         },
       });
       return { id: series?.id ?? null, isNew: series?.isNew ?? false };
@@ -265,7 +286,10 @@ export async function updateDeck(
   const imagesChanged = !sameStrings(previousImageUrls, parsed.data.imageUrls);
   const nameChanged = existingDeck.name !== parsed.data.name;
   const seriesChanged = existingDeck.seriesId !== savedSeries.id;
-  const designerChanged = existingDeck.designer !== (parsed.data.designer ?? null);
+  const designerChanged = !sameStrings(
+    existingDeck.designers.map(({ designer }) => designer.name),
+    parsed.data.designerNames
+  );
   const producerChanged = existingDeck.producer !== (parsed.data.producer ?? null);
   const quantityChanged = existingDeck.qty !== parsed.data.qty;
   const releaseYearChanged = existingDeck.releaseYear !== (parsed.data.releaseYear ?? null);

@@ -28,6 +28,10 @@ const getDeck = cache((id: string) =>
     include: {
       images: { orderBy: { sortOrder: "asc" } },
       editions: { orderBy: { deckNumber: "asc" } },
+      designers: {
+        orderBy: { sortOrder: "asc" },
+        select: { designer: { select: { name: true } } },
+      },
       series: {
         include: {
           decks: {
@@ -48,7 +52,8 @@ export async function generateMetadata({
   const deck = await getDeck(id);
   if (!deck) return { title: "Deck Not Found" };
 
-  const credit = [deck.designer, deck.producer].filter(Boolean).join(" / ");
+  const designerNames = deck.designers.map(({ designer }) => designer.name);
+  const credit = [...designerNames, deck.producer].filter(Boolean).join(" / ");
   const description =
     deck.hook ??
     deck.notes ??
@@ -87,6 +92,7 @@ export default async function DeckDetailPage({
     deck.collectionReasonPrimary,
     deck.collectionReasonSecondary,
   ].filter((reason): reason is CollectionReasonValue => reason !== null);
+  const designerNames = deck.designers.map(({ designer }) => designer.name);
 
   const deckJsonLd = {
     "@context": "https://schema.org",
@@ -95,7 +101,9 @@ export default async function DeckDetailPage({
     description: deck.hook ?? deck.notes ?? undefined,
     url: `${SITE_URL}/decks/${deck.id}`,
     image: deck.images.map((image) => image.url),
-    creator: deck.designer ? { "@type": "Person", name: deck.designer } : undefined,
+    creator: designerNames.length > 0
+      ? designerNames.map((name) => ({ "@type": "Person", name }))
+      : undefined,
     publisher: deck.producer ? { "@type": "Organization", name: deck.producer } : undefined,
     dateCreated: deck.releaseYear ? String(deck.releaseYear) : undefined,
     keywords: deck.tags.length > 0 ? deck.tags.join(", ") : undefined,
@@ -200,15 +208,9 @@ export default async function DeckDetailPage({
             </p>
           )}
 
-          {(deck.designer || deck.producer || deck.releaseYear) && (
+          {(designerNames.length > 0 || deck.producer || deck.releaseYear) && (
             <div className="flex flex-col divide-y divide-felt-line rounded-lg border border-felt-line bg-felt-surface">
-              {deck.designer && (
-                <CreditRow
-                  label="Designer"
-                  value={deck.designer}
-                  href={`/collection?designer=${encodeURIComponent(deck.designer)}`}
-                />
-              )}
+              {designerNames.length > 0 && <DesignersCreditRow names={designerNames} />}
               {deck.producer && (
                 <CreditRow
                   label="Producer"
@@ -314,6 +316,29 @@ export default async function DeckDetailPage({
         </section>
       )}
 
+    </div>
+  );
+}
+
+function DesignersCreditRow({ names }: { names: string[] }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-4 py-3">
+      <span className="text-xs uppercase tracking-wide text-felt-sub/70">
+        {names.length === 1 ? "Designer" : "Designers"}
+      </span>
+      <span className="min-w-0 text-right font-display text-base font-medium text-felt-ink">
+        {names.map((name, index) => (
+          <span key={name}>
+            {index > 0 && <span className="text-felt-sub/60">, </span>}
+            <Link
+              href={`/collection?designer=${encodeURIComponent(name)}`}
+              className="hover:text-brass"
+            >
+              {name}
+            </Link>
+          </span>
+        ))}
+      </span>
     </div>
   );
 }

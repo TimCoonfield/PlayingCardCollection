@@ -36,6 +36,14 @@ model Series {
   updatedAt        DateTime @updatedAt
 }
 
+model Designer {
+  id        String         @id @default(cuid())
+  name      String         @unique @db.VarChar(200)
+  decks     DeckDesigner[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
 model Deck {
   id                        String            @id @default(cuid())
   name                      String
@@ -45,7 +53,8 @@ model Deck {
   series                    Series?           @relation(fields: [seriesId], references: [id], onDelete: SetNull)
   seriesOrder               Int?
   variantNote               String?           @db.VarChar(300)
-  designer                  String?
+  designerLegacy            String?           @map("designer")
+  designers                 DeckDesigner[]
   producer                  String?
   tags                      String[]          @default([])
   ownershipStatus           String            @default("Owned")
@@ -67,12 +76,24 @@ model Deck {
   updatedAt                 DateTime          @updatedAt
 
   @@index([tags], type: Gin)
-  @@index([designer])
+  @@index([designerLegacy], map: "Deck_designer_idx")
   @@index([producer])
   @@index([collectionReasonPrimary])
   @@index([collectionReasonSecondary])
   @@index([seriesLegacy], map: "Deck_series_idx")
   @@index([seriesId, seriesOrder])
+}
+
+model DeckDesigner {
+  deckId     String
+  designerId String
+  sortOrder  Int      @default(0)
+  deck       Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  designer   Designer @relation(fields: [designerId], references: [id], onDelete: Restrict)
+
+  @@id([deckId, designerId])
+  @@unique([deckId, sortOrder])
+  @@index([designerId])
 }
 
 model DeckImage {

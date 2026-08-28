@@ -21,16 +21,12 @@ export default async function EditDeckPage({
       where: { id },
       include: {
         series: true,
+        designers: { orderBy: { sortOrder: "asc" }, include: { designer: true } },
         images: { orderBy: { sortOrder: "asc" } },
         editions: { orderBy: { deckNumber: "asc" } },
       },
     }),
-    prisma.deck.findMany({
-      distinct: ["designer"],
-      where: { designer: { not: null } },
-      select: { designer: true },
-      orderBy: { designer: "asc" },
-    }),
+    prisma.designer.findMany({ select: { name: true }, orderBy: { name: "asc" } }),
     prisma.deck.findMany({
       distinct: ["producer"],
       where: { producer: { not: null } },
@@ -59,7 +55,7 @@ export default async function EditDeckPage({
           seriesRaw: deck.seriesRaw ?? undefined,
           seriesOrder: deck.seriesOrder,
           variantNote: deck.variantNote ?? undefined,
-          designer: deck.designer ?? undefined,
+          designerNames: deck.designers.map(({ designer }) => designer.name),
           producer: deck.producer ?? undefined,
           qty: deck.qty,
           editionNumbers: deck.editions.map((e) => e.deckNumber),
@@ -75,7 +71,7 @@ export default async function EditDeckPage({
           tags: deck.tags,
         }}
         initialImages={deck.images.map((i) => ({ url: i.url }))}
-        designers={designers.map((d) => d.designer!).filter(Boolean)}
+        designers={designers.map((designer) => designer.name)}
         producers={producers.map((p) => p.producer!).filter(Boolean)}
         seriesOptions={seriesOptions}
         submitLabel="Save changes"

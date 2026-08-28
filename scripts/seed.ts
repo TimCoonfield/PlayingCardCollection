@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { config } from "dotenv";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { splitLegacyDesignerCredit } from "../src/lib/designers";
 
 config({ path: ".env.local" });
 
@@ -45,7 +46,7 @@ async function main() {
         name: deck.name,
         seriesLegacy: deck.series,
         seriesRaw: deck.series,
-        designer: deck.designer,
+        designerLegacy: deck.designer,
         producer: deck.producer,
         tags: deck.tags,
         ownershipStatus: deck.ownershipStatus,
@@ -58,6 +59,31 @@ async function main() {
     });
     console.log(`  inserted ${Math.min(i + batchSize, decks.length)}/${decks.length}`);
   }
+
+  const insertedDecks = await prisma.deck.findMany({
+    where: { designerLegacy: { not: null } },
+    select: { id: true, designerLegacy: true },
+  });
+  const designerNames = Array.from(
+    new Set(insertedDecks.flatMap((deck) => splitLegacyDesignerCredit(deck.designerLegacy)))
+  );
+  for (const name of designerNames) {
+    await prisma.designer.upsert({ where: { name }, update: {}, create: { name } });
+  }
+  const designers = await prisma.designer.findMany({
+    where: { name: { in: designerNames } },
+    select: { id: true, name: true },
+  });
+  const designerIdByName = new Map(designers.map((designer) => [designer.name, designer.id]));
+  await prisma.deckDesigner.createMany({
+    data: insertedDecks.flatMap((deck) =>
+      splitLegacyDesignerCredit(deck.designerLegacy).map((name, sortOrder) => ({
+        deckId: deck.id,
+        designerId: designerIdByName.get(name)!,
+        sortOrder,
+      }))
+    ),
+  });
 
   const total = await prisma.deck.count();
   console.log(`Done. Deck table now has ${total} rows.`);

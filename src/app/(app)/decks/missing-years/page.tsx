@@ -21,7 +21,10 @@ export default async function MissingYearsPage() {
       name: true,
       series: { select: { name: true } },
       producer: true,
-      designer: true,
+      designers: {
+        orderBy: { sortOrder: "asc" },
+        select: { designer: { select: { name: true } } },
+      },
     },
   });
 
@@ -40,6 +43,7 @@ export default async function MissingYearsPage() {
         initialDecks={decks.map((deck) => ({
           ...deck,
           series: deck.series?.name ?? null,
+          designers: deck.designers.map(({ designer }) => designer.name),
         }))}
       />
     </div>

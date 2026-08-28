@@ -28,6 +28,7 @@ export type FilterableScopedDeck = DeckCardData & {
 };
 
 export type FilterableScopedCoin = CoinCardData & {
+  designers: string[];
   releaseYear: number | null;
   notes: string | null;
   createdAt: Date | string;
@@ -79,9 +80,7 @@ export function ScopedCollectionBrowser({
     () =>
       Array.from(
         new Set(
-          allItems
-            .map((item) => item.designer)
-            .filter((value): value is string => Boolean(value))
+          allItems.flatMap((item) => item.designers)
         )
       ).sort(),
     [allItems]
@@ -112,13 +111,13 @@ export function ScopedCollectionBrowser({
   function matchesCommonFields(item: FilterableScopedDeck | FilterableScopedCoin) {
     const matchesQuery =
       !normalizedQuery ||
-      [item.name, item.series, item.designer, item.producer, item.notes]
+      [item.name, item.series, ...item.designers, item.producer, item.notes]
         .filter(Boolean)
         .some((value) => value!.toLocaleLowerCase().includes(normalizedQuery));
     const matchesTags = tags.every((tag) => item.tags.includes(tag));
     const matchesDesigner =
       designers.length === 0 ||
-      (item.designer !== null && designers.includes(item.designer));
+      item.designers.some((designer) => designers.includes(designer));
     const matchesProducer =
       producers.length === 0 ||
       (item.producer !== null && producers.includes(item.producer));

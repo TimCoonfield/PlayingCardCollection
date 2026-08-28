@@ -40,6 +40,7 @@ export async function GET(request: Request) {
       data: result.decks.map((deck) => ({
         id: deck.id,
         name: deck.name,
+        designers: deck.designers,
         designer: deck.designer,
         producer: deck.producer,
         series: deck.series

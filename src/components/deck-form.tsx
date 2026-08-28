@@ -11,6 +11,7 @@ import {
 } from "@/lib/collection-reasons";
 import type { DeckIdentification } from "@/lib/anthropic";
 import type { DeckFormState } from "@/app/(app)/decks/actions";
+import { splitLegacyDesignerCredit } from "@/lib/designers";
 
 export interface DeckFormDefaultValues {
   name?: string;
@@ -19,7 +20,7 @@ export interface DeckFormDefaultValues {
   seriesRaw?: string;
   seriesOrder?: number | null;
   variantNote?: string;
-  designer?: string;
+  designerNames?: string[];
   producer?: string;
   qty?: number;
   editionNumbers?: number[];
@@ -63,6 +64,7 @@ export function DeckForm({
     (defaultValues.editionNumbers ?? []).map(String)
   );
   const [qty, setQty] = useState<number>(defaultValues.qty ?? 1);
+  const [designerNames, setDesignerNames] = useState<string[]>(defaultValues.designerNames ?? []);
   const [identifying, setIdentifying] = useState(false);
   const [identifyError, setIdentifyError] = useState<string | null>(null);
   const [identified, setIdentified] = useState(false);
@@ -76,7 +78,6 @@ export function DeckForm({
   const [hook, setHook] = useState(defaultValues.hook ?? "");
 
   const nameRef = useRef<HTMLInputElement>(null);
-  const designerRef = useRef<HTMLInputElement>(null);
   const producerRef = useRef<HTMLInputElement>(null);
   const productionRunRef = useRef<HTMLInputElement>(null);
   const releaseYearRef = useRef<HTMLInputElement>(null);
@@ -99,7 +100,7 @@ export function DeckForm({
       const result = data as DeckIdentification;
       if (nameRef.current && result.name) nameRef.current.value = result.name;
       if (result.series) setSeriesSuggestion(result.series);
-      if (designerRef.current && result.designer) designerRef.current.value = result.designer;
+      if (result.designer) setDesignerNames(splitLegacyDesignerCredit(result.designer));
       if (producerRef.current && result.producer) producerRef.current.value = result.producer;
       if (result.deckNumber) {
         const detected = String(result.deckNumber);
@@ -189,19 +190,50 @@ export function DeckForm({
             className={inputClass}
           />
         </Field>
-        <Field label="Designer" error={state?.fieldErrors?.designer}>
-          <input
-            ref={designerRef}
-            name="designer"
-            list="designer-options"
-            defaultValue={defaultValues.designer}
-            className={inputClass}
-          />
+        <Field label="Designers" error={state?.fieldErrors?.designerNames}>
+          <div className="flex flex-col gap-2">
+            {designerNames.map((designer, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <input
+                  name="designerNames"
+                  list="designer-options"
+                  value={designer}
+                  onChange={(event) =>
+                    setDesignerNames((current) =>
+                      current.map((value, itemIndex) =>
+                        itemIndex === index ? event.target.value : value
+                      )
+                    )
+                  }
+                  className={inputClass}
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDesignerNames((current) =>
+                      current.filter((_, itemIndex) => itemIndex !== index)
+                    )
+                  }
+                  className="shrink-0 text-xs text-felt-sub hover:text-brick"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setDesignerNames((current) => [...current, ""])}
+              className="self-start rounded-md border border-felt-line px-3 py-1.5 text-xs text-felt-sub hover:border-brass hover:text-brass"
+            >
+              + Add designer
+            </button>
+          </div>
           <datalist id="designer-options">
             {designers.map((d) => (
               <option key={d} value={d} />
             ))}
           </datalist>
+          <span className="text-xs text-felt-sub/70">Add one credit per person, artist, or studio.</span>
         </Field>
         <Field label="Producer" error={state?.fieldErrors?.producer}>
           <input

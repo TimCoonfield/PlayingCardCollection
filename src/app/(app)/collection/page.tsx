@@ -123,9 +123,9 @@ export default async function CollectionPage({
   const missingYear = isAuthenticated && missingYearRequested;
   const matchesFilters = (item: (typeof catalog.decks)[number] | (typeof catalog.coins)[number]) =>
     (!q || matchesSearch(item, q, scope)) &&
-    (designers.length === 0 || (item.designer !== null && designers.includes(item.designer))) &&
+    (designers.length === 0 || item.designers.some((designer) => designers.includes(designer))) &&
     (producers.length === 0 || (item.producer !== null && producers.includes(item.producer))) &&
-    (!creator || item.designer === creator || item.producer === creator) &&
+    (!creator || item.designers.includes(creator) || item.producer === creator) &&
     matchesSeriesFilter(item, selectedSeries) &&
     tags.every((tag) => item.tags.includes(tag)) &&
     matchesCollectionReason(item, reason, reasonField) &&
@@ -278,7 +278,7 @@ export default async function CollectionPage({
 }
 
 function matchesSearch(
-  item: { name: string; series: string | null; designer: string | null; producer: string | null; notes: string | null; seriesRaw?: string | null },
+  item: { name: string; series: string | null; designers: string[]; producer: string | null; notes: string | null; seriesRaw?: string | null },
   query: string,
   scope: ArchiveSearchScope
 ) {
@@ -287,8 +287,8 @@ function matchesSearch(
   if (scope === "series") return includes(item.series) || includes(item.seriesRaw ?? null);
   if (scope === "producer") return includes(item.producer);
   if (scope === "notes") return includes(item.notes);
-  if (scope === "creator") return includes(item.designer) || includes(item.producer);
-  return [item.name, item.series, item.seriesRaw ?? null, item.designer, item.producer, item.notes].some(includes);
+  if (scope === "creator") return item.designers.some(includes) || includes(item.producer);
+  return [item.name, item.series, item.seriesRaw ?? null, ...item.designers, item.producer, item.notes].some(includes);
 }
 
 function matchesSeriesFilter(
