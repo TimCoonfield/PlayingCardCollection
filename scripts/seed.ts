@@ -4,6 +4,7 @@ import { config } from "dotenv";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { splitLegacyDesignerCredit } from "../src/lib/designers";
+import { creatorCollisionSlug, creatorSlugBase } from "../src/lib/creator-slug";
 
 config({ path: ".env.local" });
 
@@ -38,6 +39,33 @@ async function main() {
 
   console.log(`Seeding ${decks.length} decks...`);
 
+  const creatorNames = Array.from(
+    new Set(
+      decks.flatMap((deck) => [
+        ...splitLegacyDesignerCredit(deck.designer),
+        ...(deck.producer?.trim() ? [deck.producer.trim()] : []),
+      ])
+    )
+  );
+  for (const name of creatorNames) {
+    const existingCreator = await prisma.creator.findUnique({ where: { name } });
+    if (existingCreator) continue;
+    const base = creatorSlugBase(name);
+    const candidates = base
+      ? [base, ...[8, 12, 16, 32, 64].map((length) => creatorCollisionSlug(name, length))]
+      : [8, 12, 16, 32, 64].map((length) => creatorCollisionSlug(name, length));
+    for (const slug of candidates) {
+      if (await prisma.creator.findUnique({ where: { slug } })) continue;
+      await prisma.creator.create({ data: { name, slug } });
+      break;
+    }
+  }
+  const creators = await prisma.creator.findMany({
+    where: { name: { in: creatorNames } },
+    select: { id: true, name: true },
+  });
+  const creatorIdByName = new Map(creators.map((creator) => [creator.name, creator.id]));
+
   const batchSize = 200;
   for (let i = 0; i < decks.length; i += batchSize) {
     const batch = decks.slice(i, i + batchSize);
@@ -48,6 +76,9 @@ async function main() {
         seriesRaw: deck.series,
         designerLegacy: deck.designer,
         producer: deck.producer,
+        producerCreatorId: deck.producer?.trim()
+          ? creatorIdByName.get(deck.producer.trim())
+          : undefined,
         tags: deck.tags,
         ownershipStatus: deck.ownershipStatus,
         qty: deck.qty,
@@ -64,22 +95,11 @@ async function main() {
     where: { designerLegacy: { not: null } },
     select: { id: true, designerLegacy: true },
   });
-  const designerNames = Array.from(
-    new Set(insertedDecks.flatMap((deck) => splitLegacyDesignerCredit(deck.designerLegacy)))
-  );
-  for (const name of designerNames) {
-    await prisma.designer.upsert({ where: { name }, update: {}, create: { name } });
-  }
-  const designers = await prisma.designer.findMany({
-    where: { name: { in: designerNames } },
-    select: { id: true, name: true },
-  });
-  const designerIdByName = new Map(designers.map((designer) => [designer.name, designer.id]));
   await prisma.deckDesigner.createMany({
     data: insertedDecks.flatMap((deck) =>
       splitLegacyDesignerCredit(deck.designerLegacy).map((name, sortOrder) => ({
         deckId: deck.id,
-        designerId: designerIdByName.get(name)!,
+        designerId: creatorIdByName.get(name)!,
         sortOrder,
       }))
     ),

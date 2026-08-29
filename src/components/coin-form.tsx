@@ -2,14 +2,15 @@
 
 import { useActionState, useRef, useState } from "react";
 import { CoinPhotoSlots } from "./coin-photo-slots";
+import { CreatorSelector, type CreatorOption } from "./creator-selector";
 import { COIN_TAGS } from "@/lib/coin-schemas";
 import type { CoinFormState } from "@/app/(app)/coins/actions";
 
 export interface CoinFormDefaultValues {
   name?: string;
   series?: string;
-  designer?: string;
-  producer?: string;
+  designerCreator?: CreatorOption;
+  producerCreator?: CreatorOption;
   material?: string;
   diameter?: string;
   qty?: number;
@@ -24,16 +25,14 @@ export function CoinForm({
   defaultValues = {},
   initialObverseUrl,
   initialReverseUrl,
-  designers,
-  producers,
+  creators,
   submitLabel,
 }: {
   action: (prevState: CoinFormState, formData: FormData) => Promise<CoinFormState>;
   defaultValues?: CoinFormDefaultValues;
   initialObverseUrl?: string;
   initialReverseUrl?: string;
-  designers: string[];
-  producers: string[];
+  creators: CreatorOption[];
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState<CoinFormState, FormData>(action, {});
@@ -41,8 +40,6 @@ export function CoinForm({
 
   const nameRef = useRef<HTMLInputElement>(null);
   const seriesRef = useRef<HTMLInputElement>(null);
-  const designerRef = useRef<HTMLInputElement>(null);
-  const producerRef = useRef<HTMLInputElement>(null);
   const materialRef = useRef<HTMLInputElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
 
@@ -80,32 +77,26 @@ export function CoinForm({
           />
         </Field>
         <Field label="Designer" error={state?.fieldErrors?.designer}>
-          <input
-            ref={designerRef}
-            name="designer"
-            list="designer-options"
-            defaultValue={defaultValues.designer}
-            className={inputClass}
+          <CreatorSelector
+            options={creators}
+            names={{
+              query: "designerQuery",
+              creatorId: "designerCreatorId",
+              newCreatorName: "newDesignerName",
+            }}
+            defaultCreator={defaultValues.designerCreator}
           />
-          <datalist id="designer-options">
-            {designers.map((d) => (
-              <option key={d} value={d} />
-            ))}
-          </datalist>
         </Field>
         <Field label="Producer" error={state?.fieldErrors?.producer}>
-          <input
-            ref={producerRef}
-            name="producer"
-            list="producer-options"
-            defaultValue={defaultValues.producer}
-            className={inputClass}
+          <CreatorSelector
+            options={creators}
+            names={{
+              query: "producerQuery",
+              creatorId: "producerCreatorId",
+              newCreatorName: "newProducerName",
+            }}
+            defaultCreator={defaultValues.producerCreator}
           />
-          <datalist id="producer-options">
-            {producers.map((p) => (
-              <option key={p} value={p} />
-            ))}
-          </datalist>
         </Field>
         <Field label="Material (e.g. brass, silver-plated)">
           <input ref={materialRef} name="material" defaultValue={defaultValues.material} className={inputClass} />

@@ -28,10 +28,12 @@ Major content types (see [§6 Data model](#6-data-model) for details):
   series, release year, ownership/quantity, and optionally numbered limited-edition copies.
 - **Coins** — a smaller secondary collectible type, structurally similar to decks but simpler
   (exactly two photos: obverse/reverse; no edition-number concept).
-- **Creators** — a small, hand-curated list of favorite designers (`src/lib/featured-creators.ts`),
-  **not a database table**. Matched to normalized `Designer.name` values or the Deck's producer.
-- **Specialty/creator landing pages** — 12 dedicated pages (White Whales, Souvenir, Mini, Tarot,
-  and 8 creator pages) built from one shared layout component.
+- **Creators** — a first-class entity covering every credited designer and producer, including
+  people, studios, companies, and unresolved values such as Unknown/Various. Every Creator has a
+  dynamic public page and can optionally carry editorial profile copy, a tagline, hero image, and
+  homepage-favorite flag.
+- **Specialty/creator landing pages** — 4 dedicated specialty pages (White Whales, Souvenir, Mini,
+  Tarot) plus one dynamic `/creators/[slug]` route serving every Creator.
 - **Favorites** and **White Whales** — two independent boolean flags on decks (decks only, not
   coins). Favorite drives `/collection` sort order and the "Featured Decks" spotlight treatment
   on landing pages; White Whale marks the rarest/hardest-won pieces and powers the dedicated
@@ -46,7 +48,7 @@ Major content types (see [§6 Data model](#6-data-model) for details):
   [§10](#10-ui-and-design-conventions).
 - Prefer showing real collection data (random deck photos, live counts) over static marketing
   copy wherever practical — the homepage, stats page, and landing pages are all driven by live
-  Prisma queries, not hardcoded content (except the curated creator bios/photos).
+  Prisma queries, not hardcoded content. Curated Creator bios/photos now live on Creator rows.
 - Every write path re-checks authentication itself, never trusting the UI alone (see
   [§4 Architecture](#4-architecture)) — this is a deliberate, repeated pattern, not an oversight.
 
@@ -56,8 +58,8 @@ These aren't derivable from the code alone — they come from how this project's
 directed changes to it over time, and matter for judgment calls the sections below don't cover:
 
 - This is a personal archive and storytelling project, not just an inventory database. Creator
-  bios and landing-page copy are written in the owner's own first-person voice (see
-  `src/lib/featured-creators.ts` and the blurb text passed into `DecksLandingPage` on each
+  bios and landing-page copy are written in the owner's own first-person voice (see the Creator
+  profile records and the blurb text passed into `DecksLandingPage` on each
   landing page) — favor historical context, creator intent, and collection storytelling over
   dry catalog listings when adding this kind of content.
 - The owner is receptive to distinctive visual/interaction ideas but has repeatedly pushed back
@@ -114,6 +116,7 @@ scripts/
   seed.ts                 # one-time bulk import of the original spreadsheet (see §3 warning below)
   seed-data.json           # the ~2,528-row dataset seed.ts reads
   migrate-edition-notes.ts # one-off historical data-cleanup script (already run; kept for reference)
+  creator-migration.ts     # Creator duplicate-review, approved merge, and relation-reconciliation tool
 src/
   generated/prisma/        # PRISMA-GENERATED CLIENT — gitignored, never hand-edit. Regenerate with
                             # `npx prisma generate` (also runs automatically via `postinstall`).
@@ -123,7 +126,10 @@ src/
     auth.ts                 # iron-session config + getSession()
     schemas.ts               # deck zod schema + ALL_TAGS + parseDeckFormData()
     coin-schemas.ts           # coin zod schema + COIN_TAGS + parseCoinFormData()
-    featured-creators.ts       # hand-curated CREATORS array (not DB-backed) + HOMEPAGE_/NAVIGATION_ subsets
+    creator-data.ts            # cached dynamic Creator-profile lookup
+    creator-schemas.ts         # Creator editor validation
+    creator-slug.ts            # stable collision-safe Creator slug helpers
+    creator-write.ts           # transactional Creator selection/creation shared by Deck/Coin writes
     placeholders.ts            # tag → line-icon (TagIconName) + accent-color placeholder rules
     collection-reasons.ts      # CollectionReason enum values, labels, and descriptions
     collection-sort.ts         # shared sort-mode logic (featured/alpha/year/recent/random) for /collection + landing pages
@@ -156,7 +162,7 @@ src/
       decks/                       # deck CRUD: new/, [id]/, [id]/edit/, missing-years/, actions.ts
       coins/                       # coin CRUD: new/, [id]/, [id]/edit/, actions.ts, page.tsx (redirects to /collection)
       white-whales/, souvenir/, mini/, tarot/  # 4 specialty-collection landing pages (thin wrappers)
-      creators/{name}/              # 8 creator landing pages (thin wrappers), one dir per person
+      creators/                     # cached directory, edit action, and dynamic [slug] profile route
 ```
 
 **Generated/do-not-hand-edit**: `src/generated/prisma/**`, `.next/`, `next-env.d.ts`,
@@ -263,11 +269,12 @@ The primary entity. Key fields beyond the obvious (`name`, `designers`, `produce
   `qty: 3` and 0, 1, 2, or 3 `DeckEdition` rows depending on how many of those copies have a
   known number). The deck-form's zod schema enforces `editionNumbers.length <= qty`.
 - Designer attribution is normalized through ordered `DeckDesigner` join rows to reusable
-  `Designer` records. `designerLegacy` maps to the old physical `designer` column and is retained
+  `Creator` records. `designerLegacy` maps to the old physical `designer` column and is retained
   as a joined compatibility mirror/audit trail; all browsing, filtering, and creator matching use
   the normalized relation. The migration confidently splits spaced slashes, while ambiguous
-  ampersands and punctuation remain a single credit and are reported by
-  `scripts/designer-migration.ts` for manual review.
+  ampersands and punctuation remain a single credit. The historical
+  `scripts/designer-migration.ts` report is superseded for identity cleanup by the Creator review
+  workflow described below.
 - Detail-page display logic (see `src/app/(app)/decks/[id]/page.tsx`): if `editions.length > 0`,
   show one tile per edition as `"{deckNumber}/{productionRun}"`; else if `productionRun` is set
   but no editions are recorded, show a single placeholder tile `"XX/{productionRun}"`.
@@ -316,14 +323,24 @@ Structurally parallel to Deck (`name`, `series`, `designer`, `producer`, `tags`,
   than deck tags (`ALL_TAGS`) — Modern/Vintage/Antique/Gilded/Signed/Prototype only, no
   Mini/Tarot/Edge Painted. Don't assume the two are interchangeable.
 
-### Creators (not a table)
-`src/lib/featured-creators.ts` exports a hand-curated `FEATURED_CREATORS: FeaturedCreator[]`
-array — bios, taglines, Blob-hosted photo URLs, an accent color, and an optional
-`landingPageHref`. **A curated creator profile has no database row or foreign key to a Designer.**
-Matching is done at query time by exact string equality against normalized `Designer.name`, or
-against the producer too when `matchProducerToo: true`. Designer attribution itself now has
-referential integrity; the remaining fragile boundary is the hand-authored profile key, whose
-typo or rename can silently stop decks from appearing on that curated profile.
+### Creator
+`Creator` is the canonical identity for both designer and producer credits. Deck designers use
+ordered `DeckDesigner` join rows; a Deck has one nullable `producerCreatorId`; and Coins have one
+nullable Creator relation for each role. The legacy Deck/Coin designer and producer strings remain
+compatibility mirrors and are updated transactionally with the relations.
+
+Every Creator has a stable unique slug and a public `/creators/[slug]` page. Optional `displayName`,
+`tagline`, Markdown `description`, and `heroImageUrl` fields provide editorial depth; `favorite`
+places the Creator on the homepage and gives it the image-backed directory treatment. Renaming a
+Creator deliberately does not change its slug. The authenticated Creator editor updates all legacy
+mirrors when a canonical name changes.
+
+The directory metadata query counts distinct Decks and Coins across both roles, caches the compact
+result, and feeds `/creators`, homepage favorites, navigation favorites, and archive search. The
+directory renders favorites as image tiles, non-favorites as lightweight text tiles, and reveals
+the long list in progressive 96-item batches. Use `npm run creators:migrate -- review` to generate
+the review CSV for possible duplicates; only rows explicitly marked `MERGE` are changed by
+`npm run creators:migrate -- apply --confirm`. `reconcile` audits legacy-string/relation parity.
 
 ### Deletion rules
 Hard deletes only, no soft-delete/undo anywhere in the schema or actions
@@ -461,11 +478,11 @@ delete form submits — purely a UI courtesy, not enforced server-side.
 - **`/series/[slug]`**: public page for each first-class Series — hero image or engraved suit-emblem
   fallback, description/attribution, and its member decks with a sticky-header `SeriesDeckNavigation`
   (prev/next through the Series) shown on each member deck's own detail page.
-- **Landing pages** (`/white-whales`, `/souvenir`, `/mini`, `/tarot`, `/creators/*`) — see
-  [§4](#4-architecture) and [§11](#11-coding-conventions) for the shared-component pattern; each
-  page file is only its title/tagline/blurb/hero-image/deck-query, everything else lives in
-  `src/components/decks-landing-page.tsx`. Most pass `showFilters` (and now `coins`, fetched via
-  `catalog-browse.ts` helpers like `getCreatorLandingCatalog`/`getTaggedLandingCatalog`/
+- **Landing pages** (`/white-whales`, `/souvenir`, `/mini`, `/tarot`, `/creators/[slug]`) — see
+  [§4](#4-architecture) and [§11](#11-coding-conventions) for the shared-component pattern. The
+  four specialty pages are thin `DecksLandingPage` wrappers; the dynamic Creator route supplies
+  a Series-style hero/editor and then uses the same `ScopedCollectionBrowser`. Most pass filters
+  (and coins, fetched via `catalog-browse.ts` helpers like `getCreatorLandingCatalog`/`getTaggedLandingCatalog`/
   `getSeriesLandingCatalog`/`getProducerOrDesignerLandingCatalog`) to get the full sort/filter
   experience via `ScopedCollectionBrowser` instead of a static grid; White Whales additionally
   sets `showFeaturedDecks={false}` since every item on that page is already "featured" by
@@ -501,18 +518,17 @@ no star-rating widgets, no "Add to cart," no bright multi-color badges, no card-
   driven by `src/lib/placeholders.ts`'s tag-precedence system (`getDeckPlaceholder`/`getTagStyle`)
   and rendered via the shared `TagIcon` line-icon set (`src/components/tag-icon.tsx`).
 - `TagChip` / `CoinTagChip` — tag pill rendering, same placeholder-style system for icon/color.
-- `DecksLandingPage` — the shared layout for all 10 specialty/creator pages (see §4). **Any new
-  specialty or creator page should be a thin wrapper around this component**, not a new
-  hand-built page — this exact mistake (9x copy-pasted pages) was made and then refactored away
-  in this project's history; don't repeat it.
+- `DecksLandingPage` — the shared layout for specialty pages (see §4). **Any new specialty page
+  should be a thin wrapper around this component**, not a new hand-built page. Creator pages are
+  generated by the single dynamic `[slug]` route and share `ScopedCollectionBrowser` directly.
 - `DeckSpotlightCard` — the "Featured Decks" poster-style card, only used inside
   `DecksLandingPage`.
 - `ScopedCollectionBrowser` — the in-memory sort/filter/grid experience used by any
   `DecksLandingPage` invocation with `showFilters` set (most of them); shares filter-widget
   components with `/collection` but filters client-side over an already-fetched deck/coin array
   instead of URL params.
-- `SeriesEditor` / `SeriesHeroUploader` — authenticated Series create/edit form and its Blob-backed
-  hero-image upload control (see §6/§7 for the Blob cleanup rules around replacing a hero).
+- `SeriesEditor` / `CreatorEditor` / `SeriesHeroUploader` — authenticated profile editors and the
+  shared Blob-backed hero-image upload control (see §6/§7 for cleanup rules around replacement).
 - `SeriesDeckNavigation` — sticky prev/next-through-Series bar shown at the top of a deck detail
   page when that deck belongs to a Series.
 - `ArchiveSpotlight` / `ArchiveSpotlightTrigger` — the global `/`-triggered search palette (§9);
@@ -707,11 +723,10 @@ beyond Vercel's own auto-detection) — verification is entirely manual/local ri
 - **Blob/image cache**: overwriting an image at an existing Blob URL leaves stale content served
   indefinitely by both the Blob CDN and Next's image optimizer — always use a new path for a
   replacement image (§7).
-- **Curated creator-profile matching is still string-keyed** (§6) — normalized Deck designer
-  relations have referential integrity, but a mismatch between `featured-creators.ts` and
-  `Designer.name` can still break a creator landing page with no error surfaced anywhere.
-  `collection-filter-controls.tsx`'s duplicated tag list is a smaller version of the same risk
-  class: two places that must be kept in sync by hand.
+- **Creator cleanup remains editorially supervised** (§6) — exact credit strings become distinct
+  Creator rows by design, so punctuation, spacing, or spelling variants can remain separate until
+  the CSV review workflow explicitly approves a merge. Never auto-merge these identities.
+  `collection-filter-controls.tsx`'s duplicated tag list is a separate hand-sync risk.
 - **`DeckGallery` and `CoinGallery` are near-duplicate components** (§7) — a bug fix or feature
   added to one's carousel behavior needs to be manually ported to the other; they are not shared.
 - **No automated tests anywhere** (§13) — any change to shared components
@@ -736,6 +751,10 @@ Confirmed present in the codebase as of this writing:
   sort modes including seeded random, and a "Surprise Me" jump-to-random-item button.
 - A global `/`-triggered "Archive Spotlight" search palette (nav bar) searching deck names,
   creators, Series, and specialty archives in one request.
+- First-class Creator entities for every Deck/Coin designer and producer, with normalized role
+  relations, a searchable/sortable progressive `/creators` directory, and one dynamic public
+  `/creators/[slug]` page per identity. Authenticated editing supports public display name,
+  tagline, Markdown profile copy, shared hero image, and homepage favorite status.
 - First-class Series entities with their own public `/series/[slug]` pages (hero image or
   engraved-suit-emblem fallback, description, attribution, member decks) and sticky prev/next
   Series navigation on member decks' detail pages.
@@ -756,10 +775,9 @@ Confirmed present in the codebase as of this writing:
   Coins, Souvenir), and a "Recently added" strip.
 - Stats dashboard: totals, top designers, era pie chart, release-year histogram, biggest-series
   showcase, photo-coverage percentage, recently added.
-- 12 dedicated landing pages (White Whales, Souvenir Decks, Mini Decks, Tarot Decks, and 8
-  individual featured creators), all built from one shared layout component with photo or
-  inline-SVG hero art, gradient text-legibility overlay, and — for most pages — the full
-  in-page sort/filter experience (`ScopedCollectionBrowser`) rather than a static grid.
+- Four dedicated specialty landing pages plus dynamic Creator pages, with photo or inline-SVG
+  hero art, gradient text-legibility overlay, and — for most pages — the full in-page sort/filter
+  experience (`ScopedCollectionBrowser`) rather than a static grid.
 - Release-year tracking and display, edition/limited-run number tracking.
 - Tag-driven placeholder art (line icons + accent color) for any deck/coin with no photos yet.
 

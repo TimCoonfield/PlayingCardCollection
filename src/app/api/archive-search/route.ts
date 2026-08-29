@@ -1,6 +1,5 @@
-import { CREATORS } from "@/lib/featured-creators";
 import { getBrowseDeckCards } from "@/lib/catalog-browse";
-import { getArchiveSearchSeries } from "@/lib/catalog-metadata";
+import { getArchiveSearchSeries, getCreatorDirectory } from "@/lib/catalog-metadata";
 import {
   isArchiveSearchScope,
   type ArchiveSearchScope,
@@ -17,6 +16,7 @@ const ARCHIVES = [
 type EntityResult = { label: string; href: string; count?: number; meta?: string };
 type SearchDeck = Awaited<ReturnType<typeof getBrowseDeckCards>>[number];
 type SearchSeries = Awaited<ReturnType<typeof getArchiveSearchSeries>>[number];
+type SearchCreator = Awaited<ReturnType<typeof getCreatorDirectory>>[number];
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -29,26 +29,24 @@ export async function GET(request: Request) {
   }
 
   const include = (candidate: ArchiveSearchScope) => scope === "all" || scope === candidate;
-  const [catalogDecks, catalogSeries] = await Promise.all([
+  const [catalogDecks, catalogSeries, catalogCreators] = await Promise.all([
     getBrowseDeckCards(),
     include("series") ? getArchiveSearchSeries() : Promise.resolve([]),
+    include("creator") || include("producer") ? getCreatorDirectory() : Promise.resolve([]),
   ]);
   const [decks, creators, series, producers] = await Promise.all([
     findDecks(catalogDecks, query, scope),
-    include("creator") ? findEntities(catalogDecks, [], "designer", query) : Promise.resolve([]),
-    include("series") ? findEntities(catalogDecks, catalogSeries, "series", query) : Promise.resolve([]),
-    include("producer") ? findEntities(catalogDecks, [], "producer", query) : Promise.resolve([]),
+    include("creator") ? findCreators(catalogCreators, query) : Promise.resolve([]),
+    include("series") ? findSeries(catalogSeries, query) : Promise.resolve([]),
+    include("producer")
+      ? findCreators(
+          catalogCreators.filter((creator) => creator.role.includes("Producer")),
+          query,
+          "Producer"
+        )
+      : Promise.resolve([]),
   ]);
 
-  const creatorResults = creators.map((creator) => {
-    const profile = CREATORS.find((entry) => entry.designer === creator.label);
-    return {
-      ...creator,
-      label: profile?.displayName ?? creator.label,
-      href: profile?.landingPageHref ?? `/collection?designer=${encodeURIComponent(creator.label)}`,
-      meta: "Creator",
-    };
-  });
   const archiveResults =
     scope === "all"
       ? ARCHIVES.filter((archive) =>
@@ -58,7 +56,7 @@ export async function GET(request: Request) {
 
   return Response.json({
     decks,
-    creators: creatorResults,
+    creators,
     series: series.map((item) => ({ ...item, meta: "Series" })),
     producers: producers.map((item) => ({ ...item, meta: "Producer" })),
     archives: archiveResults,
@@ -98,42 +96,51 @@ function findDecks(decks: SearchDeck[], query: string, scope: ArchiveSearchScope
     }));
 }
 
-function findEntities(
-  decks: SearchDeck[],
-  series: SearchSeries[],
-  field: "designer" | "series" | "producer",
-  query: string
-) {
+function findSeries(series: SearchSeries[], query: string) {
   const normalized = query.toLocaleLowerCase();
   const rank = (value: string) => {
     const candidate = value.toLocaleLowerCase();
     return candidate === normalized ? 0 : candidate.startsWith(normalized) ? 1 : 2;
   };
 
-  if (field === "series") {
-    return series
-      .filter(({ name }) => name.toLocaleLowerCase().includes(normalized))
-      .sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name))
-      .slice(0, 4)
-      .map((series): EntityResult => ({
-        label: series.name,
-        count: series._count.decks,
-        href: `/series/${series.slug}`,
-      }));
-  }
+  return series
+    .filter(({ name }) => name.toLocaleLowerCase().includes(normalized))
+    .sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name))
+    .slice(0, 4)
+    .map((item): EntityResult => ({
+      label: item.name,
+      count: item._count.decks,
+      href: `/series/${item.slug}`,
+    }));
+}
 
-  const counts = new Map<string, number>();
-  for (const deck of decks) {
-    const labels = field === "designer" ? deck.designers : deck.producer ? [deck.producer] : [];
-    for (const label of labels) counts.set(label, (counts.get(label) ?? 0) + 1);
-  }
-  const labels = Array.from(counts.keys())
-    .filter((label) => label.toLocaleLowerCase().includes(normalized))
-    .sort((a, b) => rank(a) - rank(b) || a.localeCompare(b))
-    .slice(0, 4);
-  return labels.map((label): EntityResult => ({
-    label,
-    count: counts.get(label),
-    href: `/collection?${field}=${encodeURIComponent(label)}`,
-  }));
+function findCreators(creators: SearchCreator[], query: string, meta = "Creator") {
+  const normalized = query.toLocaleLowerCase();
+  const rank = (creator: SearchCreator) => {
+    const names = [creator.name, creator.displayName].filter(
+      (value): value is string => Boolean(value)
+    );
+    if (names.some((name) => name.toLocaleLowerCase() === normalized)) return 0;
+    if (names.some((name) => name.toLocaleLowerCase().startsWith(normalized))) return 1;
+    return 2;
+  };
+  return creators
+    .filter((creator) =>
+      [creator.name, creator.displayName]
+        .filter((value): value is string => Boolean(value))
+        .some((value) => value.toLocaleLowerCase().includes(normalized))
+    )
+    .sort(
+      (left, right) =>
+        rank(left) - rank(right) ||
+        right.deckCount - left.deckCount ||
+        left.name.localeCompare(right.name)
+    )
+    .slice(0, 4)
+    .map((creator): EntityResult => ({
+      label: creator.displayName ?? creator.name,
+      count: creator.deckCount,
+      href: `/creators/${creator.slug}`,
+      meta,
+    }));
 }

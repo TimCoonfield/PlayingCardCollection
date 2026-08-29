@@ -1,5 +1,4 @@
 import { unstable_cache } from "next/cache";
-import { CREATORS } from "@/lib/featured-creators";
 import { prisma } from "@/lib/prisma";
 import {
   ARCHIVE_SERIES_METADATA_CACHE_TAG,
@@ -23,7 +22,9 @@ export const getCoreCatalogMetadata = unstable_cache(
       coinCount,
     ] = await Promise.all([
       prisma.deck.count(),
-      prisma.designer.count({ where: { decks: { some: {} } } }),
+      prisma.creator.count({
+        where: { OR: [{ decksDesigned: { some: {} } }, { coinsDesigned: { some: {} } }] },
+      }),
       prisma.series.count(),
       prisma.coin.count(),
     ]);
@@ -88,24 +89,21 @@ export const getCollectionMetadata = unstable_cache(
     ] = await Promise.all([
       prisma.deck.aggregate({ _min: { releaseYear: true }, _max: { releaseYear: true } }),
       prisma.coin.aggregate({ _min: { releaseYear: true }, _max: { releaseYear: true } }),
-      prisma.designer.findMany({
-        where: { decks: { some: {} } },
+      prisma.creator.findMany({
+        where: { decksDesigned: { some: {} } },
         select: { name: true },
       }),
-      prisma.coin.findMany({
-        distinct: ["designer"],
-        where: { designer: { not: null } },
-        select: { designer: true },
+      prisma.creator.findMany({
+        where: { coinsDesigned: { some: {} } },
+        select: { name: true },
       }),
-      prisma.deck.findMany({
-        distinct: ["producer"],
-        where: { producer: { not: null } },
-        select: { producer: true },
+      prisma.creator.findMany({
+        where: { decksProduced: { some: {} } },
+        select: { name: true },
       }),
-      prisma.coin.findMany({
-        distinct: ["producer"],
-        where: { producer: { not: null } },
-        select: { producer: true },
+      prisma.creator.findMany({
+        where: { coinsProduced: { some: {} } },
+        select: { name: true },
       }),
       prisma.series.findMany({ select: { name: true } }),
       prisma.coin.findMany({
@@ -134,19 +132,13 @@ export const getCollectionMetadata = unstable_cache(
       designers: Array.from(
         new Set([
           ...deckDesigners.map(({ name }) => name),
-          ...coinDesigners
-            .map(({ designer }) => designer)
-            .filter((value): value is string => Boolean(value)),
+          ...coinDesigners.map(({ name }) => name),
         ])
       ).sort(),
       producers: Array.from(
         new Set([
-          ...deckProducers
-            .map(({ producer }) => producer)
-            .filter((value): value is string => Boolean(value)),
-          ...coinProducers
-            .map(({ producer }) => producer)
-            .filter((value): value is string => Boolean(value)),
+          ...deckProducers.map(({ name }) => name),
+          ...coinProducers.map(({ name }) => name),
         ])
       ).sort(),
       series: Array.from(
@@ -166,10 +158,10 @@ export const getCollectionMetadata = unstable_cache(
 export const getStatsChartMetadata = unstable_cache(
   async () => {
     const [designerGroups, topSeriesGroups, releaseYearGroups] = await Promise.all([
-      prisma.designer.findMany({
-        where: { decks: { some: {} } },
-        select: { name: true, _count: { select: { decks: true } } },
-        orderBy: { decks: { _count: "desc" } },
+      prisma.creator.findMany({
+        where: { decksDesigned: { some: {} } },
+        select: { name: true, _count: { select: { decksDesigned: true } } },
+        orderBy: { decksDesigned: { _count: "desc" } },
         take: 10,
       }),
       prisma.series.findMany({
@@ -187,7 +179,7 @@ export const getStatsChartMetadata = unstable_cache(
     return {
       designerGroups: designerGroups.map(({ name, _count }) => ({
         designer: name,
-        _count: { _all: _count.decks },
+        _count: { _all: _count.decksDesigned },
       })),
       topSeriesGroups,
       releaseYearGroups,
@@ -197,86 +189,50 @@ export const getStatsChartMetadata = unstable_cache(
   { tags: [STATS_CATALOG_METADATA_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
-export const getCreatorCounts = unstable_cache(
+export const getCreatorDirectory = unstable_cache(
   async () => {
-    const counts = await Promise.all(
-      CREATORS.map((creator) =>
-        prisma.deck.count({
-          where: creator.collectionProducer && creator.collectionDesigners
-            ? {
-                OR: [
-                  { producer: creator.collectionProducer },
-                  { designers: { some: { designer: { name: { in: creator.collectionDesigners } } } } },
-                ],
-              }
-            : creator.collectionProducer
-              ? { producer: creator.collectionProducer }
-            : creator.matchProducerToo
-              ? {
-                  OR: [
-                    { designers: { some: { designer: { name: creator.designer } } } },
-                    { producer: creator.designer },
-                  ],
-                }
-              : { designers: { some: { designer: { name: creator.designer } } } },
-        })
-      )
-    );
-
-    return Object.fromEntries(
-      CREATORS.map((creator, index) => [creator.designer, counts[index]])
-    );
-  },
-  [
-    "curated-creator-counts-v4",
-    ...CREATORS.flatMap((creator) => [
-      creator.collectionProducer ?? creator.designer,
-      ...(creator.collectionDesigners ?? []),
-    ]),
-  ],
-  { tags: [CREATOR_CATALOG_METADATA_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
-);
-
-export const getCreatorRepresentativeImages = unstable_cache(
-  async () => {
-    const creatorsNeedingImages = CREATORS.filter((creator) => !creator.spotlightImageUrl);
-    if (creatorsNeedingImages.length === 0) return {};
-
-    const decks = await prisma.deck.findMany({
-      where: { images: { some: {} } },
-      orderBy: [{ name: "asc" }, { id: "asc" }],
+    const creators = await prisma.creator.findMany({
       select: {
-        designers: { select: { designer: { select: { name: true } } } },
-        producer: true,
-        images: { orderBy: { sortOrder: "asc" }, take: 1, select: { url: true } },
+        id: true,
+        name: true,
+        displayName: true,
+        slug: true,
+        tagline: true,
+        heroImageUrl: true,
+        favorite: true,
+        decksDesigned: { select: { deckId: true } },
+        decksProduced: { select: { id: true } },
+        coinsDesigned: { select: { id: true } },
+        coinsProduced: { select: { id: true } },
       },
+      orderBy: { name: "asc" },
     });
-
-    return Object.fromEntries(
-      creatorsNeedingImages.map((creator) => {
-        const deck = decks.find(({ designers, producer }) => {
-          const designerNames = designers.map(({ designer }) => designer.name);
-          return (
-          creator.collectionProducer && creator.collectionDesigners
-            ? producer === creator.collectionProducer || creator.collectionDesigners.some((name) => designerNames.includes(name))
-            : creator.collectionProducer
-              ? producer === creator.collectionProducer
-              : creator.matchProducerToo
-                ? designerNames.includes(creator.designer) || producer === creator.designer
-                : designerNames.includes(creator.designer)
-          );
-        });
-        return [creator.designer, deck?.images[0]?.url ?? null];
-      })
-    );
+    return creators.map(({ decksDesigned, decksProduced, coinsDesigned, coinsProduced, ...creator }) => {
+      const deckIds = new Set([
+        ...decksDesigned.map(({ deckId }) => deckId),
+        ...decksProduced.map(({ id }) => id),
+      ]);
+      const coinIds = new Set([
+        ...coinsDesigned.map(({ id }) => id),
+        ...coinsProduced.map(({ id }) => id),
+      ]);
+      const hasDesignerRole = decksDesigned.length > 0 || coinsDesigned.length > 0;
+      const hasProducerRole = decksProduced.length > 0 || coinsProduced.length > 0;
+      return {
+        ...creator,
+        deckCount: deckIds.size,
+        coinCount: coinIds.size,
+        role: hasDesignerRole && hasProducerRole
+          ? "Designer & Producer" as const
+          : hasDesignerRole
+            ? "Designer" as const
+            : hasProducerRole
+              ? "Producer" as const
+              : "Uncredited" as const,
+      };
+    });
   },
-  [
-    "curated-creator-representative-images-v2",
-    ...CREATORS.flatMap((creator) => [
-      creator.collectionProducer ?? creator.designer,
-      ...(creator.collectionDesigners ?? []),
-    ]),
-  ],
+  ["creator-directory-v1"],
   { tags: [CREATOR_CATALOG_METADATA_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 

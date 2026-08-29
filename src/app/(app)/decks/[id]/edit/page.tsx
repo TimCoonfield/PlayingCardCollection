@@ -16,23 +16,18 @@ export default async function EditDeckPage({
 }) {
   const { id } = await params;
 
-  const [deck, designers, producers, seriesOptions] = await Promise.all([
+  const [deck, creators, seriesOptions] = await Promise.all([
     prisma.deck.findUnique({
       where: { id },
       include: {
         series: true,
         designers: { orderBy: { sortOrder: "asc" }, include: { designer: true } },
+        producerCreator: true,
         images: { orderBy: { sortOrder: "asc" } },
         editions: { orderBy: { deckNumber: "asc" } },
       },
     }),
-    prisma.designer.findMany({ select: { name: true }, orderBy: { name: "asc" } }),
-    prisma.deck.findMany({
-      distinct: ["producer"],
-      where: { producer: { not: null } },
-      select: { producer: true },
-      orderBy: { producer: "asc" },
-    }),
+    prisma.creator.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.series.findMany({
       select: { id: true, name: true },
       orderBy: { name: "asc" },
@@ -55,8 +50,10 @@ export default async function EditDeckPage({
           seriesRaw: deck.seriesRaw ?? undefined,
           seriesOrder: deck.seriesOrder,
           variantNote: deck.variantNote ?? undefined,
-          designerNames: deck.designers.map(({ designer }) => designer.name),
-          producer: deck.producer ?? undefined,
+          designers: deck.designers.map(({ designer }) => ({ id: designer.id, name: designer.name })),
+          producerCreator: deck.producerCreator
+            ? { id: deck.producerCreator.id, name: deck.producerCreator.name }
+            : undefined,
           qty: deck.qty,
           editionNumbers: deck.editions.map((e) => e.deckNumber),
           productionRun: deck.productionRun,
@@ -71,8 +68,7 @@ export default async function EditDeckPage({
           tags: deck.tags,
         }}
         initialImages={deck.images.map((i) => ({ url: i.url }))}
-        designers={designers.map((designer) => designer.name)}
-        producers={producers.map((p) => p.producer!).filter(Boolean)}
+        creators={creators}
         seriesOptions={seriesOptions}
         submitLabel="Save changes"
         showEditorialFields

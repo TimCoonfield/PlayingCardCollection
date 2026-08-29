@@ -16,20 +16,12 @@ export default async function EditCoinPage({
 }) {
   const { id } = await params;
 
-  const [coin, designers, producers] = await Promise.all([
-    prisma.coin.findUnique({ where: { id } }),
-    prisma.coin.findMany({
-      distinct: ["designer"],
-      where: { designer: { not: null } },
-      select: { designer: true },
-      orderBy: { designer: "asc" },
+  const [coin, creators] = await Promise.all([
+    prisma.coin.findUnique({
+      where: { id },
+      include: { designerCreator: true, producerCreator: true },
     }),
-    prisma.coin.findMany({
-      distinct: ["producer"],
-      where: { producer: { not: null } },
-      select: { producer: true },
-      orderBy: { producer: "asc" },
-    }),
+    prisma.creator.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
   ]);
 
   if (!coin) notFound();
@@ -44,8 +36,12 @@ export default async function EditCoinPage({
         defaultValues={{
           name: coin.name,
           series: coin.series ?? undefined,
-          designer: coin.designer ?? undefined,
-          producer: coin.producer ?? undefined,
+          designerCreator: coin.designerCreator
+            ? { id: coin.designerCreator.id, name: coin.designerCreator.name }
+            : undefined,
+          producerCreator: coin.producerCreator
+            ? { id: coin.producerCreator.id, name: coin.producerCreator.name }
+            : undefined,
           material: coin.material ?? undefined,
           diameter: coin.diameter ?? undefined,
           qty: coin.qty,
@@ -56,8 +52,7 @@ export default async function EditCoinPage({
         }}
         initialObverseUrl={coin.obverseImageUrl ?? undefined}
         initialReverseUrl={coin.reverseImageUrl ?? undefined}
-        designers={designers.map((d) => d.designer!).filter(Boolean)}
-        producers={producers.map((p) => p.producer!).filter(Boolean)}
+        creators={creators}
         submitLabel="Save changes"
       />
     </div>

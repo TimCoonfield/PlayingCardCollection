@@ -9,14 +9,8 @@ export const metadata: Metadata = {
 };
 
 export default async function NewDeckPage() {
-  const [designers, producers, seriesOptions] = await Promise.all([
-    prisma.designer.findMany({ select: { name: true }, orderBy: { name: "asc" } }),
-    prisma.deck.findMany({
-      distinct: ["producer"],
-      where: { producer: { not: null } },
-      select: { producer: true },
-      orderBy: { producer: "asc" },
-    }),
+  const [creators, seriesOptions] = await Promise.all([
+    prisma.creator.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.series.findMany({
       select: { id: true, name: true },
       orderBy: { name: "asc" },
@@ -28,8 +22,7 @@ export default async function NewDeckPage() {
       <h1 className="font-display text-xl font-semibold text-felt-ink">Add Deck</h1>
       <DeckForm
         action={createDeck}
-        designers={designers.map((designer) => designer.name)}
-        producers={producers.map((p) => p.producer!).filter(Boolean)}
+        creators={creators}
         seriesOptions={seriesOptions}
         submitLabel="Save deck"
         enableAiIdentify

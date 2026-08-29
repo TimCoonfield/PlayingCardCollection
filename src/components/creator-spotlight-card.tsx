@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { CreatorAccent } from "@/lib/featured-creators";
+
+export type CreatorAccent = "plum" | "brass" | "sage" | "brick" | "felt-ink";
 
 const ACCENT_BORDER_CLASSES: Record<CreatorAccent, string> = {
   brass: "hover:border-brass",
@@ -16,16 +17,18 @@ export function CreatorSpotlightCard({
   imageUrl,
   imageAlt,
   deckCount,
+  coinCount = 0,
   href,
-  accent,
+  accent = "brass",
 }: {
   name: string;
-  tagline: string;
-  imageUrl?: string;
+  tagline?: string | null;
+  imageUrl?: string | null;
   imageAlt?: string;
   deckCount: number;
+  coinCount?: number;
   href: string;
-  accent: CreatorAccent;
+  accent?: CreatorAccent;
 }) {
   const nameSizeClass =
     name.length >= 34
@@ -66,13 +69,18 @@ export function CreatorSpotlightCard({
         >
           {name}
         </span>
-        <span className="mt-2 font-display text-lg italic tracking-wide text-brass">{tagline}</span>
+        {tagline && (
+          <span className="mt-2 font-display text-lg italic tracking-wide text-brass">{tagline}</span>
+        )}
         <span className="mt-4 flex items-baseline justify-between gap-3 border-t border-felt-line/60 pt-3">
           <span className="flex items-baseline gap-2">
             <span className="font-display text-3xl font-semibold leading-none text-felt-ink">
               {deckCount}
             </span>
-            <span className="text-[11px] uppercase tracking-wider text-felt-sub">collected</span>
+            <span className="text-[11px] uppercase tracking-wider text-felt-sub">
+              {deckCount === 1 ? "deck" : "decks"}
+              {coinCount > 0 && ` · ${coinCount} ${coinCount === 1 ? "coin" : "coins"}`}
+            </span>
           </span>
           <span className="text-xl text-brass" aria-hidden="true">
             →

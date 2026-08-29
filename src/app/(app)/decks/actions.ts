@@ -26,6 +26,11 @@ import {
 import { parseDeckFormData, type DeckFormValues } from "@/lib/schemas";
 import { seriesCollisionSlug, seriesSlugBase } from "@/lib/series-slug";
 import { joinDesignerNames } from "@/lib/designers";
+import {
+  CreatorSelectionError,
+  resolveCreatorSelection,
+  type ResolvedCreator,
+} from "@/lib/creator-write";
 
 export interface DeckFormState {
   error?: string;
@@ -70,7 +75,9 @@ function sameStrings(left: string[], right: string[]) {
 
 function toDeckData(
   values: DeckFormValues,
-  series: { id: string; name: string } | null
+  series: { id: string; name: string } | null,
+  designers: ResolvedCreator[],
+  producer: ResolvedCreator | null
 ) {
   return {
     name: values.name,
@@ -78,8 +85,9 @@ function toDeckData(
     seriesLegacy: series?.name ?? null,
     seriesOrder: series ? values.seriesOrder ?? null : null,
     variantNote: series ? values.variantNote ?? null : null,
-    designerLegacy: joinDesignerNames(values.designerNames),
-    producer: values.producer ?? null,
+    designerLegacy: joinDesignerNames(designers.map(({ name }) => name)),
+    producer: producer?.name ?? null,
+    producerCreatorId: producer?.id ?? null,
     ownershipStatus: values.ownershipStatus,
     qty: values.qty,
     productionRun: values.productionRun ?? null,
@@ -88,18 +96,6 @@ function toDeckData(
     catalogNumber: values.catalogNumber ?? null,
     tags: values.tags,
   };
-}
-
-function toDesignerRelations(values: DeckFormValues) {
-  return values.designerNames.map((name, sortOrder) => ({
-    sortOrder,
-    designer: {
-      connectOrCreate: {
-        where: { name },
-        create: { name },
-      },
-    },
-  }));
 }
 
 function toEditorialDeckData(values: DeckFormValues) {
@@ -113,6 +109,33 @@ function toEditorialDeckData(values: DeckFormValues) {
 }
 
 class SeriesSelectionError extends Error {}
+
+async function resolveDeckCreators(tx: Prisma.TransactionClient, values: DeckFormValues) {
+  const designers: ResolvedCreator[] = [];
+  for (const [index, query] of values.designerNames.entries()) {
+    const creator = await resolveCreatorSelection(
+      tx,
+      {
+        query,
+        creatorId: values.designerCreatorIds[index] || undefined,
+        newCreatorName: values.newDesignerNames[index] || undefined,
+      },
+      "designerNames"
+    );
+    if (creator) designers.push(creator);
+  }
+
+  const producer = await resolveCreatorSelection(
+    tx,
+    {
+      query: values.producer,
+      creatorId: values.producerCreatorId,
+      newCreatorName: values.newProducerName,
+    },
+    "producer"
+  );
+  return { designers, producer };
+}
 
 async function resolveSeries(
   tx: Prisma.TransactionClient,
@@ -171,16 +194,22 @@ export async function createDeck(
   try {
     deck = await prisma.$transaction(async (tx) => {
       const series = await resolveSeries(tx, parsed.data);
+      const creators = await resolveDeckCreators(tx, parsed.data);
       return tx.deck.create({
         data: {
-          ...toDeckData(parsed.data, series),
+          ...toDeckData(parsed.data, series, creators.designers, creators.producer),
           images: {
             create: parsed.data.imageUrls.map((url, i) => ({ url, sortOrder: i })),
           },
           editions: {
             create: parsed.data.editionNumbers.map((deckNumber) => ({ deckNumber })),
           },
-          designers: { create: toDesignerRelations(parsed.data) },
+          designers: {
+            create: creators.designers.map(({ id }, sortOrder) => ({
+              designerId: id,
+              sortOrder,
+            })),
+          },
         },
         select: { id: true },
       });
@@ -188,6 +217,9 @@ export async function createDeck(
   } catch (error) {
     if (error instanceof SeriesSelectionError) {
       return { error: "Please fix the errors below.", fieldErrors: { seriesId: error.message } };
+    }
+    if (error instanceof CreatorSelectionError) {
+      return { error: "Please fix the errors below.", fieldErrors: { [error.field]: error.message } };
     }
     throw error;
   }
@@ -224,6 +256,7 @@ export async function updateDeck(
         select: { designer: { select: { name: true } } },
       },
       producer: true,
+      producerCreatorId: true,
       qty: true,
       releaseYear: true,
       notes: true,
@@ -242,16 +275,23 @@ export async function updateDeck(
 
   const existingBrowsePage = await getDeckBrowsePageIndex(existingDeck.name, deckId);
 
-  let savedSeries = { id: null as string | null, isNew: false };
+  let savedRelations = {
+    seriesId: null as string | null,
+    seriesIsNew: false,
+    designerNames: [] as string[],
+    producerId: null as string | null,
+    creatorIsNew: false,
+  };
   try {
-    savedSeries = await prisma.$transaction(async (tx) => {
+    savedRelations = await prisma.$transaction(async (tx) => {
       const series = await resolveSeries(tx, parsed.data);
+      const creators = await resolveDeckCreators(tx, parsed.data);
       await tx.deckImage.deleteMany({ where: { deckId } });
       await tx.deckEdition.deleteMany({ where: { deckId } });
       await tx.deck.update({
         where: { id: deckId },
         data: {
-          ...toDeckData(parsed.data, series),
+          ...toDeckData(parsed.data, series, creators.designers, creators.producer),
           ...toEditorialDeckData(parsed.data),
           notesReviewedAt: parsed.data.notesReviewed
             ? existingDeck?.notesReviewedAt ?? new Date()
@@ -264,15 +304,28 @@ export async function updateDeck(
           },
           designers: {
             deleteMany: {},
-            create: toDesignerRelations(parsed.data),
+            create: creators.designers.map(({ id }, sortOrder) => ({
+              designerId: id,
+              sortOrder,
+            })),
           },
         },
       });
-      return { id: series?.id ?? null, isNew: series?.isNew ?? false };
+      return {
+        seriesId: series?.id ?? null,
+        seriesIsNew: series?.isNew ?? false,
+        designerNames: creators.designers.map(({ name }) => name),
+        producerId: creators.producer?.id ?? null,
+        creatorIsNew:
+          creators.designers.some(({ isNew }) => isNew) || Boolean(creators.producer?.isNew),
+      };
     });
   } catch (error) {
     if (error instanceof SeriesSelectionError) {
       return { error: "Please fix the errors below.", fieldErrors: { seriesId: error.message } };
+    }
+    if (error instanceof CreatorSelectionError) {
+      return { error: "Please fix the errors below.", fieldErrors: { [error.field]: error.message } };
     }
     throw error;
   }
@@ -285,12 +338,12 @@ export async function updateDeck(
   const previousImageUrls = existingDeck.images.map(({ url }) => url);
   const imagesChanged = !sameStrings(previousImageUrls, parsed.data.imageUrls);
   const nameChanged = existingDeck.name !== parsed.data.name;
-  const seriesChanged = existingDeck.seriesId !== savedSeries.id;
+  const seriesChanged = existingDeck.seriesId !== savedRelations.seriesId;
   const designerChanged = !sameStrings(
     existingDeck.designers.map(({ designer }) => designer.name),
-    parsed.data.designerNames
+    savedRelations.designerNames
   );
-  const producerChanged = existingDeck.producer !== (parsed.data.producer ?? null);
+  const producerChanged = existingDeck.producerCreatorId !== savedRelations.producerId;
   const quantityChanged = existingDeck.qty !== parsed.data.qty;
   const releaseYearChanged = existingDeck.releaseYear !== (parsed.data.releaseYear ?? null);
   const tagsChanged = !sameStrings(existingDeck.tags, parsed.data.tags);
@@ -312,8 +365,10 @@ export async function updateDeck(
     else invalidateDeckBrowsePage(existingBrowsePage);
     invalidateRecentDecksCache();
   }
-  if (designerChanged || savedSeries.isNew) invalidateCoreCatalogMetadataCache();
-  if (designerChanged || producerChanged || releaseYearChanged || savedSeries.isNew) {
+  if (designerChanged || savedRelations.creatorIsNew || savedRelations.seriesIsNew) {
+    invalidateCoreCatalogMetadataCache();
+  }
+  if (designerChanged || producerChanged || releaseYearChanged || savedRelations.seriesIsNew) {
     invalidateCollectionCatalogMetadataCache();
   }
   if (designerChanged || producerChanged || nameChanged || imagesChanged) {
@@ -323,7 +378,7 @@ export async function updateDeck(
   if (designerChanged || quantityChanged || releaseYearChanged || tagsChanged || seriesChanged) {
     invalidateStatsCatalogMetadataCache();
   }
-  if (seriesChanged || savedSeries.isNew) invalidateArchiveSeriesMetadataCache();
+  if (seriesChanged || savedRelations.seriesIsNew) invalidateArchiveSeriesMetadataCache();
   if (imagesChanged && existingDeck.favorite) invalidateFavoriteDeckImagesCache();
   if (nameChanged || seriesChanged || tagsChanged || imagesChanged) {
     invalidateSeriesSpotlightCache();

@@ -48,7 +48,11 @@ export const deckFormSchema = z
       .max(20, "A deck can have at most 20 designer credits")
       .transform(uniqueDesignerNames)
       .default([]),
+    designerCreatorIds: z.array(z.string().trim()).max(20).default([]),
+    newDesignerNames: z.array(z.string().trim()).max(20).default([]),
     producer: optionalString,
+    producerCreatorId: optionalString,
+    newProducerName: optionalBoundedString(200),
     ownershipStatus: z.string().trim().min(1).default("Owned"),
     qty: z
       .string()
@@ -71,6 +75,40 @@ export const deckFormSchema = z
     message: "Can't have more editions than quantity",
     path: ["editionNumbers"],
   })
+  .refine(
+    (data) =>
+      data.designerNames.length === data.designerCreatorIds.length &&
+      data.designerNames.length === data.newDesignerNames.length,
+    {
+      message: "Choose each Designer again.",
+      path: ["designerNames"],
+    }
+  )
+  .refine(
+    (data) =>
+      data.designerNames.every((name, index) => {
+        const creatorId = data.designerCreatorIds[index];
+        const newName = data.newDesignerNames[index];
+        return !(creatorId && newName) && Boolean(creatorId || newName === name);
+      }),
+    {
+      message: "Choose an existing Creator or use the Create option for every Designer.",
+      path: ["designerNames"],
+    }
+  )
+  .refine((data) => !(data.producerCreatorId && data.newProducerName), {
+    message: "Choose an existing Creator or create a new one, not both.",
+    path: ["producer"],
+  })
+  .refine(
+    (data) =>
+      !data.producer ||
+      Boolean(data.producerCreatorId || data.newProducerName === data.producer),
+    {
+      message: "Choose an existing Creator or use the Create option.",
+      path: ["producer"],
+    }
+  )
   .refine(
     (data) =>
       !data.collectionReasonPrimary ||
@@ -125,8 +163,12 @@ export function parseDeckFormData(formData: FormData) {
     newSeriesName: formData.get("newSeriesName") ?? "",
     seriesOrder: formData.get("seriesOrder") ?? "",
     variantNote: formData.get("variantNote") ?? "",
-    designerNames: formData.getAll("designerNames").map(String),
-    producer: formData.get("producer") ?? "",
+    designerNames: formData.getAll("designerQueries").map(String),
+    designerCreatorIds: formData.getAll("designerCreatorIds").map(String),
+    newDesignerNames: formData.getAll("newDesignerNames").map(String),
+    producer: formData.get("producerQuery") ?? "",
+    producerCreatorId: formData.get("producerCreatorId") ?? "",
+    newProducerName: formData.get("newProducerName") ?? "",
     ownershipStatus: formData.get("ownershipStatus") || "Owned",
     qty: formData.get("qty") ?? "",
     editionNumbers: formData.getAll("editionNumbers").map(String),

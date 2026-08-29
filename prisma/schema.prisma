@@ -36,12 +36,21 @@ model Series {
   updatedAt        DateTime @updatedAt
 }
 
-model Designer {
-  id        String         @id @default(cuid())
-  name      String         @unique @db.VarChar(200)
-  decks     DeckDesigner[]
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+model Creator {
+  id            String         @id @default(cuid())
+  name          String         @unique @db.VarChar(200)
+  displayName   String?        @db.VarChar(240)
+  slug          String         @unique @db.VarChar(240)
+  tagline       String?        @db.VarChar(300)
+  description   String?
+  heroImageUrl  String?
+  favorite      Boolean        @default(false)
+  decksDesigned DeckDesigner[]
+  decksProduced Deck[]         @relation("DeckProducer")
+  coinsDesigned Coin[]         @relation("CoinDesigner")
+  coinsProduced Coin[]         @relation("CoinProducer")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
 model Deck {
@@ -56,6 +65,8 @@ model Deck {
   designerLegacy            String?           @map("designer")
   designers                 DeckDesigner[]
   producer                  String?
+  producerCreatorId         String?
+  producerCreator           Creator?          @relation("DeckProducer", fields: [producerCreatorId], references: [id], onDelete: Restrict)
   tags                      String[]          @default([])
   ownershipStatus           String            @default("Owned")
   qty                       Int               @default(1)
@@ -78,6 +89,7 @@ model Deck {
   @@index([tags], type: Gin)
   @@index([designerLegacy], map: "Deck_designer_idx")
   @@index([producer])
+  @@index([producerCreatorId])
   @@index([collectionReasonPrimary])
   @@index([collectionReasonSecondary])
   @@index([seriesLegacy], map: "Deck_series_idx")
@@ -87,9 +99,9 @@ model Deck {
 model DeckDesigner {
   deckId     String
   designerId String
-  sortOrder  Int      @default(0)
-  deck       Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
-  designer   Designer @relation(fields: [designerId], references: [id], onDelete: Restrict)
+  sortOrder  Int     @default(0)
+  deck       Deck    @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  designer   Creator @relation(fields: [designerId], references: [id], onDelete: Restrict)
 
   @@id([deckId, designerId])
   @@unique([deckId, sortOrder])
@@ -118,26 +130,32 @@ model DeckEdition {
 }
 
 model Coin {
-  id              String   @id @default(cuid())
-  name            String
-  series          String?
-  designer        String?
-  producer        String?
-  material        String?
-  diameter        String?
-  obverseImageUrl String?
-  reverseImageUrl String?
-  tags            String[] @default([])
-  ownershipStatus String   @default("Owned")
-  qty             Int      @default(1)
-  releaseYear     Int?
-  notes           String?
-  catalogNumber   String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                String   @id @default(cuid())
+  name              String
+  series            String?
+  designer          String?
+  designerCreatorId String?
+  designerCreator   Creator? @relation("CoinDesigner", fields: [designerCreatorId], references: [id], onDelete: Restrict)
+  producer          String?
+  producerCreatorId String?
+  producerCreator   Creator? @relation("CoinProducer", fields: [producerCreatorId], references: [id], onDelete: Restrict)
+  material          String?
+  diameter          String?
+  obverseImageUrl   String?
+  reverseImageUrl   String?
+  tags              String[] @default([])
+  ownershipStatus   String   @default("Owned")
+  qty               Int      @default(1)
+  releaseYear       Int?
+  notes             String?
+  catalogNumber     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@index([tags], type: Gin)
   @@index([designer])
+  @@index([designerCreatorId])
   @@index([producer])
+  @@index([producerCreatorId])
   @@index([series])
 }

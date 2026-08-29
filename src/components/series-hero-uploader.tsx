@@ -16,12 +16,16 @@ export function SeriesHeroUploader({
   error,
   onChange,
   onUploadingChange,
+  pathPrefix = "series",
+  entityLabel = "Series",
 }: {
   value: string;
   persistedValue: string;
   error?: string;
   onChange: (url: string) => void;
   onUploadingChange: (uploading: boolean) => void;
+  pathPrefix?: "series" | "creators";
+  entityLabel?: "Series" | "Creator";
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -44,7 +48,7 @@ export function SeriesHeroUploader({
     try {
       const uploadFile = await compressImage(file);
       uploadFileSize = uploadFile.size;
-      const blob = await upload(`series/${Date.now()}-${uploadFile.name}`, uploadFile, {
+      const blob = await upload(`${pathPrefix}/${Date.now()}-${uploadFile.name}`, uploadFile, {
         access: "public",
         handleUploadUrl: "/api/upload",
         abortSignal: controller.signal,
@@ -79,11 +83,11 @@ export function SeriesHeroUploader({
 
       {value ? (
         <div className="relative aspect-[16/7] w-full overflow-hidden rounded-md border border-felt-line bg-felt-bg">
-          <Image src={value} alt="Current Series hero" fill sizes="640px" className="object-cover" />
+          <Image src={value} alt={`Current ${entityLabel} hero`} fill sizes="640px" className="object-cover" />
         </div>
       ) : (
         <div className="flex aspect-[16/7] w-full items-center justify-center rounded-md border border-dashed border-felt-line bg-felt-bg px-4 text-center text-xs text-felt-sub">
-          No custom image. The Series will use its engraved suit artwork.
+          No custom image. The {entityLabel} will use its engraved suit artwork.
         </div>
       )}
 

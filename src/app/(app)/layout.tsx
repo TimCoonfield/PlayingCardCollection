@@ -1,14 +1,22 @@
 import { getSession } from "@/lib/auth";
-import { NAVIGATION_CREATORS } from "@/lib/featured-creators";
+import { getCreatorDirectory } from "@/lib/catalog-metadata";
 import { NavBar } from "./nav-bar";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSession();
+  const [session, creators] = await Promise.all([getSession(), getCreatorDirectory()]);
   const isAuthenticated = Boolean(session.authenticated);
-  const creatorNavItems = NAVIGATION_CREATORS.map((creator) => ({
-    name: creator.displayName ?? creator.designer,
-    href: creator.landingPageHref,
-  }));
+  const creatorNavItems = creators
+    .filter((creator) => creator.favorite)
+    .sort(
+      (left, right) =>
+        right.deckCount - left.deckCount ||
+        (left.displayName ?? left.name).localeCompare(right.displayName ?? right.name)
+    )
+    .slice(0, 6)
+    .map((creator) => ({
+      name: creator.displayName ?? creator.name,
+      href: `/creators/${creator.slug}`,
+    }));
 
   return (
     <div className="flex min-h-screen flex-1 flex-col bg-felt-bg text-felt-ink">

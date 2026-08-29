@@ -36,8 +36,9 @@ const getDeck = cache((id: string) =>
       editions: { orderBy: { deckNumber: "asc" } },
       designers: {
         orderBy: { sortOrder: "asc" },
-        select: { designer: { select: { name: true } } },
+        select: { designer: { select: { name: true, slug: true } } },
       },
+      producerCreator: { select: { name: true, slug: true } },
       series: {
         include: {
           decks: {
@@ -292,12 +293,18 @@ export default async function DeckDetailPage({
 
           {(designerNames.length > 0 || deck.producer || deck.releaseYear) && (
             <div className="flex flex-col divide-y divide-felt-line rounded-lg border border-felt-line bg-felt-surface">
-              {designerNames.length > 0 && <DesignersCreditRow names={designerNames} />}
+              {designerNames.length > 0 && (
+                <DesignersCreditRow creators={deck.designers.map(({ designer }) => designer)} />
+              )}
               {deck.producer && (
                 <CreditRow
                   label="Producer"
                   value={deck.producer}
-                  href={`/collection?producer=${encodeURIComponent(deck.producer)}`}
+                  href={
+                    deck.producerCreator
+                      ? `/creators/${deck.producerCreator.slug}`
+                      : `/collection?producer=${encodeURIComponent(deck.producer)}`
+                  }
                 />
               )}
               {deck.releaseYear !== null && (
@@ -402,21 +409,21 @@ export default async function DeckDetailPage({
   );
 }
 
-function DesignersCreditRow({ names }: { names: string[] }) {
+function DesignersCreditRow({ creators }: { creators: { name: string; slug: string }[] }) {
   return (
     <div className="flex items-center justify-between gap-3 px-4 py-3">
       <span className="text-xs uppercase tracking-wide text-felt-sub/70">
-        {names.length === 1 ? "Designer" : "Designers"}
+        {creators.length === 1 ? "Designer" : "Designers"}
       </span>
       <span className="min-w-0 text-right font-display text-base font-medium text-felt-ink">
-        {names.map((name, index) => (
-          <span key={name}>
+        {creators.map((creator, index) => (
+          <span key={creator.slug}>
             {index > 0 && <span className="text-felt-sub/60">, </span>}
             <Link
-              href={`/collection?designer=${encodeURIComponent(name)}`}
+              href={`/creators/${creator.slug}`}
               className="hover:text-brass"
             >
-              {name}
+              {creator.name}
             </Link>
           </span>
         ))}

@@ -22,7 +22,11 @@ export const coinFormSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   series: optionalString,
   designer: optionalString,
+  designerCreatorId: optionalString,
+  newDesignerName: optionalString,
   producer: optionalString,
+  producerCreatorId: optionalString,
+  newProducerName: optionalString,
   material: optionalString,
   diameter: optionalString,
   ownershipStatus: z.string().trim().min(1).default("Owned"),
@@ -36,7 +40,33 @@ export const coinFormSchema = z.object({
   tags: z.array(z.string()).default([]),
   obverseImageUrl: optionalUrl,
   reverseImageUrl: optionalUrl,
-});
+})
+  .refine((data) => !(data.designerCreatorId && data.newDesignerName), {
+    message: "Choose an existing Creator or create a new one, not both.",
+    path: ["designer"],
+  })
+  .refine(
+    (data) =>
+      !data.designer ||
+      Boolean(data.designerCreatorId || data.newDesignerName === data.designer),
+    {
+      message: "Choose an existing Creator or use the Create option.",
+      path: ["designer"],
+    }
+  )
+  .refine((data) => !(data.producerCreatorId && data.newProducerName), {
+    message: "Choose an existing Creator or create a new one, not both.",
+    path: ["producer"],
+  })
+  .refine(
+    (data) =>
+      !data.producer ||
+      Boolean(data.producerCreatorId || data.newProducerName === data.producer),
+    {
+      message: "Choose an existing Creator or use the Create option.",
+      path: ["producer"],
+    }
+  );
 
 export type CoinFormValues = z.infer<typeof coinFormSchema>;
 
@@ -53,8 +83,12 @@ export function parseCoinFormData(formData: FormData) {
   return coinFormSchema.safeParse({
     name: formData.get("name") ?? "",
     series: formData.get("series") ?? "",
-    designer: formData.get("designer") ?? "",
-    producer: formData.get("producer") ?? "",
+    designer: formData.get("designerQuery") ?? "",
+    designerCreatorId: formData.get("designerCreatorId") ?? "",
+    newDesignerName: formData.get("newDesignerName") ?? "",
+    producer: formData.get("producerQuery") ?? "",
+    producerCreatorId: formData.get("producerCreatorId") ?? "",
+    newProducerName: formData.get("newProducerName") ?? "",
     material: formData.get("material") ?? "",
     diameter: formData.get("diameter") ?? "",
     ownershipStatus: formData.get("ownershipStatus") || "Owned",

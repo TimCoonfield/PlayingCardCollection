@@ -19,7 +19,15 @@ import {
 } from "@/lib/seo";
 
 // Wrapped in React's cache() so generateMetadata and the page body share one query per request.
-const getCoin = cache((id: string) => prisma.coin.findUnique({ where: { id } }));
+const getCoin = cache((id: string) =>
+  prisma.coin.findUnique({
+    where: { id },
+    include: {
+      designerCreator: { select: { name: true, slug: true } },
+      producerCreator: { select: { name: true, slug: true } },
+    },
+  })
+);
 
 export async function generateMetadata({
   params,
@@ -199,14 +207,22 @@ export default async function CoinDetailPage({
                 <CreditRow
                   label="Designer"
                   value={coin.designer}
-                  href={`/coins?designer=${encodeURIComponent(coin.designer)}`}
+                  href={
+                    coin.designerCreator
+                      ? `/creators/${coin.designerCreator.slug}`
+                      : `/collection?designer=${encodeURIComponent(coin.designer)}`
+                  }
                 />
               )}
               {coin.producer && (
                 <CreditRow
                   label="Producer"
                   value={coin.producer}
-                  href={`/coins?producer=${encodeURIComponent(coin.producer)}`}
+                  href={
+                    coin.producerCreator
+                      ? `/creators/${coin.producerCreator.slug}`
+                      : `/collection?producer=${encodeURIComponent(coin.producer)}`
+                  }
                 />
               )}
               {coin.material && <CreditRow label="Material" value={coin.material} />}

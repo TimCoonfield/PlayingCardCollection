@@ -19,7 +19,7 @@ export async function deleteUnreferencedBlobUrls(urls: string[]): Promise<void> 
   if (candidates.length === 0) return;
 
   try {
-    const [deckReferences, coinReferences, seriesReferences] = await Promise.all([
+    const [deckReferences, coinReferences, seriesReferences, creatorReferences] = await Promise.all([
       prisma.deckImage.findMany({
         where: { url: { in: candidates } },
         select: { url: true },
@@ -37,6 +37,10 @@ export async function deleteUnreferencedBlobUrls(urls: string[]): Promise<void> 
         where: { heroImageUrl: { in: candidates } },
         select: { heroImageUrl: true },
       }),
+      prisma.creator.findMany({
+        where: { heroImageUrl: { in: candidates } },
+        select: { heroImageUrl: true },
+      }),
     ]);
 
     const referenced = new Set(deckReferences.map(({ url }) => url));
@@ -46,6 +50,9 @@ export async function deleteUnreferencedBlobUrls(urls: string[]): Promise<void> 
     }
     for (const series of seriesReferences) {
       if (series.heroImageUrl) referenced.add(series.heroImageUrl);
+    }
+    for (const creator of creatorReferences) {
+      if (creator.heroImageUrl) referenced.add(creator.heroImageUrl);
     }
 
     const unreferenced = candidates.filter((url) => !referenced.has(url));

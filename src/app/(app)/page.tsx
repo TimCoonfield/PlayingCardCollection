@@ -12,25 +12,28 @@ import {
   SearchIcon,
   WhaleIcon,
 } from "@/components/icons";
-import { HOMEPAGE_CREATORS } from "@/lib/featured-creators";
 import {
   getCoreCatalogMetadata,
-  getCreatorCounts,
+  getCreatorDirectory,
   getHomePageMetadata,
 } from "@/lib/catalog-metadata";
 import { getRecentDecks } from "@/lib/catalog-browse";
 
 export default async function HomePage() {
-  const [metadata, homeMetadata, creatorCounts, recentDecks] = await Promise.all([
+  const [metadata, homeMetadata, creators, recentDecks] = await Promise.all([
     getCoreCatalogMetadata(),
     getHomePageMetadata(),
-    getCreatorCounts(),
+    getCreatorDirectory(),
     getRecentDecks(),
   ]);
-  const creatorsData = HOMEPAGE_CREATORS.map((creator) => ({
-    ...creator,
-    deckCount: creatorCounts[creator.designer] ?? 0,
-  }));
+  const creatorsData = creators
+    .filter((creator) => creator.favorite)
+    .sort(
+      (left, right) =>
+        right.deckCount - left.deckCount ||
+        right.coinCount - left.coinCount ||
+        (left.displayName ?? left.name).localeCompare(right.displayName ?? right.name)
+    );
 
   const specialtyCollections = [
     {
@@ -157,40 +160,20 @@ export default async function HomePage() {
         </div>
         <div className="flex flex-wrap justify-center gap-4">
           {creatorsData.map((creator) => {
-            const viewAllHref =
-              creator.landingPageHref ??
-              (creator.matchProducerToo
-                ? `/collection?creator=${encodeURIComponent(creator.designer)}`
-                : `/collection?designer=${encodeURIComponent(creator.designer)}`);
+            const viewAllHref = `/creators/${creator.slug}`;
             return (
               <div
-                key={creator.designer}
+                key={creator.id}
                 className="w-full sm:w-[calc(50%-0.5rem)] xl:w-[calc(33.333%-0.667rem)]"
               >
-                {/* Poster-style treatment for all featured creators — a wide image as a
-                    full-bleed watermark instead of the bio/logo card. Revert to the old
-                    style by swapping back to the commented CreatorCard call below.
-
-                    <CreatorCard
-                      designer={creator.designer}
-                      producer={creator.producer}
-                      bio={creator.bio}
-                      accent={creator.accent}
-                      initials={creator.initials}
-                      logoUrl={creator.logoUrl}
-                      logoAlt={creator.logoAlt}
-                      deckCount={creator.deckCount}
-                      randomDecks={creator.randomDecks}
-                      viewAllHref={viewAllHref}
-                    /> */}
                 <CreatorSpotlightCard
-                  name={creator.displayName ?? creator.designer}
+                  name={creator.displayName ?? creator.name}
                   tagline={creator.tagline}
-                  imageUrl={creator.spotlightImageUrl}
-                  imageAlt={creator.spotlightImageAlt}
+                  imageUrl={creator.heroImageUrl}
+                  imageAlt={`Creator profile for ${creator.displayName ?? creator.name}`}
                   deckCount={creator.deckCount}
+                  coinCount={creator.coinCount}
                   href={viewAllHref}
-                  accent={creator.accent}
                 />
               </div>
             );

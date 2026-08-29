@@ -3,14 +3,21 @@
 import { redirect } from "next/navigation";
 import type { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma/client";
 import { getSession } from "@/lib/auth";
 import { deleteUnreferencedBlobUrls } from "@/lib/blob-cleanup";
 import {
   invalidateCollectionCatalogMetadataCache,
   invalidateCoinBrowseCache,
   invalidateCoreCatalogMetadataCache,
+  invalidateCreatorCatalogMetadataCache,
 } from "@/lib/catalog-cache";
 import { parseCoinFormData, type CoinFormValues } from "@/lib/coin-schemas";
+import {
+  CreatorSelectionError,
+  resolveCreatorSelection,
+  type ResolvedCreator,
+} from "@/lib/creator-write";
 
 export interface CoinFormState {
   error?: string;
@@ -25,12 +32,18 @@ async function isAuthenticated() {
   return Boolean(session.authenticated);
 }
 
-function toCoinData(values: CoinFormValues) {
+function toCoinData(
+  values: CoinFormValues,
+  designer: ResolvedCreator | null,
+  producer: ResolvedCreator | null
+) {
   return {
     name: values.name,
     series: values.series ?? null,
-    designer: values.designer ?? null,
-    producer: values.producer ?? null,
+    designer: designer?.name ?? null,
+    designerCreatorId: designer?.id ?? null,
+    producer: producer?.name ?? null,
+    producerCreatorId: producer?.id ?? null,
     material: values.material ?? null,
     diameter: values.diameter ?? null,
     ownershipStatus: values.ownershipStatus,
@@ -42,6 +55,28 @@ function toCoinData(values: CoinFormValues) {
     obverseImageUrl: values.obverseImageUrl ?? null,
     reverseImageUrl: values.reverseImageUrl ?? null,
   };
+}
+
+async function resolveCoinCreators(tx: Prisma.TransactionClient, values: CoinFormValues) {
+  const designer = await resolveCreatorSelection(
+    tx,
+    {
+      query: values.designer,
+      creatorId: values.designerCreatorId,
+      newCreatorName: values.newDesignerName,
+    },
+    "designer"
+  );
+  const producer = await resolveCreatorSelection(
+    tx,
+    {
+      query: values.producer,
+      creatorId: values.producerCreatorId,
+      newCreatorName: values.newProducerName,
+    },
+    "producer"
+  );
+  return { designer, producer };
 }
 
 export async function createCoin(
@@ -57,13 +92,26 @@ export async function createCoin(
     return { error: "Please fix the errors below.", fieldErrors: flatten(parsed.error) };
   }
 
-  const coin = await prisma.coin.create({
-    data: toCoinData(parsed.data),
-  });
+  let coin: { id: string };
+  try {
+    coin = await prisma.$transaction(async (tx) => {
+      const creators = await resolveCoinCreators(tx, parsed.data);
+      return tx.coin.create({
+        data: toCoinData(parsed.data, creators.designer, creators.producer),
+        select: { id: true },
+      });
+    });
+  } catch (error) {
+    if (error instanceof CreatorSelectionError) {
+      return { error: "Please fix the errors below.", fieldErrors: { [error.field]: error.message } };
+    }
+    throw error;
+  }
 
   invalidateCoinBrowseCache();
   invalidateCoreCatalogMetadataCache();
   invalidateCollectionCatalogMetadataCache();
+  invalidateCreatorCatalogMetadataCache();
   redirect(`/coins/${coin.id}`);
 }
 
@@ -86,10 +134,20 @@ export async function updateCoin(
     select: { obverseImageUrl: true, reverseImageUrl: true },
   });
 
-  await prisma.coin.update({
-    where: { id: coinId },
-    data: toCoinData(parsed.data),
-  });
+  try {
+    await prisma.$transaction(async (tx) => {
+      const creators = await resolveCoinCreators(tx, parsed.data);
+      await tx.coin.update({
+        where: { id: coinId },
+        data: toCoinData(parsed.data, creators.designer, creators.producer),
+      });
+    });
+  } catch (error) {
+    if (error instanceof CreatorSelectionError) {
+      return { error: "Please fix the errors below.", fieldErrors: { [error.field]: error.message } };
+    }
+    throw error;
+  }
 
   const retainedUrls = new Set(
     [parsed.data.obverseImageUrl, parsed.data.reverseImageUrl].filter(
@@ -104,7 +162,9 @@ export async function updateCoin(
   );
 
   invalidateCoinBrowseCache();
+  invalidateCoreCatalogMetadataCache();
   invalidateCollectionCatalogMetadataCache();
+  invalidateCreatorCatalogMetadataCache();
   redirect(`/coins/${coinId}`);
 }
 
@@ -126,6 +186,7 @@ export async function deleteCoin(coinId: string) {
   invalidateCoinBrowseCache();
   invalidateCoreCatalogMetadataCache();
   invalidateCollectionCatalogMetadataCache();
+  invalidateCreatorCatalogMetadataCache();
   redirect("/coins");
 }
 

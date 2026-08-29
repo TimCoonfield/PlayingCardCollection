@@ -3,6 +3,11 @@
 import { useActionState, useRef, useState } from "react";
 import { ImageUploader } from "./image-uploader";
 import { SeriesSelector, type SeriesOption } from "./series-selector";
+import {
+  CreatorMultiSelector,
+  CreatorSelector,
+  type CreatorOption,
+} from "./creator-selector";
 import { ALL_TAGS } from "@/lib/schemas";
 import {
   COLLECTION_REASON_DETAILS,
@@ -20,8 +25,8 @@ export interface DeckFormDefaultValues {
   seriesRaw?: string;
   seriesOrder?: number | null;
   variantNote?: string;
-  designerNames?: string[];
-  producer?: string;
+  designers?: CreatorOption[];
+  producerCreator?: CreatorOption;
   qty?: number;
   editionNumbers?: number[];
   productionRun?: number | null;
@@ -40,8 +45,7 @@ export function DeckForm({
   action,
   defaultValues = {},
   initialImages = [],
-  designers,
-  producers,
+  creators,
   seriesOptions,
   submitLabel,
   enableAiIdentify = false,
@@ -50,8 +54,7 @@ export function DeckForm({
   action: (prevState: DeckFormState, formData: FormData) => Promise<DeckFormState>;
   defaultValues?: DeckFormDefaultValues;
   initialImages?: { url: string }[];
-  designers: string[];
-  producers: string[];
+  creators: CreatorOption[];
   seriesOptions: SeriesOption[];
   submitLabel: string;
   enableAiIdentify?: boolean;
@@ -64,7 +67,8 @@ export function DeckForm({
     (defaultValues.editionNumbers ?? []).map(String)
   );
   const [qty, setQty] = useState<number>(defaultValues.qty ?? 1);
-  const [designerNames, setDesignerNames] = useState<string[]>(defaultValues.designerNames ?? []);
+  const [designerSuggestions, setDesignerSuggestions] = useState<string[] | undefined>();
+  const [producerSuggestion, setProducerSuggestion] = useState<string | undefined>();
   const [identifying, setIdentifying] = useState(false);
   const [identifyError, setIdentifyError] = useState<string | null>(null);
   const [identified, setIdentified] = useState(false);
@@ -78,7 +82,6 @@ export function DeckForm({
   const [hook, setHook] = useState(defaultValues.hook ?? "");
 
   const nameRef = useRef<HTMLInputElement>(null);
-  const producerRef = useRef<HTMLInputElement>(null);
   const productionRunRef = useRef<HTMLInputElement>(null);
   const releaseYearRef = useRef<HTMLInputElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
@@ -100,8 +103,8 @@ export function DeckForm({
       const result = data as DeckIdentification;
       if (nameRef.current && result.name) nameRef.current.value = result.name;
       if (result.series) setSeriesSuggestion(result.series);
-      if (result.designer) setDesignerNames(splitLegacyDesignerCredit(result.designer));
-      if (producerRef.current && result.producer) producerRef.current.value = result.producer;
+      if (result.designer) setDesignerSuggestions(splitLegacyDesignerCredit(result.designer));
+      if (result.producer) setProducerSuggestion(result.producer);
       if (result.deckNumber) {
         const detected = String(result.deckNumber);
         setEditionNumbers((prev) => (prev.includes(detected) ? prev : [...prev, detected]));
@@ -191,63 +194,24 @@ export function DeckForm({
           />
         </Field>
         <Field label="Designers" error={state?.fieldErrors?.designerNames}>
-          <div className="flex flex-col gap-2">
-            {designerNames.map((designer, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <input
-                  name="designerNames"
-                  list="designer-options"
-                  value={designer}
-                  onChange={(event) =>
-                    setDesignerNames((current) =>
-                      current.map((value, itemIndex) =>
-                        itemIndex === index ? event.target.value : value
-                      )
-                    )
-                  }
-                  className={inputClass}
-                />
-                <button
-                  type="button"
-                  onClick={() =>
-                    setDesignerNames((current) =>
-                      current.filter((_, itemIndex) => itemIndex !== index)
-                    )
-                  }
-                  className="shrink-0 text-xs text-felt-sub hover:text-brick"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={() => setDesignerNames((current) => [...current, ""])}
-              className="self-start rounded-md border border-felt-line px-3 py-1.5 text-xs text-felt-sub hover:border-brass hover:text-brass"
-            >
-              + Add designer
-            </button>
-          </div>
-          <datalist id="designer-options">
-            {designers.map((d) => (
-              <option key={d} value={d} />
-            ))}
-          </datalist>
+          <CreatorMultiSelector
+            options={creators}
+            defaultCreators={defaultValues.designers}
+            suggestedNames={designerSuggestions}
+          />
           <span className="text-xs text-felt-sub/70">Add one credit per person, artist, or studio.</span>
         </Field>
         <Field label="Producer" error={state?.fieldErrors?.producer}>
-          <input
-            ref={producerRef}
-            name="producer"
-            list="producer-options"
-            defaultValue={defaultValues.producer}
-            className={inputClass}
+          <CreatorSelector
+            options={creators}
+            names={{
+              query: "producerQuery",
+              creatorId: "producerCreatorId",
+              newCreatorName: "newProducerName",
+            }}
+            defaultCreator={defaultValues.producerCreator}
+            suggestedName={producerSuggestion}
           />
-          <datalist id="producer-options">
-            {producers.map((p) => (
-              <option key={p} value={p} />
-            ))}
-          </datalist>
         </Field>
         <Field label="Production run (e.g. 700)">
           <input

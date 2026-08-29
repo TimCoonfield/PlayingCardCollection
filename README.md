@@ -1,7 +1,8 @@
 # Playing Card Collection
 
 A visual tracker for a physical playing card collection: browse/search 2,528 imported
-decks, add new ones manually or by AI photo identification, and see collection stats.
+decks and related coins, explore dynamic Series and Creator pages, add records manually
+or by AI photo identification, and see collection stats.
 
 ## Stack
 
@@ -51,12 +52,28 @@ Fill these into `.env.local` (local) and as Vercel project env vars (prod):
 
 ## Notable structure
 
-- `prisma/schema.prisma` — `Deck` / `DeckImage` models.
+- `prisma/schema.prisma` — the Deck, Coin, Series, and Creator data model.
 - `scripts/seed.ts` + `scripts/seed-data.json` — one-time import of the original
   spreadsheet's 2,528 rows.
+- `scripts/creator-migration.ts` — review possible duplicate Creators, apply only approved
+  merges, and audit normalized relations against legacy credit strings.
 - `src/proxy.ts` — password-gate check (Next 16 renamed `middleware.ts` → `proxy.ts`).
 - `src/app/(app)/` — the public archive shell plus authenticated editing routes.
 - `src/app/api/upload` — Vercel Blob client-upload token route.
 - `src/app/api/ai/identify` — Claude vision deck identification.
 - `src/app/llms.txt` — AI-agent discovery map for the public catalog capabilities.
 - `src/app/api/catalog/decks` — public, read-only deck search and detail JSON API.
+
+## Creator duplicate review
+
+Creator names are intentionally migrated exactly as recorded. Generate a reviewable CSV without
+changing data, mark only confirmed rows with `MERGE`, then apply those approved decisions:
+
+```bash
+npm run creators:migrate -- review
+npm run creators:migrate -- apply --confirm
+npm run creators:migrate -- reconcile
+```
+
+The report is written to `reports/creator-merge-review.csv`. Regenerate it against the target
+database before reviewing so Deck and Coin counts reflect that database.
