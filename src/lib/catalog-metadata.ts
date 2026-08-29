@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import {
@@ -5,7 +6,8 @@ import {
   CATALOG_CACHE_REVALIDATE_SECONDS,
   COLLECTION_CATALOG_METADATA_CACHE_TAG,
   CORE_CATALOG_METADATA_CACHE_TAG,
-  CREATOR_CATALOG_METADATA_CACHE_TAG,
+  CREATOR_DIRECTORY_CACHE_TAG,
+  FAVORITE_CREATORS_CACHE_TAG,
   HOME_CATALOG_METADATA_CACHE_TAG,
   STATS_CATALOG_METADATA_CACHE_TAG,
 } from "@/lib/catalog-cache";
@@ -233,8 +235,51 @@ export const getCreatorDirectory = unstable_cache(
     });
   },
   ["creator-directory-v1"],
-  { tags: [CREATOR_CATALOG_METADATA_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
+  { tags: [CREATOR_DIRECTORY_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
+
+const getCachedFavoriteCreators = unstable_cache(
+  async () => {
+    const creators = await prisma.creator.findMany({
+      where: { favorite: true },
+      select: {
+        id: true,
+        name: true,
+        displayName: true,
+        slug: true,
+        tagline: true,
+        heroImageUrl: true,
+        decksDesigned: { select: { deckId: true } },
+        decksProduced: { select: { id: true } },
+        coinsDesigned: { select: { id: true } },
+        coinsProduced: { select: { id: true } },
+      },
+    });
+    return creators
+      .map(({ decksDesigned, decksProduced, coinsDesigned, coinsProduced, ...creator }) => ({
+        ...creator,
+        deckCount: new Set([
+          ...decksDesigned.map(({ deckId }) => deckId),
+          ...decksProduced.map(({ id }) => id),
+        ]).size,
+        coinCount: new Set([
+          ...coinsDesigned.map(({ id }) => id),
+          ...coinsProduced.map(({ id }) => id),
+        ]).size,
+      }))
+      .sort(
+        (left, right) =>
+          right.deckCount - left.deckCount ||
+          right.coinCount - left.coinCount ||
+          (left.displayName ?? left.name).localeCompare(right.displayName ?? right.name)
+      );
+  },
+  ["favorite-creators-v1"],
+  { tags: [FAVORITE_CREATORS_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
+);
+
+// The homepage and app layout render together and both need this same small snapshot.
+export const getFavoriteCreators = cache(getCachedFavoriteCreators);
 
 export const getArchiveSearchSeries = unstable_cache(
   async () =>

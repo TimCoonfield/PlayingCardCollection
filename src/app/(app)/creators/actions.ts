@@ -12,6 +12,7 @@ import {
   invalidateCollectionCatalogMetadataCache,
   invalidateCoreCatalogMetadataCache,
   invalidateCreatorCatalogMetadataCache,
+  invalidateCreatorProfileCache,
   invalidateStatsCatalogMetadataCache,
 } from "@/lib/catalog-cache";
 import { joinDesignerNames } from "@/lib/designers";
@@ -38,7 +39,7 @@ export async function updateCreator(
 
   const current = await prisma.creator.findUnique({
     where: { id: creatorId },
-    select: { name: true, heroImageUrl: true, favorite: true },
+    select: { name: true, slug: true, heroImageUrl: true, favorite: true },
   });
   if (!current) return { error: "This Creator no longer exists." };
 
@@ -107,6 +108,7 @@ export async function updateCreator(
   }
 
   invalidateCreatorCatalogMetadataCache();
+  invalidateCreatorProfileCache(current.slug);
   if (nameChanged) {
     invalidateAllDeckBrowsePages();
     invalidateCoinBrowseCache();

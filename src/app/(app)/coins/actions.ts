@@ -131,16 +131,27 @@ export async function updateCoin(
 
   const existingCoin = await prisma.coin.findUnique({
     where: { id: coinId },
-    select: { obverseImageUrl: true, reverseImageUrl: true },
+    select: {
+      designerCreatorId: true,
+      producerCreatorId: true,
+      obverseImageUrl: true,
+      reverseImageUrl: true,
+    },
   });
 
+  let savedCreators: { designerId: string | null; producerId: string | null; created: boolean };
   try {
-    await prisma.$transaction(async (tx) => {
+    savedCreators = await prisma.$transaction(async (tx) => {
       const creators = await resolveCoinCreators(tx, parsed.data);
       await tx.coin.update({
         where: { id: coinId },
         data: toCoinData(parsed.data, creators.designer, creators.producer),
       });
+      return {
+        designerId: creators.designer?.id ?? null,
+        producerId: creators.producer?.id ?? null,
+        created: Boolean(creators.designer?.isNew || creators.producer?.isNew),
+      };
     });
   } catch (error) {
     if (error instanceof CreatorSelectionError) {
@@ -162,9 +173,14 @@ export async function updateCoin(
   );
 
   invalidateCoinBrowseCache();
-  invalidateCoreCatalogMetadataCache();
   invalidateCollectionCatalogMetadataCache();
-  invalidateCreatorCatalogMetadataCache();
+  const creatorCreditsChanged =
+    existingCoin?.designerCreatorId !== savedCreators.designerId ||
+    existingCoin?.producerCreatorId !== savedCreators.producerId;
+  if (creatorCreditsChanged || savedCreators.created) {
+    invalidateCoreCatalogMetadataCache();
+    invalidateCreatorCatalogMetadataCache();
+  }
   redirect(`/coins/${coinId}`);
 }
 

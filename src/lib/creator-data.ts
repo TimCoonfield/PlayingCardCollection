@@ -3,7 +3,8 @@ import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import {
   CATALOG_CACHE_REVALIDATE_SECONDS,
-  CREATOR_CATALOG_METADATA_CACHE_TAG,
+  CREATOR_PROFILES_CACHE_TAG,
+  creatorProfileCacheTag,
 } from "@/lib/catalog-cache";
 
 export const getCreatorPageData = cache((slug: string) =>
@@ -25,7 +26,7 @@ export const getCreatorPageData = cache((slug: string) =>
       }),
     ["creator-page-v1", slug],
     {
-      tags: [CREATOR_CATALOG_METADATA_CACHE_TAG],
+      tags: [CREATOR_PROFILES_CACHE_TAG, creatorProfileCacheTag(slug)],
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
     }
   )()

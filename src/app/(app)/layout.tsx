@@ -1,17 +1,11 @@
 import { getSession } from "@/lib/auth";
-import { getCreatorDirectory } from "@/lib/catalog-metadata";
+import { getFavoriteCreators } from "@/lib/catalog-metadata";
 import { NavBar } from "./nav-bar";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const [session, creators] = await Promise.all([getSession(), getCreatorDirectory()]);
+  const [session, creators] = await Promise.all([getSession(), getFavoriteCreators()]);
   const isAuthenticated = Boolean(session.authenticated);
   const creatorNavItems = creators
-    .filter((creator) => creator.favorite)
-    .sort(
-      (left, right) =>
-        right.deckCount - left.deckCount ||
-        (left.displayName ?? left.name).localeCompare(right.displayName ?? right.name)
-    )
     .slice(0, 6)
     .map((creator) => ({
       name: creator.displayName ?? creator.name,

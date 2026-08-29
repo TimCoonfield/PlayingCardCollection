@@ -14,7 +14,7 @@ import {
 } from "@/components/icons";
 import {
   getCoreCatalogMetadata,
-  getCreatorDirectory,
+  getFavoriteCreators,
   getHomePageMetadata,
 } from "@/lib/catalog-metadata";
 import { getRecentDecks } from "@/lib/catalog-browse";
@@ -23,17 +23,10 @@ export default async function HomePage() {
   const [metadata, homeMetadata, creators, recentDecks] = await Promise.all([
     getCoreCatalogMetadata(),
     getHomePageMetadata(),
-    getCreatorDirectory(),
+    getFavoriteCreators(),
     getRecentDecks(),
   ]);
-  const creatorsData = creators
-    .filter((creator) => creator.favorite)
-    .sort(
-      (left, right) =>
-        right.deckCount - left.deckCount ||
-        right.coinCount - left.coinCount ||
-        (left.displayName ?? left.name).localeCompare(right.displayName ?? right.name)
-    );
+  const creatorsData = creators;
 
   const specialtyCollections = [
     {

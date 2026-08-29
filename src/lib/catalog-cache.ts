@@ -8,7 +8,9 @@ export const CORE_CATALOG_METADATA_CACHE_TAG = "catalog-metadata-core";
 export const HOME_CATALOG_METADATA_CACHE_TAG = "catalog-metadata-home";
 export const STATS_CATALOG_METADATA_CACHE_TAG = "catalog-metadata-stats";
 export const COLLECTION_CATALOG_METADATA_CACHE_TAG = "catalog-metadata-collection";
-export const CREATOR_CATALOG_METADATA_CACHE_TAG = "catalog-metadata-creators";
+export const CREATOR_DIRECTORY_CACHE_TAG = "catalog-creators-directory";
+export const FAVORITE_CREATORS_CACHE_TAG = "catalog-creators-favorites";
+export const CREATOR_PROFILES_CACHE_TAG = "catalog-creator-profiles";
 export const ARCHIVE_SERIES_METADATA_CACHE_TAG = "catalog-metadata-archive-series";
 export const FAVORITE_DECK_IMAGES_CACHE_TAG = "catalog-favorite-deck-images";
 export const RECENT_DECKS_CACHE_TAG = "catalog-recent-decks";
@@ -21,6 +23,10 @@ export function deckBrowsePageCacheTag(page: number) {
 
 export function publicDeckDetailCacheTag(deckId: string) {
   return `catalog-public-deck-${deckId}`;
+}
+
+export function creatorProfileCacheTag(slug: string) {
+  return `catalog-creator-profile-${slug}`;
 }
 
 // These helpers are intentionally mutation-specific. updateTag gives the authenticated owner
@@ -63,7 +69,12 @@ export function invalidateCollectionCatalogMetadataCache() {
 }
 
 export function invalidateCreatorCatalogMetadataCache() {
-  updateTag(CREATOR_CATALOG_METADATA_CACHE_TAG);
+  updateTag(CREATOR_DIRECTORY_CACHE_TAG);
+  updateTag(FAVORITE_CREATORS_CACHE_TAG);
+}
+
+export function invalidateCreatorProfileCache(slug: string) {
+  updateTag(creatorProfileCacheTag(slug));
 }
 
 export function invalidateArchiveSeriesMetadataCache() {

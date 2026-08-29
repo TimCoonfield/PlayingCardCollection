@@ -371,7 +371,7 @@ export async function updateDeck(
   if (designerChanged || producerChanged || releaseYearChanged || savedRelations.seriesIsNew) {
     invalidateCollectionCatalogMetadataCache();
   }
-  if (designerChanged || producerChanged || nameChanged || imagesChanged) {
+  if (designerChanged || producerChanged || savedRelations.creatorIsNew) {
     invalidateCreatorCatalogMetadataCache();
   }
   if (tagsChanged || seriesChanged) invalidateHomeCatalogMetadataCache();
