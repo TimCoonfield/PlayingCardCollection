@@ -7,7 +7,7 @@ import {
   coinDetailCacheTag,
 } from "@/lib/catalog-cache";
 
-export const getCoinPageData = cache((id: string) =>
+const getCachedCoinPageData = (id: string) =>
   unstable_cache(
     () =>
       prisma.coin.findUnique({
@@ -22,5 +22,16 @@ export const getCoinPageData = cache((id: string) =>
       tags: [COIN_DETAILS_CACHE_TAG, coinDetailCacheTag(id)],
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
     }
-  )()
-);
+  )();
+
+export const getCoinPageData = cache(async (id: string) => {
+  const coin = await getCachedCoinPageData(id);
+  if (!coin) return null;
+
+  // Keep cache hits type-equivalent to direct Prisma results.
+  return {
+    ...coin,
+    createdAt: new Date(coin.createdAt),
+    updatedAt: new Date(coin.updatedAt),
+  };
+});
