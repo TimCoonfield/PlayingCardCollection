@@ -130,6 +130,8 @@ src/
     creator-schemas.ts         # Creator editor validation
     creator-slug.ts            # stable collision-safe Creator slug helpers
     creator-write.ts           # transactional Creator selection/creation shared by Deck/Coin writes
+    deck-data.ts               # cached Deck detail-page lookup
+    coin-data.ts               # cached Coin detail-page lookup
     placeholders.ts            # tag → line-icon (TagIconName) + accent-color placeholder rules
     collection-reasons.ts      # CollectionReason enum values, labels, and descriptions
     collection-sort.ts         # shared sort-mode logic (featured/alpha/year/recent/random) for /collection + landing pages
@@ -150,6 +152,7 @@ src/
       upload/route.ts          # Vercel Blob client-upload token endpoint (session-gated)
       ai/identify/route.ts      # Claude deck-identification endpoint (session-gated)
       archive-search/route.ts   # global search endpoint (decks/creators/series/producers/archives) behind the nav-bar spotlight
+      admin/revalidate-catalog/ # secret-gated cache refresh endpoint for out-of-band maintenance scripts
       catalog/decks/            # public, read-only agent API: paged search + single-Deck detail JSON
     (app)/                    # the route group for the whole authenticated-and-public app shell
       layout.tsx                # NavBar + page shell, reads session for isAuthenticated
@@ -212,8 +215,10 @@ src/
 1. Install dependencies: `npm install` (this also runs `prisma generate` via `postinstall`).
 2. `.env.local` must define (see README.md for the full explanation of each):
    `DATABASE_URL`, `SHADOW_DATABASE_URL`, `BLOB_READ_WRITE_TOKEN`, `ANTHROPIC_API_KEY`,
-   `SESSION_SECRET`, `APP_PASSWORD`. (A `VERCEL_OIDC_TOKEN` var also appears locally but is
-   Vercel-CLI-managed, not something you set by hand.)
+   `SESSION_SECRET`, `APP_PASSWORD`, `CACHE_REVALIDATION_SECRET`. Creator merges against a
+   deployed database also require a local `CATALOG_REVALIDATION_URL`. (A
+   `VERCEL_OIDC_TOKEN` var also appears locally but is Vercel-CLI-managed, not something you
+   set by hand.)
 3. Database: README documents `npx prisma dev` (Prisma's local Postgres, no Docker) as the local
    Postgres. **In practice, treat this as unreliable for schema changes** — see [§12](#12-database-and-migration-safety)
    for the actual working migration procedure used throughout this project's history.
@@ -664,7 +669,8 @@ beyond Vercel's own auto-detection) — verification is entirely manual/local ri
   defined in this repo.
 - **Environment variables** must be set in the Vercel project settings, matching `.env.local`'s
   keys: `DATABASE_URL`, `BLOB_READ_WRITE_TOKEN`, `ANTHROPIC_API_KEY`, `SESSION_SECRET`,
-  `APP_PASSWORD` (`SHADOW_DATABASE_URL` is a local-migration-only concern, likely not needed in
+  `APP_PASSWORD`, `CACHE_REVALIDATION_SECRET` (`SHADOW_DATABASE_URL` and
+  `CATALOG_REVALIDATION_URL` are local maintenance concerns, likely not needed in
   prod). Prisma client generation runs automatically via the `postinstall` script during
   Vercel's build.
 - **Database migrations do not run automatically on deploy** — there is no deploy-time migration

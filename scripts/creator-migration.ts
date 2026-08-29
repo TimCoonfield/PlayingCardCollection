@@ -78,11 +78,70 @@ async function applyApprovedMerges() {
     return;
   }
 
-  for (const row of approved) {
-    await mergeCreators(row.keepId, row.removeId, row.keepName, row.removeName);
-    console.log(`Merged ${row.removeName} into ${row.keepName}`);
+  const skipCacheRefresh = args.includes("--skip-cache-refresh");
+  if (skipCacheRefresh) {
+    console.warn(
+      "Skipping application cache refresh. Use this only for local/offline databases; production pages may remain stale."
+    );
+  } else {
+    await refreshCatalogCaches(true);
   }
-  console.log(`Applied ${approved.length} approved Creator merge(s).`);
+
+  let applied = 0;
+  let mergeError: unknown;
+  try {
+    for (const row of approved) {
+      await mergeCreators(row.keepId, row.removeId, row.keepName, row.removeName);
+      applied += 1;
+      console.log(`Merged ${row.removeName} into ${row.keepName}`);
+    }
+  } catch (error) {
+    mergeError = error;
+  }
+
+  let refreshError: unknown;
+  if (!skipCacheRefresh && applied > 0) {
+    try {
+      await refreshCatalogCaches(false);
+    } catch (error) {
+      refreshError = error;
+    }
+  }
+
+  if (mergeError && refreshError) {
+    throw new AggregateError(
+      [mergeError, refreshError],
+      "A Creator merge failed, and the cache refresh after the completed merges also failed."
+    );
+  }
+  if (mergeError) throw mergeError;
+  if (refreshError) throw refreshError;
+  console.log(`Applied ${applied} approved Creator merge(s).`);
+}
+
+async function refreshCatalogCaches(dryRun: boolean) {
+  const endpoint = process.env.CATALOG_REVALIDATION_URL?.trim();
+  const secret = process.env.CACHE_REVALIDATION_SECRET;
+  if (!endpoint || !secret?.trim()) {
+    throw new Error(
+      "Creator merges require CATALOG_REVALIDATION_URL and CACHE_REVALIDATION_SECRET. " +
+      "Configure both, or use --skip-cache-refresh only for a local/offline database."
+    );
+  }
+
+  const url = new URL(endpoint);
+  if (dryRun) url.searchParams.set("dryRun", "1");
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${secret}` },
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(
+      `Catalog cache ${dryRun ? "preflight" : "refresh"} failed (${response.status}): ${message}`
+    );
+  }
+  console.log(dryRun ? "Catalog cache refresh preflight passed." : "Application caches refreshed.");
 }
 
 async function mergeCreators(

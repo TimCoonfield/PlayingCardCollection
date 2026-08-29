@@ -40,6 +40,10 @@ Fill these into `.env.local` (local) and as Vercel project env vars (prod):
    separate one for prod with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
 5. **`APP_PASSWORD`** — the password used to log in to the app. Set this to something
    real before deploying.
+6. **`CACHE_REVALIDATION_SECRET`** — a separate random secret used only by maintenance
+   scripts to authenticate catalog-cache refresh requests. Generate it like the session
+   secret and set the same value in Vercel and in the local environment used to run a
+   production maintenance script.
 
 ## Deploying
 
@@ -76,4 +80,9 @@ npm run creators:migrate -- reconcile
 ```
 
 The report is written to `reports/creator-merge-review.csv`. Regenerate it against the target
-database before reviewing so Deck and Coin counts reflect that database.
+database before reviewing so Deck and Coin counts reflect that database. Before applying merges,
+set `CATALOG_REVALIDATION_URL` to the deployed endpoint (for example,
+`https://your-site.example/api/admin/revalidate-catalog`) and make sure the local
+`CACHE_REVALIDATION_SECRET` matches the deployed value. The apply command verifies that endpoint
+before making any database changes and refreshes all application caches afterward. Use
+`--skip-cache-refresh` only when the target is a local or otherwise offline database.
