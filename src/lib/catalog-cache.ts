@@ -16,6 +16,8 @@ export const FAVORITE_DECK_IMAGES_CACHE_TAG = "catalog-favorite-deck-images";
 export const RECENT_DECKS_CACHE_TAG = "catalog-recent-decks";
 export const SERIES_SPOTLIGHT_CACHE_TAG = "catalog-series-spotlights";
 export const PUBLIC_DECK_DETAILS_CACHE_TAG = "catalog-public-deck-details";
+export const SERIES_PAGES_CACHE_TAG = "catalog-series-pages";
+export const COIN_DETAILS_CACHE_TAG = "catalog-coin-details";
 
 export function deckBrowsePageCacheTag(page: number) {
   return `catalog-deck-browse-page-${page}`;
@@ -27,6 +29,14 @@ export function publicDeckDetailCacheTag(deckId: string) {
 
 export function creatorProfileCacheTag(slug: string) {
   return `catalog-creator-profile-${slug}`;
+}
+
+export function seriesPageCacheTag(slug: string) {
+  return `catalog-series-page-${slug}`;
+}
+
+export function coinDetailCacheTag(coinId: string) {
+  return `catalog-coin-${coinId}`;
 }
 
 // These helpers are intentionally mutation-specific. updateTag gives the authenticated owner
@@ -99,4 +109,16 @@ export function invalidatePublicDeckDetail(deckId: string) {
 
 export function invalidateAllPublicDeckDetails() {
   updateTag(PUBLIC_DECK_DETAILS_CACHE_TAG);
+}
+
+export function invalidateSeriesPageCache(slug: string) {
+  updateTag(seriesPageCacheTag(slug));
+}
+
+export function invalidateCoinDetailCache(coinId: string) {
+  updateTag(coinDetailCacheTag(coinId));
+}
+
+export function invalidateAllCoinDetails() {
+  updateTag(COIN_DETAILS_CACHE_TAG);
 }

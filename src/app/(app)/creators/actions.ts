@@ -7,12 +7,14 @@ import { getSession } from "@/lib/auth";
 import { deleteUnreferencedBlobUrls } from "@/lib/blob-cleanup";
 import {
   invalidateAllDeckBrowsePages,
+  invalidateAllCoinDetails,
   invalidateAllPublicDeckDetails,
   invalidateCoinBrowseCache,
   invalidateCollectionCatalogMetadataCache,
   invalidateCoreCatalogMetadataCache,
   invalidateCreatorCatalogMetadataCache,
   invalidateCreatorProfileCache,
+  invalidateSeriesPageCache,
   invalidateStatsCatalogMetadataCache,
 } from "@/lib/catalog-cache";
 import { joinDesignerNames } from "@/lib/designers";
@@ -55,6 +57,21 @@ export async function updateCreator(
   }
 
   const nameChanged = current.name !== parsed.data.name;
+  const affectedSeries = nameChanged
+    ? await prisma.series.findMany({
+        where: {
+          decks: {
+            some: {
+              OR: [
+                { designers: { some: { designerId: creatorId } } },
+                { producerCreatorId: creatorId },
+              ],
+            },
+          },
+        },
+        select: { slug: true },
+      })
+    : [];
   await prisma.$transaction(async (tx) => {
     await tx.creator.update({
       where: { id: creatorId },
@@ -116,6 +133,8 @@ export async function updateCreator(
     invalidateCollectionCatalogMetadataCache();
     invalidateStatsCatalogMetadataCache();
     invalidateAllPublicDeckDetails();
+    invalidateAllCoinDetails();
+    for (const series of affectedSeries) invalidateSeriesPageCache(series.slug);
   }
   refresh();
   return { saved: true };

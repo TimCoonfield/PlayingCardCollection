@@ -1,8 +1,7 @@
-import { cache } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { getCoinPageData } from "@/lib/coin-data";
 import { CoinGallery } from "@/components/coin-gallery";
 import { BackLink } from "@/components/back-link";
 import { CoinTagChip } from "@/components/coin-tag-chip";
@@ -18,24 +17,13 @@ import {
   serializeJsonLd,
 } from "@/lib/seo";
 
-// Wrapped in React's cache() so generateMetadata and the page body share one query per request.
-const getCoin = cache((id: string) =>
-  prisma.coin.findUnique({
-    where: { id },
-    include: {
-      designerCreator: { select: { name: true, slug: true } },
-      producerCreator: { select: { name: true, slug: true } },
-    },
-  })
-);
-
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const coin = await getCoin(id);
+  const coin = await getCoinPageData(id);
   if (!coin) return { title: "Coin Not Found" };
 
   const credit = [coin.designer, coin.producer].filter(Boolean).join(" / ");
@@ -59,7 +47,7 @@ export default async function CoinDetailPage({
 }) {
   const { id } = await params;
   const [coin, session] = await Promise.all([
-    getCoin(id),
+    getCoinPageData(id),
     getSession(),
   ]);
 

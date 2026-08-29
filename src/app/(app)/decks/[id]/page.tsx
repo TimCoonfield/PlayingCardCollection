@@ -1,9 +1,8 @@
-import { cache } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { getDeckPageData } from "@/lib/deck-data";
 import { DeckGallery } from "@/components/deck-gallery";
 import { StatTile } from "@/components/stat-tile";
 import { TagChip } from "@/components/tag-chip";
@@ -15,6 +14,7 @@ import { SeriesDeckNavigation } from "@/components/series-deck-navigation";
 import { getSession } from "@/lib/auth";
 import { deleteDeck } from "../actions";
 import { sortSeriesDecks } from "@/lib/series-order";
+import { getSeriesDeckNavigation } from "@/lib/series-data";
 import { SITE_URL } from "@/lib/site";
 import {
   WEBSITE_JSON_LD_REFERENCE,
@@ -27,36 +27,13 @@ import {
   type CollectionReasonValue,
 } from "@/lib/collection-reasons";
 
-// Wrapped in React's cache() so generateMetadata and the page body share one query per request.
-const getDeck = cache((id: string) =>
-  prisma.deck.findUnique({
-    where: { id },
-    include: {
-      images: { orderBy: { sortOrder: "asc" } },
-      editions: { orderBy: { deckNumber: "asc" } },
-      designers: {
-        orderBy: { sortOrder: "asc" },
-        select: { designer: { select: { name: true, slug: true } } },
-      },
-      producerCreator: { select: { name: true, slug: true } },
-      series: {
-        include: {
-          decks: {
-            select: { id: true, name: true, seriesOrder: true, releaseYear: true },
-          },
-        },
-      },
-    },
-  })
-);
-
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const deck = await getDeck(id);
+  const deck = await getDeckPageData(id);
   if (!deck) return { title: "Deck Not Found" };
 
   const designerNames = deck.designers.map(({ designer }) => designer.name);
@@ -84,7 +61,7 @@ export default async function DeckDetailPage({
 }) {
   const { id } = await params;
   const [deck, session] = await Promise.all([
-    getDeck(id),
+    getDeckPageData(id),
     getSession(),
   ]);
 
@@ -92,7 +69,8 @@ export default async function DeckDetailPage({
 
   const isAuthenticated = Boolean(session.authenticated);
   const deleteDeckWithId = deleteDeck.bind(null, deck.id);
-  const orderedSeriesDecks = deck.series ? sortSeriesDecks(deck.series.decks) : [];
+  const seriesDecks = deck.series ? await getSeriesDeckNavigation(deck.series.slug) : [];
+  const orderedSeriesDecks = sortSeriesDecks(seriesDecks);
   const seriesIndex = orderedSeriesDecks.findIndex((member) => member.id === deck.id);
   const previousDeck = seriesIndex > 0 ? orderedSeriesDecks[seriesIndex - 1] : null;
   const nextDeck = seriesIndex >= 0 && seriesIndex < orderedSeriesDecks.length - 1

@@ -20,6 +20,7 @@ import {
   invalidateHomeCatalogMetadataCache,
   invalidatePublicDeckDetail,
   invalidateRecentDecksCache,
+  invalidateSeriesPageCache,
   invalidateSeriesSpotlightCache,
   invalidateStatsCatalogMetadataCache,
 } from "@/lib/catalog-cache";
@@ -140,11 +141,11 @@ async function resolveDeckCreators(tx: Prisma.TransactionClient, values: DeckFor
 async function resolveSeries(
   tx: Prisma.TransactionClient,
   values: DeckFormValues
-): Promise<{ id: string; name: string; isNew: boolean } | null> {
+): Promise<{ id: string; name: string; slug: string; isNew: boolean } | null> {
   if (values.seriesId) {
     const selected = await tx.series.findUnique({
       where: { id: values.seriesId },
-      select: { id: true, name: true },
+      select: { id: true, name: true, slug: true },
     });
     if (!selected) throw new SeriesSelectionError("The selected Series no longer exists.");
     return { ...selected, isNew: false };
@@ -154,7 +155,7 @@ async function resolveSeries(
 
   const existing = await tx.series.findUnique({
     where: { name: values.newSeriesName },
-    select: { id: true, name: true },
+    select: { id: true, name: true, slug: true },
   });
   if (existing) return { ...existing, isNew: false };
 
@@ -168,7 +169,7 @@ async function resolveSeries(
     if (!occupied) {
       const created = await tx.series.create({
         data: { name: values.newSeriesName, slug },
-        select: { id: true, name: true },
+        select: { id: true, name: true, slug: true },
       });
       return { ...created, isNew: true };
     }
@@ -190,12 +191,12 @@ export async function createDeck(
     return { error: "Please fix the errors below.", fieldErrors: flatten(parsed.error) };
   }
 
-  let deck: { id: string };
+  let deck: { id: string; seriesSlug: string | null };
   try {
     deck = await prisma.$transaction(async (tx) => {
       const series = await resolveSeries(tx, parsed.data);
       const creators = await resolveDeckCreators(tx, parsed.data);
-      return tx.deck.create({
+      const created = await tx.deck.create({
         data: {
           ...toDeckData(parsed.data, series, creators.designers, creators.producer),
           images: {
@@ -213,6 +214,7 @@ export async function createDeck(
         },
         select: { id: true },
       });
+      return { id: created.id, seriesSlug: series?.slug ?? null };
     });
   } catch (error) {
     if (error instanceof SeriesSelectionError) {
@@ -228,6 +230,7 @@ export async function createDeck(
   invalidateAllCatalogMetadataCaches();
   invalidateRecentDecksCache();
   invalidateSeriesSpotlightCache();
+  if (deck.seriesSlug) invalidateSeriesPageCache(deck.seriesSlug);
   invalidatePublicDeckDetail(deck.id);
   redirect(`/decks/${deck.id}`);
 }
@@ -251,6 +254,8 @@ export async function updateDeck(
     select: {
       name: true,
       seriesId: true,
+      seriesOrder: true,
+      series: { select: { slug: true } },
       designers: {
         orderBy: { sortOrder: "asc" },
         select: { designer: { select: { name: true } } },
@@ -277,6 +282,7 @@ export async function updateDeck(
 
   let savedRelations = {
     seriesId: null as string | null,
+    seriesSlug: null as string | null,
     seriesIsNew: false,
     designerNames: [] as string[],
     producerId: null as string | null,
@@ -313,6 +319,7 @@ export async function updateDeck(
       });
       return {
         seriesId: series?.id ?? null,
+        seriesSlug: series?.slug ?? null,
         seriesIsNew: series?.isNew ?? false,
         designerNames: creators.designers.map(({ name }) => name),
         producerId: creators.producer?.id ?? null,
@@ -339,6 +346,7 @@ export async function updateDeck(
   const imagesChanged = !sameStrings(previousImageUrls, parsed.data.imageUrls);
   const nameChanged = existingDeck.name !== parsed.data.name;
   const seriesChanged = existingDeck.seriesId !== savedRelations.seriesId;
+  const seriesOrderChanged = existingDeck.seriesOrder !== (parsed.data.seriesOrder ?? null);
   const designerChanged = !sameStrings(
     existingDeck.designers.map(({ designer }) => designer.name),
     savedRelations.designerNames
@@ -383,6 +391,24 @@ export async function updateDeck(
   if (nameChanged || seriesChanged || tagsChanged || imagesChanged) {
     invalidateSeriesSpotlightCache();
   }
+  if (
+    nameChanged ||
+    seriesChanged ||
+    seriesOrderChanged ||
+    designerChanged ||
+    producerChanged ||
+    quantityChanged ||
+    releaseYearChanged ||
+    tagsChanged ||
+    imagesChanged
+  ) {
+    const affectedSeriesSlugs = new Set(
+      [existingDeck.series?.slug, savedRelations.seriesSlug].filter(
+        (slug): slug is string => Boolean(slug)
+      )
+    );
+    for (const slug of affectedSeriesSlugs) invalidateSeriesPageCache(slug);
+  }
   redirect(`/decks/${deckId}`);
 }
 
@@ -400,7 +426,10 @@ export async function updateDeckReleaseYear(
     return { status: "error", message: parsed.error.issues[0]?.message ?? "Enter a valid year" };
   }
 
-  const deck = await prisma.deck.findUnique({ where: { id: deckId }, select: { name: true } });
+  const deck = await prisma.deck.findUnique({
+    where: { id: deckId },
+    select: { name: true, series: { select: { slug: true } } },
+  });
   if (!deck) return { status: "error", message: "This deck no longer exists." };
   const browsePage = await getDeckBrowsePageIndex(deck.name, deckId);
 
@@ -416,6 +445,7 @@ export async function updateDeckReleaseYear(
   invalidateCollectionCatalogMetadataCache();
   invalidateStatsCatalogMetadataCache();
   invalidatePublicDeckDetail(deckId);
+  if (deck.series?.slug) invalidateSeriesPageCache(deck.series.slug);
   return { status: "saved", message: "Saved", savedYear: parsed.data };
 }
 
@@ -426,7 +456,11 @@ export async function deleteDeck(deckId: string) {
 
   const deck = await prisma.deck.findUnique({
     where: { id: deckId },
-    select: { favorite: true, images: { select: { url: true } } },
+    select: {
+      favorite: true,
+      series: { select: { slug: true } },
+      images: { select: { url: true } },
+    },
   });
   await prisma.deck.delete({ where: { id: deckId } });
   await deleteUnreferencedBlobUrls(deck?.images.map(({ url }) => url) ?? []);
@@ -435,6 +469,7 @@ export async function deleteDeck(deckId: string) {
   invalidateRecentDecksCache();
   invalidateSeriesSpotlightCache();
   invalidatePublicDeckDetail(deckId);
+  if (deck?.series?.slug) invalidateSeriesPageCache(deck.series.slug);
   if (deck?.favorite) invalidateFavoriteDeckImagesCache();
   redirect("/collection");
 }
@@ -444,7 +479,7 @@ export async function toggleFavorite(deckId: string) {
 
   const deck = await prisma.deck.findUnique({
     where: { id: deckId },
-    select: { favorite: true, name: true },
+    select: { favorite: true, name: true, series: { select: { slug: true } } },
   });
   if (!deck) return;
 
@@ -454,6 +489,7 @@ export async function toggleFavorite(deckId: string) {
   invalidateFavoriteDeckImagesCache();
   invalidateRecentDecksCache();
   invalidatePublicDeckDetail(deckId);
+  if (deck.series?.slug) invalidateSeriesPageCache(deck.series.slug);
   refresh();
 }
 
@@ -462,7 +498,7 @@ export async function toggleWhiteWhale(deckId: string) {
 
   const deck = await prisma.deck.findUnique({
     where: { id: deckId },
-    select: { whiteWhale: true, name: true },
+    select: { whiteWhale: true, name: true, series: { select: { slug: true } } },
   });
   if (!deck) return;
 
@@ -475,6 +511,7 @@ export async function toggleWhiteWhale(deckId: string) {
   invalidateHomeCatalogMetadataCache();
   invalidateRecentDecksCache();
   invalidatePublicDeckDetail(deckId);
+  if (deck.series?.slug) invalidateSeriesPageCache(deck.series.slug);
   refresh();
 }
 

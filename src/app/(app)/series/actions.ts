@@ -9,6 +9,7 @@ import {
   invalidateAllPublicDeckDetails,
   invalidateArchiveSeriesMetadataCache,
   invalidateCollectionCatalogMetadataCache,
+  invalidateSeriesPageCache,
   invalidateStatsCatalogMetadataCache,
 } from "@/lib/catalog-cache";
 import { deleteUnreferencedBlobUrls } from "@/lib/blob-cleanup";
@@ -84,6 +85,7 @@ export async function updateSeries(
     invalidateArchiveSeriesMetadataCache();
   }
   if (nameChanged || subtitleChanged) invalidateAllPublicDeckDetails();
+  invalidateSeriesPageCache(current.slug);
   refresh();
   return { saved: true };
 }

@@ -9,6 +9,7 @@ import { deleteUnreferencedBlobUrls } from "@/lib/blob-cleanup";
 import {
   invalidateCollectionCatalogMetadataCache,
   invalidateCoinBrowseCache,
+  invalidateCoinDetailCache,
   invalidateCoreCatalogMetadataCache,
   invalidateCreatorCatalogMetadataCache,
 } from "@/lib/catalog-cache";
@@ -173,6 +174,7 @@ export async function updateCoin(
   );
 
   invalidateCoinBrowseCache();
+  invalidateCoinDetailCache(coinId);
   invalidateCollectionCatalogMetadataCache();
   const creatorCreditsChanged =
     existingCoin?.designerCreatorId !== savedCreators.designerId ||
@@ -200,6 +202,7 @@ export async function deleteCoin(coinId: string) {
     )
   );
   invalidateCoinBrowseCache();
+  invalidateCoinDetailCache(coinId);
   invalidateCoreCatalogMetadataCache();
   invalidateCollectionCatalogMetadataCache();
   invalidateCreatorCatalogMetadataCache();
