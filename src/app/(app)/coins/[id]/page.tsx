@@ -11,6 +11,12 @@ import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { getSession } from "@/lib/auth";
 import { deleteCoin } from "../actions";
 import { SITE_URL } from "@/lib/site";
+import {
+  WEBSITE_JSON_LD_REFERENCE,
+  breadcrumbJsonLd,
+  buildPageMetadata,
+  serializeJsonLd,
+} from "@/lib/seo";
 
 // Wrapped in React's cache() so generateMetadata and the page body share one query per request.
 const getCoin = cache((id: string) => prisma.coin.findUnique({ where: { id } }));
@@ -28,11 +34,14 @@ export async function generateMetadata({
   const description = coin.notes ?? [coin.name, credit, coin.releaseYear].filter(Boolean).join(" — ");
   const image = coin.obverseImageUrl ?? coin.reverseImageUrl ?? undefined;
 
-  return {
+  return buildPageMetadata({
     title: coin.name,
     description,
-    openGraph: image ? { images: [{ url: image }] } : undefined,
-  };
+    path: `/coins/${coin.id}`,
+    image,
+    imageAlt: `${coin.name} collector coin`,
+    keywords: ["collector coin", ...coin.tags],
+  });
 }
 
 export default async function CoinDetailPage({
@@ -54,24 +63,81 @@ export default async function CoinDetailPage({
     .filter((url): url is string => Boolean(url))
     .map((url) => ({ url }));
 
+  const coinUrl = `${SITE_URL}/coins/${coin.id}`;
+  const additionalProperty = [
+    coin.qty > 1
+      ? { "@type": "PropertyValue", name: "Copies in collection", value: coin.qty }
+      : null,
+    coin.ownershipStatus
+      ? { "@type": "PropertyValue", name: "Ownership status", value: coin.ownershipStatus }
+      : null,
+  ].filter(Boolean);
   const coinJsonLd = {
     "@context": "https://schema.org",
-    "@type": "CreativeWork",
-    name: coin.name,
-    description: coin.notes ?? undefined,
-    url: `${SITE_URL}/coins/${coin.id}`,
-    image: galleryImages.map((image) => image.url),
-    creator: coin.designer ? { "@type": "Person", name: coin.designer } : undefined,
-    publisher: coin.producer ? { "@type": "Organization", name: coin.producer } : undefined,
-    dateCreated: coin.releaseYear ? String(coin.releaseYear) : undefined,
-    keywords: coin.tags.length > 0 ? coin.tags.join(", ") : undefined,
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": `${coinUrl}#webpage`,
+        url: coinUrl,
+        name: coin.name,
+        description: coin.notes ?? undefined,
+        isPartOf: WEBSITE_JSON_LD_REFERENCE,
+        mainEntity: { "@id": `${coinUrl}#coin` },
+        primaryImageOfPage: galleryImages[0]
+          ? { "@type": "ImageObject", url: galleryImages[0].url }
+          : undefined,
+        breadcrumb: { "@id": `${coinUrl}#breadcrumb` },
+        dateModified: coin.updatedAt.toISOString(),
+      },
+      {
+        "@type": "CreativeWork",
+        "@id": `${coinUrl}#coin`,
+        name: coin.name,
+        url: coinUrl,
+        mainEntityOfPage: { "@id": `${coinUrl}#webpage` },
+        description: coin.notes ?? undefined,
+        image: galleryImages.map((image) => image.url),
+        genre: "Collector coin",
+        creator: coin.designer ? { "@type": "Person", name: coin.designer } : undefined,
+        producer: coin.producer
+          ? {
+              "@type": coin.producer === coin.designer ? "Person" : "Organization",
+              name: coin.producer,
+            }
+          : undefined,
+        creditText: [coin.designer, coin.producer].filter(Boolean).join(" / ") || undefined,
+        datePublished: coin.releaseYear ? String(coin.releaseYear) : undefined,
+        material: coin.material ?? undefined,
+        size: coin.diameter ?? undefined,
+        keywords: coin.tags.length > 0 ? coin.tags : undefined,
+        identifier: coin.catalogNumber
+          ? {
+              "@type": "PropertyValue",
+              propertyID: "Card Guy Archive catalog number",
+              value: coin.catalogNumber,
+            }
+          : undefined,
+        isPartOf: coin.series
+          ? { "@type": "CreativeWorkSeries", name: coin.series }
+          : undefined,
+        additionalProperty: additionalProperty.length > 0 ? additionalProperty : undefined,
+      },
+      breadcrumbJsonLd(
+        [
+          { name: "Collection", path: "/collection" },
+          { name: "Coins", path: "/collection?type=coin" },
+          { name: coin.name, path: `/coins/${coin.id}` },
+        ],
+        `/coins/${coin.id}`
+      ),
+    ],
   };
 
   return (
     <div className="flex flex-col gap-6">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(coinJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(coinJsonLd) }}
       />
       <div className="flex items-center justify-between">
         <BackLink fallbackHref="/coins">← Back to coins</BackLink>

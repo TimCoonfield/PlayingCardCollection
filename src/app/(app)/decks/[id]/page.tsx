@@ -17,6 +17,12 @@ import { deleteDeck } from "../actions";
 import { sortSeriesDecks } from "@/lib/series-order";
 import { SITE_URL } from "@/lib/site";
 import {
+  WEBSITE_JSON_LD_REFERENCE,
+  breadcrumbJsonLd,
+  buildPageMetadata,
+  serializeJsonLd,
+} from "@/lib/seo";
+import {
   COLLECTION_REASON_DETAILS,
   type CollectionReasonValue,
 } from "@/lib/collection-reasons";
@@ -60,11 +66,14 @@ export async function generateMetadata({
     [deck.name, credit, deck.releaseYear].filter(Boolean).join(" — ");
   const image = deck.images[0]?.url;
 
-  return {
+  return buildPageMetadata({
     title: deck.name,
     description,
-    openGraph: image ? { images: [{ url: image }] } : undefined,
-  };
+    path: `/decks/${deck.id}`,
+    image,
+    imageAlt: `${deck.name} playing card deck`,
+    keywords: ["playing cards", "playing card deck", ...deck.tags],
+  });
 }
 
 export default async function DeckDetailPage({
@@ -94,29 +103,102 @@ export default async function DeckDetailPage({
   ].filter((reason): reason is CollectionReasonValue => reason !== null);
   const designerNames = deck.designers.map(({ designer }) => designer.name);
 
+  const deckUrl = `${SITE_URL}/decks/${deck.id}`;
+  const description = deck.hook ?? deck.notes ?? undefined;
+  const additionalProperty = [
+    deck.qty > 1
+      ? { "@type": "PropertyValue", name: "Copies in collection", value: deck.qty }
+      : null,
+    deck.productionRun
+      ? { "@type": "PropertyValue", name: "Production run", value: deck.productionRun }
+      : null,
+    deck.editions.length > 0
+      ? {
+          "@type": "PropertyValue",
+          name: "Numbered copies in collection",
+          value: deck.editions.map((edition) =>
+            deck.productionRun
+              ? `${edition.deckNumber}/${deck.productionRun}`
+              : String(edition.deckNumber)
+          ).join(", "),
+        }
+      : null,
+  ].filter(Boolean);
   const deckJsonLd = {
     "@context": "https://schema.org",
-    "@type": "CreativeWork",
-    name: deck.name,
-    description: deck.hook ?? deck.notes ?? undefined,
-    url: `${SITE_URL}/decks/${deck.id}`,
-    image: deck.images.map((image) => image.url),
-    creator: designerNames.length > 0
-      ? designerNames.map((name) => ({ "@type": "Person", name }))
-      : undefined,
-    publisher: deck.producer ? { "@type": "Organization", name: deck.producer } : undefined,
-    dateCreated: deck.releaseYear ? String(deck.releaseYear) : undefined,
-    keywords: deck.tags.length > 0 ? deck.tags.join(", ") : undefined,
-    isPartOf: deck.series
-      ? { "@type": "CollectionPage", name: deck.series.name, url: `${SITE_URL}/series/${deck.series.slug}` }
-      : undefined,
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": `${deckUrl}#webpage`,
+        url: deckUrl,
+        name: deck.name,
+        description,
+        isPartOf: WEBSITE_JSON_LD_REFERENCE,
+        mainEntity: { "@id": `${deckUrl}#deck` },
+        primaryImageOfPage: deck.images[0]
+          ? { "@type": "ImageObject", url: deck.images[0].url }
+          : undefined,
+        breadcrumb: { "@id": `${deckUrl}#breadcrumb` },
+        dateModified: deck.updatedAt.toISOString(),
+      },
+      {
+        "@type": "CreativeWork",
+        "@id": `${deckUrl}#deck`,
+        name: deck.name,
+        url: deckUrl,
+        mainEntityOfPage: { "@id": `${deckUrl}#webpage` },
+        abstract: deck.hook ?? undefined,
+        description,
+        image: deck.images.map((image) => image.url),
+        genre: "Playing cards",
+        creator: designerNames.length > 0
+          ? designerNames.map((name) => ({ "@type": "Person", name }))
+          : undefined,
+        producer: deck.producer
+          ? {
+              "@type": designerNames.includes(deck.producer) ? "Person" : "Organization",
+              name: deck.producer,
+            }
+          : undefined,
+        creditText: [...designerNames, deck.producer].filter(Boolean).join(" / ") || undefined,
+        datePublished: deck.releaseYear ? String(deck.releaseYear) : undefined,
+        keywords: deck.tags.length > 0 ? deck.tags : undefined,
+        identifier: deck.catalogNumber
+          ? {
+              "@type": "PropertyValue",
+              propertyID: "Card Guy Archive catalog number",
+              value: deck.catalogNumber,
+            }
+          : undefined,
+        position: deck.seriesOrder ?? undefined,
+        isPartOf: deck.series
+          ? {
+              "@type": "CreativeWorkSeries",
+              "@id": `${SITE_URL}/series/${deck.series.slug}#series`,
+              name: deck.series.name,
+              url: `${SITE_URL}/series/${deck.series.slug}`,
+            }
+          : undefined,
+        additionalProperty: additionalProperty.length > 0 ? additionalProperty : undefined,
+      },
+      breadcrumbJsonLd(
+        [
+          { name: "Collection", path: "/collection" },
+          ...(deck.series
+            ? [{ name: deck.series.name, path: `/series/${deck.series.slug}` }]
+            : []),
+          { name: deck.name, path: `/decks/${deck.id}` },
+        ],
+        `/decks/${deck.id}`
+      ),
+    ],
   };
 
   return (
     <div className="flex flex-col gap-6">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(deckJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(deckJsonLd) }}
       />
       {deck.series && (
         <SeriesDeckNavigation
