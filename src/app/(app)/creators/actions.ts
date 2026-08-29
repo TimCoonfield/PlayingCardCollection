@@ -14,6 +14,7 @@ import {
   invalidateCoreCatalogMetadataCache,
   invalidateCreatorCatalogMetadataCache,
   invalidateCreatorProfileCache,
+  invalidateRecentDecksCache,
   invalidateSeriesPageCache,
   invalidateStatsCatalogMetadataCache,
 } from "@/lib/catalog-cache";
@@ -134,6 +135,7 @@ export async function updateCreator(
     invalidateStatsCatalogMetadataCache();
     invalidateAllPublicDeckDetails();
     invalidateAllCoinDetails();
+    invalidateRecentDecksCache();
     for (const series of affectedSeries) invalidateSeriesPageCache(series.slug);
   }
   refresh();

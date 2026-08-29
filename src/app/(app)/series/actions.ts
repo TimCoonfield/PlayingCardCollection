@@ -9,6 +9,7 @@ import {
   invalidateAllPublicDeckDetails,
   invalidateArchiveSeriesMetadataCache,
   invalidateCollectionCatalogMetadataCache,
+  invalidateRecentDecksCache,
   invalidateSeriesPageCache,
   invalidateStatsCatalogMetadataCache,
 } from "@/lib/catalog-cache";
@@ -83,6 +84,7 @@ export async function updateSeries(
     invalidateCollectionCatalogMetadataCache();
     invalidateStatsCatalogMetadataCache();
     invalidateArchiveSeriesMetadataCache();
+    invalidateRecentDecksCache();
   }
   if (nameChanged || subtitleChanged) invalidateAllPublicDeckDetails();
   invalidateSeriesPageCache(current.slug);
