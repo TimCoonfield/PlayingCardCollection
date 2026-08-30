@@ -259,8 +259,9 @@ The primary entity. Key fields beyond the obvious (`name`, `designers`, `produce
   are present and are filterable independently or together on `/collection`; they are deliberately
   separate from tags.
 - Editorial depth is split across `hook` (nullable `VARCHAR(240)`, one-sentence public lead), the
-  legacy `notes` text field (preserved as concise Deck/copy commentary), and `essay` (nullable
-  Markdown long-form context). `notesReviewedAt` is an explicit owner-set timestamp and must never
+  legacy `notes` text field (Markdown-capable when rendered and preserved as concise Deck/copy
+  commentary), and `essay` (nullable Markdown long-form context). `notesReviewedAt` is an explicit
+  owner-set timestamp and must never
   be inferred from whether any editorial field is populated. Hook and essay are intentionally not
   searchable; legacy notes retain their existing search behavior.
 - `favorite: Boolean` — deck-only (Coin has no equivalent field). Drives `/collection` sort order

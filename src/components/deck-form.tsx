@@ -412,11 +412,11 @@ export function DeckForm({
           defaultValue={defaultValues.notes}
           className={inputClass}
         />
-        {showEditorialFields && (
-          <span className="text-xs text-felt-sub/80">
-            Deck- or copy-specific collector commentary and concise factual context.
-          </span>
-        )}
+        <span className="text-xs text-felt-sub/80">
+          {showEditorialFields
+            ? "Deck- or copy-specific collector commentary and concise factual context. Markdown is supported."
+            : "Markdown is supported."}
+        </span>
       </Field>
 
       {showEditorialFields && (

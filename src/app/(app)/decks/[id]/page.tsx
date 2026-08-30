@@ -10,6 +10,7 @@ import { PencilIcon, TrashIcon, HeartIcon, WhaleIcon } from "@/components/icons"
 import { FavoriteButton } from "@/components/favorite-button";
 import { WhiteWhaleButton } from "@/components/white-whale-button";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
+import { MarkdownNote } from "@/components/markdown-note";
 import { SeriesDeckNavigation } from "@/components/series-deck-navigation";
 import { getSession } from "@/lib/auth";
 import { deleteDeck } from "../actions";
@@ -338,7 +339,7 @@ export default async function DeckDetailPage({
               <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-felt-sub/70">
                 Note
               </h2>
-              <p className="whitespace-pre-wrap text-sm text-felt-sub">{deck.notes}</p>
+              <MarkdownNote>{deck.notes}</MarkdownNote>
             </div>
           )}
 

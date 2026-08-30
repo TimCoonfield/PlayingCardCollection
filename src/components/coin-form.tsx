@@ -149,6 +149,7 @@ export function CoinForm({
           defaultValue={defaultValues.notes}
           className={inputClass}
         />
+        <span className="text-xs text-felt-sub/80">Markdown is supported.</span>
       </Field>
 
       <button

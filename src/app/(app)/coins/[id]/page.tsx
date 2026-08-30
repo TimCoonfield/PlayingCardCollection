@@ -7,6 +7,7 @@ import { BackLink } from "@/components/back-link";
 import { CoinTagChip } from "@/components/coin-tag-chip";
 import { PencilIcon, TrashIcon } from "@/components/icons";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
+import { MarkdownNote } from "@/components/markdown-note";
 import { getSession } from "@/lib/auth";
 import { deleteCoin } from "../actions";
 import { SITE_URL } from "@/lib/site";
@@ -239,7 +240,7 @@ export default async function CoinDetailPage({
               <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-felt-sub/70">
                 Notes
               </h2>
-              <p className="whitespace-pre-wrap text-sm text-felt-sub">{coin.notes}</p>
+              <MarkdownNote>{coin.notes}</MarkdownNote>
             </div>
           )}
         </div>
