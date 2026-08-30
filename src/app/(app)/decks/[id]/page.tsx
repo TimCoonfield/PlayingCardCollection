@@ -218,36 +218,42 @@ export default async function DeckDetailPage({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-        <DeckGallery images={deck.images} tags={deck.tags} deckName={deck.name} />
-
-        <div className="flex flex-col gap-5">
-          <div className="flex flex-col gap-1">
-            {deck.series && (
-              <Link
-                href={`/series/${deck.series.slug}`}
-                className="text-sm text-felt-sub hover:text-brass"
-              >
-                {deck.series.name}
-              </Link>
+      <div className="grid grid-cols-1 gap-y-5 md:grid-cols-2 md:gap-x-8">
+        <div className="flex flex-col gap-1 md:col-start-2 md:row-start-1">
+          {deck.series && (
+            <Link
+              href={`/series/${deck.series.slug}`}
+              className="hidden text-sm text-felt-sub hover:text-brass md:block"
+            >
+              {deck.series.name}
+            </Link>
+          )}
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brass md:hidden">
+            Playing card deck
+          </p>
+          <div className="flex items-center gap-2.5">
+            <h1 className="font-display text-3xl font-semibold text-felt-ink">{deck.name}</h1>
+            {deck.qty > 1 && (
+              <span className="rounded-full bg-felt-surface px-2 py-0.5 text-xs font-medium text-felt-sub">
+                ×{deck.qty}
+              </span>
             )}
-            <div className="flex items-center gap-2.5">
-              <h1 className="font-display text-3xl font-semibold text-felt-ink">{deck.name}</h1>
-              {deck.qty > 1 && (
-                <span className="rounded-full bg-felt-surface px-2 py-0.5 text-xs font-medium text-felt-sub">
-                  ×{deck.qty}
-                </span>
-              )}
-              {deck.favorite && (
-                <HeartIcon filled className="h-5 w-5 shrink-0 text-brick" aria-label="Favorite" />
-              )}
-              {deck.whiteWhale && (
-                <span className="shrink-0 text-sage" aria-label="White Whale" title="White Whale">
-                  <WhaleIcon className="h-5 w-5" />
-                </span>
-              )}
-            </div>
+            {deck.favorite && (
+              <HeartIcon filled className="h-5 w-5 shrink-0 text-brick" aria-label="Favorite" />
+            )}
+            {deck.whiteWhale && (
+              <span className="shrink-0 text-sage" aria-label="White Whale" title="White Whale">
+                <WhaleIcon className="h-5 w-5" />
+              </span>
+            )}
           </div>
+        </div>
+
+        <div className="md:col-start-1 md:row-span-2 md:row-start-1">
+          <DeckGallery images={deck.images} tags={deck.tags} deckName={deck.name} />
+        </div>
+
+        <div className="flex flex-col gap-5 md:col-start-2 md:row-start-2">
 
           {deck.hook && (
             <p className="font-display text-lg italic leading-7 text-brass">{deck.hook}</p>
