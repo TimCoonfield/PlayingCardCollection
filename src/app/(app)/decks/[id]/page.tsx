@@ -216,41 +216,32 @@ export default async function DeckDetailPage({
       )}
 
       <div className="grid grid-cols-1 gap-y-5 md:grid-cols-2 md:gap-x-8">
-        <div className="flex flex-col gap-1 md:col-start-2 md:row-start-1">
-          {deck.series && (
-            <Link
-              href={`/series/${deck.series.slug}`}
-              className="hidden text-sm text-felt-sub hover:text-brass md:block"
-            >
-              {deck.series.name}
-            </Link>
-          )}
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brass md:hidden">
-            Playing card deck
-          </p>
-          <div className="flex items-center gap-2.5">
-            <h1 className="font-display text-3xl font-semibold text-felt-ink">{deck.name}</h1>
-            {deck.qty > 1 && (
-              <span className="rounded-full bg-felt-surface px-2 py-0.5 text-xs font-medium text-felt-sub">
-                ×{deck.qty}
-              </span>
-            )}
-            {deck.favorite && (
-              <HeartIcon filled className="h-5 w-5 shrink-0 text-brick" aria-label="Favorite" />
-            )}
-            {deck.whiteWhale && (
-              <span className="shrink-0 text-sage" aria-label="White Whale" title="White Whale">
-                <WhaleIcon className="h-5 w-5" />
-              </span>
-            )}
-          </div>
+        <div className="md:hidden">
+          <DeckHeading
+            name={deck.name}
+            series={deck.series}
+            qty={deck.qty}
+            favorite={deck.favorite}
+            whiteWhale={deck.whiteWhale}
+            mobile
+          />
         </div>
 
-        <div className="md:col-start-1 md:row-span-2 md:row-start-1">
+        <div>
           <DeckGallery images={deck.images} tags={deck.tags} deckName={deck.name} />
         </div>
 
-        <div className="flex flex-col gap-5 md:col-start-2 md:row-start-2">
+        <div className="flex flex-col gap-5">
+          <div className="hidden md:block">
+            <DeckHeading
+              name={deck.name}
+              series={deck.series}
+              qty={deck.qty}
+              favorite={deck.favorite}
+              whiteWhale={deck.whiteWhale}
+            />
+          </div>
+
           {deck.hook && (
             <p className="font-display text-lg italic leading-7 text-brass">{deck.hook}</p>
           )}
@@ -355,6 +346,67 @@ export default async function DeckDetailPage({
         </section>
       )}
 
+    </div>
+  );
+}
+
+function DeckHeading({
+  name,
+  series,
+  qty,
+  favorite,
+  whiteWhale,
+  mobile = false,
+}: {
+  name: string;
+  series: { name: string; slug: string } | null;
+  qty: number;
+  favorite: boolean;
+  whiteWhale: boolean;
+  mobile?: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      {mobile ? (
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brass">
+          Playing card deck
+        </p>
+      ) : (
+        series && (
+          <Link
+            href={`/series/${series.slug}`}
+            className="text-sm text-felt-sub hover:text-brass"
+          >
+            {series.name}
+          </Link>
+        )
+      )}
+      <div className="flex items-center gap-2.5">
+        {mobile ? (
+          <h1 className="font-display text-3xl font-semibold text-felt-ink">{name}</h1>
+        ) : (
+          <div
+            role="heading"
+            aria-level={1}
+            className="font-display text-3xl font-semibold text-felt-ink"
+          >
+            {name}
+          </div>
+        )}
+        {qty > 1 && (
+          <span className="rounded-full bg-felt-surface px-2 py-0.5 text-xs font-medium text-felt-sub">
+            ×{qty}
+          </span>
+        )}
+        {favorite && (
+          <HeartIcon filled className="h-5 w-5 shrink-0 text-brick" aria-label="Favorite" />
+        )}
+        {whiteWhale && (
+          <span className="shrink-0 text-sage" aria-label="White Whale" title="White Whale">
+            <WhaleIcon className="h-5 w-5" />
+          </span>
+        )}
+      </div>
     </div>
   );
 }
