@@ -245,8 +245,10 @@ than trusting a stale copy in this doc). The write-through models are `Series`, 
 The primary entity. Key fields beyond the obvious (`name`, `designers`, `producer`,
 `notes`, `catalogNumber`, `releaseYear`): 
 - `seriesId: String?` — nullable FK to the one canonical `Series` a Deck belongs to.
-  `seriesOrder` provides optional within-Series ordering and `variantNote` explains what
-  distinguishes similar members. The physical `series` column remains as a compatibility mirror
+  `seriesOrder` provides optional within-Series ordering. `variantNote` explains what distinguishes
+  related or similar editions and deliberately remains usable even when a Deck has no Series; the
+  detail page labels it "Within this Series" only when Series membership exists. The physical
+  `series` column remains as a compatibility mirror
   exposed by Prisma as `seriesLegacy`; `seriesRaw` preserves the original imported value and is
   not rewritten when membership or a Series name changes.
 - `tags: String[]` — free-form but validated against a fixed allowlist (`ALL_TAGS` in

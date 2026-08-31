@@ -85,7 +85,7 @@ function toDeckData(
     seriesId: series?.id ?? null,
     seriesLegacy: series?.name ?? null,
     seriesOrder: series ? values.seriesOrder ?? null : null,
-    variantNote: series ? values.variantNote ?? null : null,
+    variantNote: values.variantNote ?? null,
     designerLegacy: joinDesignerNames(designers.map(({ name }) => name)),
     producer: producer?.name ?? null,
     producerCreatorId: producer?.id ?? null,

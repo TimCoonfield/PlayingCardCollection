@@ -309,7 +309,7 @@ export default async function DeckDetailPage({
           {deck.variantNote && (
             <div className="rounded-lg border border-felt-line bg-felt-surface p-4">
               <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-felt-sub/70">
-                Within this Series
+                {deck.series ? "Within this Series" : "Variant note"}
               </h2>
               <p className="text-sm text-felt-sub">{deck.variantNote}</p>
             </div>

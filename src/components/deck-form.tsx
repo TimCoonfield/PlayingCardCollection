@@ -252,7 +252,7 @@ export function DeckForm({
           name="variantNote"
           maxLength={300}
           defaultValue={defaultValues.variantNote}
-          placeholder="What distinguishes this Deck within the Series?"
+          placeholder="What distinguishes this Deck from related or similar editions?"
           className={inputClass}
         />
       </Field>
