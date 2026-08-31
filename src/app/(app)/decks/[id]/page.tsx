@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { getDeckPageData } from "@/lib/deck-data";
 import { DeckGallery } from "@/components/deck-gallery";
 import { StatTile } from "@/components/stat-tile";
-import { TagChip } from "@/components/tag-chip";
+import { CollectionProfile } from "@/components/collection-profile";
 import { PencilIcon, TrashIcon, HeartIcon, WhaleIcon } from "@/components/icons";
 import { FavoriteButton } from "@/components/favorite-button";
 import { WhiteWhaleButton } from "@/components/white-whale-button";
@@ -23,10 +23,7 @@ import {
   buildPageMetadata,
   serializeJsonLd,
 } from "@/lib/seo";
-import {
-  COLLECTION_REASON_DETAILS,
-  type CollectionReasonValue,
-} from "@/lib/collection-reasons";
+import type { CollectionReasonValue } from "@/lib/collection-reasons";
 
 export async function generateMetadata({
   params,
@@ -254,29 +251,15 @@ export default async function DeckDetailPage({
         </div>
 
         <div className="flex flex-col gap-5 md:col-start-2 md:row-start-2">
-
           {deck.hook && (
             <p className="font-display text-lg italic leading-7 text-brass">{deck.hook}</p>
           )}
 
-          {collectionReasons.length > 0 && (
-            <p className="text-sm text-felt-sub">
-              <span className="text-felt-sub/70">Why it&rsquo;s here:</span>{" "}
-              {collectionReasons.map((reason, index) => (
-                <span key={reason}>
-                  {index > 0 && <span aria-hidden="true"> · </span>}
-                  <Link
-                    href={`/collection?reason=${reason}`}
-                    className="text-felt-ink underline decoration-felt-line underline-offset-2 hover:text-brass"
-                  >
-                    {COLLECTION_REASON_DETAILS[reason].label}
-                  </Link>
-                </span>
-              ))}
-            </p>
-          )}
-
-          {(designerNames.length > 0 || deck.producer || deck.releaseYear) && (
+          {(designerNames.length > 0 ||
+            deck.producer ||
+            deck.releaseYear ||
+            collectionReasons.length > 0 ||
+            deck.tags.length > 0) && (
             <div className="flex flex-col divide-y divide-felt-line rounded-lg border border-felt-line bg-felt-surface">
               {designerNames.length > 0 && (
                 <DesignersCreditRow creators={deck.designers.map(({ designer }) => designer)} />
@@ -299,6 +282,7 @@ export default async function DeckDetailPage({
                   href={`/collection?minYear=${deck.releaseYear}&maxYear=${deck.releaseYear}`}
                 />
               )}
+              <CollectionProfile collectionReasons={collectionReasons} tags={deck.tags} />
             </div>
           )}
 
@@ -347,25 +331,6 @@ export default async function DeckDetailPage({
               </h2>
               <MarkdownNote>{deck.notes}</MarkdownNote>
             </div>
-          )}
-
-          {deck.tags.length > 0 && (
-            <section
-              className="border-t border-felt-line pt-4"
-              aria-labelledby="deck-classification-heading"
-            >
-              <h2
-                id="deck-classification-heading"
-                className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-felt-sub/70"
-              >
-                Classification
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {deck.tags.map((tag) => (
-                  <TagChip key={tag} tag={tag} />
-                ))}
-              </div>
-            </section>
           )}
         </div>
       </div>
