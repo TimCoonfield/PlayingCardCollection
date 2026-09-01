@@ -164,3 +164,84 @@ h3,
 legend {
   font-family: var(--font-spectral), Georgia, serif;
 }
+
+.profile-modal-fallback {
+  background:
+    radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--brass) 34%, transparent) 0%, transparent 34%),
+    repeating-linear-gradient(135deg, color-mix(in srgb, var(--felt-ink) 7%, transparent) 0 1px, transparent 1px 13px),
+    linear-gradient(145deg, color-mix(in srgb, var(--brass-deep) 42%, var(--felt-header)) 0%, var(--felt-header) 74%);
+}
+
+.profile-modal-fallback::before {
+  position: absolute;
+  inset: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--brass) 34%, transparent);
+  background:
+    linear-gradient(var(--brass), var(--brass)) left top / 1.5rem 1px no-repeat,
+    linear-gradient(var(--brass), var(--brass)) left top / 1px 1.5rem no-repeat,
+    linear-gradient(var(--brass), var(--brass)) right top / 1.5rem 1px no-repeat,
+    linear-gradient(var(--brass), var(--brass)) right top / 1px 1.5rem no-repeat,
+    linear-gradient(var(--brass), var(--brass)) left bottom / 1.5rem 1px no-repeat,
+    linear-gradient(var(--brass), var(--brass)) left bottom / 1px 1.5rem no-repeat,
+    linear-gradient(var(--brass), var(--brass)) right bottom / 1.5rem 1px no-repeat,
+    linear-gradient(var(--brass), var(--brass)) right bottom / 1px 1.5rem no-repeat;
+  content: "";
+  opacity: 0.56;
+}
+
+.profile-modal-backdrop-in {
+  animation: profile-modal-backdrop-in 180ms ease-out both;
+}
+
+.profile-modal-backdrop-out {
+  animation: profile-modal-backdrop-out 170ms ease-in both;
+}
+
+.profile-modal-panel-in {
+  animation: profile-modal-panel-in 280ms cubic-bezier(0.2, 0.72, 0.22, 1) both;
+}
+
+.profile-modal-panel-out {
+  animation: profile-modal-panel-out 170ms ease-in both;
+}
+
+@keyframes profile-modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes profile-modal-backdrop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes profile-modal-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.9rem) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes profile-modal-panel-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.99);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-modal-backdrop-in,
+  .profile-modal-backdrop-out,
+  .profile-modal-panel-in,
+  .profile-modal-panel-out {
+    animation-duration: 1ms;
+  }
+}

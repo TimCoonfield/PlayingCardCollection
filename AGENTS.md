@@ -290,9 +290,11 @@ The primary entity. Key fields beyond the obvious (`name`, `designers`, `produce
 ### Series
 First-class canonical Deck families. A Series owns its display name, stable unique slug, optional
 subtitle, Markdown description, hero override, and free-text attribution label/text. Attribution
-is never inferred from member Decks. Every Series is public at `/series/[slug]`; if no hero is set,
-the page deterministically assigns one of four static engraved suit emblems from the Series id.
-Member Deck imagery is not used as the Series fallback. Legacy
+is never inferred from member Decks. Every Series is public at `/series/[slug]`. Series and Creator
+pages use restrained, type-led headers; saved hero imagery is reserved for their editorial About
+modal rather than repeated behind the page header. When no hero is set, the modal generates a stable
+archival texture with a title-derived monogram and suit motif. Member Deck imagery is not used as a
+fallback. Legacy
 `/collection?series=...` filters remain supported. Backfill, duplicate-review, merge, and rollback
 tooling lives in `scripts/series-migration.ts`.
 

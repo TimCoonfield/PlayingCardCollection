@@ -1,19 +1,14 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { notFound } from "next/navigation";
-import ReactMarkdown from "react-markdown";
 import { getSession } from "@/lib/auth";
 import { getSeriesPageData } from "@/lib/series-data";
 import { sortSeriesDecks } from "@/lib/series-order";
-import { getSeriesFallbackHero } from "@/lib/series-fallback-hero";
 import { DeckCard } from "@/components/deck-card";
-import { ChevronDownIcon } from "@/components/icons";
+import { EditorialProfileModal } from "@/components/editorial-profile-modal";
+import { MarkdownNote } from "@/components/markdown-note";
 import { SeriesEditor } from "@/components/series-editor";
 import { SITE_URL } from "@/lib/site";
 import { updateSeries } from "../actions";
-
-const HERO_FADE_GRADIENT =
-  "linear-gradient(to right, color-mix(in srgb, var(--felt-bg) 90%, transparent) 0%, color-mix(in srgb, var(--felt-bg) 90%, transparent) 44%, transparent 58%)";
 
 /** Strips Markdown syntax down to plain text for a meta description, truncated to ~155 chars. */
 function toPlainDescription(markdown: string, maxLength = 155): string {
@@ -56,9 +51,13 @@ export default async function SeriesPage({
   if (!series) notFound();
 
   const decks = sortSeriesDecks(series.decks);
-  const usesFallbackHero = !series.heroImageUrl;
-  const heroImageUrl = series.heroImageUrl ?? getSeriesFallbackHero(series.id);
   const updateSeriesWithId = updateSeries.bind(null, series.id);
+  const modalMetadata = [
+    `${decks.length} ${decks.length === 1 ? "deck" : "decks"} in the archive`,
+    series.attributionText
+      ? `${series.attributionLabel ? `${series.attributionLabel}: ` : ""}${series.attributionText}`
+      : null,
+  ].filter((value): value is string => Boolean(value));
 
   const seriesJsonLd = {
     "@context": "https://schema.org",
@@ -85,21 +84,14 @@ export default async function SeriesPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(seriesJsonLd) }}
       />
-      <div className="flex flex-col">
-        <header className={`relative overflow-hidden border border-felt-line bg-felt-surface ${series.description ? "rounded-t-lg" : "rounded-lg"}`}>
-          <Image
-            src={heroImageUrl}
-            alt=""
-            fill
-            priority
-            sizes="(min-width: 1200px) 1152px, 100vw"
-            className={`pointer-events-none object-cover opacity-[0.18] ${
-              usesFallbackHero ? "lg:object-[64%_center] lg:opacity-55" : "lg:opacity-100"
-            }`}
-          />
+      <div>
+        <header className="relative overflow-hidden rounded-lg border border-felt-line bg-felt-surface">
           <div
-            className="pointer-events-none absolute inset-0 hidden lg:block"
-            style={{ background: HERO_FADE_GRADIENT }}
+            className="pointer-events-none absolute inset-0 opacity-45"
+            style={{
+              background:
+                "radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--brass) 13%, transparent), transparent 30%), repeating-linear-gradient(135deg, color-mix(in srgb, var(--felt-ink) 2.5%, transparent) 0 1px, transparent 1px 14px)",
+            }}
           />
           {session.authenticated && (
             <div className="absolute right-3 top-3 z-20">
@@ -116,9 +108,9 @@ export default async function SeriesPage({
               />
             </div>
           )}
-          <div className="relative flex min-h-72 max-w-xl flex-col justify-end gap-3 p-6 sm:min-h-80 sm:p-8">
+          <div className="relative flex min-h-56 max-w-3xl flex-col justify-end gap-3 p-6 sm:min-h-64 sm:p-8 lg:p-10">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brass">Series</p>
-            <h1 className="font-display text-4xl font-semibold leading-tight text-felt-ink sm:text-5xl">
+            <h1 className="max-w-2xl font-display text-4xl font-semibold leading-tight text-felt-ink sm:text-5xl lg:text-6xl">
               {series.name}
             </h1>
             {series.subtitle && <p className="font-display text-lg italic text-brass">{series.subtitle}</p>}
@@ -132,35 +124,20 @@ export default async function SeriesPage({
                 {series.attributionText && <span className="text-felt-ink">{series.attributionText}</span>}
               </p>
             )}
+            {series.description && (
+              <EditorialProfileModal
+                kind="Series"
+                title={series.name}
+                tagline={series.subtitle}
+                heroImageUrl={series.heroImageUrl}
+                fallbackSeed={series.id}
+                metadata={modalMetadata}
+              >
+                <MarkdownNote>{series.description}</MarkdownNote>
+              </EditorialProfileModal>
+            )}
           </div>
         </header>
-
-        {series.description && (
-          <details className="group overflow-hidden rounded-b-lg border border-t-0 border-felt-line bg-felt-surface">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-felt-surface-2/60 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brass [&::-webkit-details-marker]:hidden">
-              <h2 className="font-display text-sm font-semibold uppercase tracking-[0.14em] text-brass">
-                About this Series
-              </h2>
-              <ChevronDownIcon className="h-4 w-4 text-felt-sub transition-transform duration-200 group-open:rotate-180" />
-            </summary>
-            <div className="border-t border-felt-line px-5 py-5 sm:px-6 sm:py-6">
-              <ReactMarkdown
-                components={{
-                  h1: ({ children }) => <h3 className="mb-3 mt-6 font-display text-2xl font-semibold text-felt-ink first:mt-0">{children}</h3>,
-                  h2: ({ children }) => <h3 className="mb-3 mt-6 font-display text-xl font-semibold text-felt-ink first:mt-0">{children}</h3>,
-                  h3: ({ children }) => <h3 className="mb-2 mt-5 font-display text-lg font-semibold text-felt-ink first:mt-0">{children}</h3>,
-                  p: ({ children }) => <p className="mb-4 leading-7 text-felt-sub last:mb-0">{children}</p>,
-                  ul: ({ children }) => <ul className="mb-4 list-disc space-y-1 pl-6 text-felt-sub">{children}</ul>,
-                  ol: ({ children }) => <ol className="mb-4 list-decimal space-y-1 pl-6 text-felt-sub">{children}</ol>,
-                  a: ({ href, children }) => <a href={href} className="text-brass underline decoration-brass/50 underline-offset-2 hover:text-brass-deep">{children}</a>,
-                  blockquote: ({ children }) => <blockquote className="mb-4 border-l-2 border-brass/60 pl-4 italic text-felt-sub">{children}</blockquote>,
-                }}
-              >
-                {series.description}
-              </ReactMarkdown>
-            </div>
-          </details>
-        )}
       </div>
 
       <section className="flex flex-col gap-4">
