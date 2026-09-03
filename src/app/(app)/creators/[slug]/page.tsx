@@ -8,6 +8,7 @@ import { buildPageMetadata, serializeJsonLd } from "@/lib/seo";
 import { CreatorEditor } from "@/components/creator-editor";
 import { EditorialProfileModal } from "@/components/editorial-profile-modal";
 import { MarkdownNote } from "@/components/markdown-note";
+import { ProfileHeaderWatermark } from "@/components/profile-monogram-art";
 import { ScopedCollectionBrowser } from "@/components/scoped-collection-browser";
 import { updateCreator } from "../actions";
 
@@ -55,6 +56,8 @@ export default async function CreatorPage({
   const title = creator.displayName ?? creator.name;
   const updateCreatorWithId = updateCreator.bind(null, creator.id);
   const itemCount = decks.length + coins.length;
+  const hasHeaderDetails = Boolean(creator.tagline || creator.description);
+  const usesLargeTitle = title.length <= 20;
   const modalMetadata = [
     `${decks.length} ${decks.length === 1 ? "deck" : "decks"}`,
     coins.length > 0 ? `${coins.length} ${coins.length === 1 ? "coin" : "coins"}` : null,
@@ -101,6 +104,7 @@ export default async function CreatorPage({
                 "radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--brass) 13%, transparent), transparent 30%), repeating-linear-gradient(135deg, color-mix(in srgb, var(--felt-ink) 2.5%, transparent) 0 1px, transparent 1px 14px)",
             }}
           />
+          <ProfileHeaderWatermark title={title} seed={creator.id} />
           {session.authenticated && (
             <div className="absolute right-3 top-3 z-20">
               <CreatorEditor
@@ -116,9 +120,21 @@ export default async function CreatorPage({
               />
             </div>
           )}
-          <div className="relative flex min-h-56 max-w-3xl flex-col justify-end gap-3 p-6 sm:min-h-64 sm:p-8 lg:p-10">
+          <div
+            className={`relative flex max-w-3xl flex-col justify-center gap-3 p-6 sm:p-8 lg:px-10 ${
+              hasHeaderDetails
+                ? "min-h-52 sm:min-h-56 lg:min-h-60"
+                : "min-h-40 sm:min-h-44 lg:min-h-48"
+            }`}
+          >
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brass">Creator</p>
-            <h1 className="max-w-2xl font-display text-4xl font-semibold leading-tight text-felt-ink sm:text-5xl lg:text-6xl">
+            <h1
+              className={`max-w-2xl font-display font-semibold leading-tight text-felt-ink ${
+                usesLargeTitle
+                  ? "text-5xl sm:text-6xl lg:text-7xl"
+                  : "text-4xl sm:text-5xl lg:text-6xl"
+              }`}
+            >
               {title}
             </h1>
             {creator.tagline && (
