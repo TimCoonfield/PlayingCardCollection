@@ -8,7 +8,7 @@ import { buildPageMetadata, serializeJsonLd } from "@/lib/seo";
 import { CreatorEditor } from "@/components/creator-editor";
 import { EditorialProfileModal } from "@/components/editorial-profile-modal";
 import { MarkdownNote } from "@/components/markdown-note";
-import { ProfileHeaderWatermark } from "@/components/profile-monogram-art";
+import { ProfileHeaderArtwork } from "@/components/profile-monogram-art";
 import { ScopedCollectionBrowser } from "@/components/scoped-collection-browser";
 import { updateCreator } from "../actions";
 
@@ -104,7 +104,11 @@ export default async function CreatorPage({
                 "radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--brass) 13%, transparent), transparent 30%), repeating-linear-gradient(135deg, color-mix(in srgb, var(--felt-ink) 2.5%, transparent) 0 1px, transparent 1px 14px)",
             }}
           />
-          <ProfileHeaderWatermark title={title} seed={creator.id} />
+          <ProfileHeaderArtwork
+            title={title}
+            seed={creator.id}
+            heroImageUrl={creator.heroImageUrl}
+          />
           {session.authenticated && (
             <div className="absolute right-3 top-3 z-20">
               <CreatorEditor
@@ -121,9 +125,11 @@ export default async function CreatorPage({
             </div>
           )}
           <div
-            className={`relative flex max-w-3xl flex-col justify-center gap-3 p-6 sm:p-8 lg:px-10 ${
-              hasHeaderDetails
-                ? "min-h-52 sm:min-h-56 lg:min-h-60"
+            className={`relative z-10 flex flex-col justify-center gap-3 p-6 sm:p-8 lg:px-10 ${
+              creator.heroImageUrl ? "max-w-[82%] sm:max-w-[62%] xl:max-w-[58%]" : "max-w-3xl"
+            } ${
+              creator.heroImageUrl || hasHeaderDetails
+                ? "min-h-48 sm:min-h-52 lg:min-h-56"
                 : "min-h-40 sm:min-h-44 lg:min-h-48"
             }`}
           >

@@ -1,4 +1,26 @@
+import Image from "next/image";
+
 const SUITS = ["♠", "♥", "♣", "♦"] as const;
+
+const MINOR_WORDS = new Set([
+  "a",
+  "an",
+  "and",
+  "at",
+  "by",
+  "de",
+  "del",
+  "di",
+  "for",
+  "in",
+  "la",
+  "le",
+  "of",
+  "on",
+  "the",
+  "to",
+  "with",
+]);
 
 function stableIndex(value: string, length: number) {
   let hash = 2_166_136_261;
@@ -15,8 +37,21 @@ function getMonogram(value: string) {
     .split(/\s+/)
     .filter(Boolean);
   if (words.length === 0) return "?";
-  if (words.length === 1) return words[0].slice(0, 2).toLocaleUpperCase();
-  return `${words[0][0]}${words.at(-1)?.[0] ?? ""}`.toLocaleUpperCase();
+  if (words.length === 1) return getInitial(words[0]);
+
+  const majorWords = words.filter((word) => !MINOR_WORDS.has(normalizeWord(word)));
+  const monogramWords = (majorWords.length > 0 ? majorWords : words).slice(0, 2);
+  return monogramWords.map(getInitial).join("");
+}
+
+function normalizeWord(value: string) {
+  return value
+    .toLocaleLowerCase()
+    .replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+}
+
+function getInitial(value: string) {
+  return value.match(/[\p{L}\p{N}]/u)?.[0]?.toLocaleUpperCase() ?? "?";
 }
 
 export function ProfileModalFallback({ title, seed }: { title: string; seed: string }) {
@@ -58,6 +93,43 @@ export function ProfileHeaderWatermark({ title, seed }: { title: string; seed: s
       <span className="absolute -right-5 top-1/2 -translate-y-1/2 rotate-180 font-display text-2xl text-brass/20">
         {suit}
       </span>
+    </div>
+  );
+}
+
+export function ProfileHeaderArtwork({
+  title,
+  seed,
+  heroImageUrl,
+}: {
+  title: string;
+  seed: string;
+  heroImageUrl?: string | null;
+}) {
+  if (!heroImageUrl) {
+    return <ProfileHeaderWatermark title={title} seed={seed} />;
+  }
+
+  return (
+    <div
+      className="pointer-events-none absolute inset-y-0 right-0 w-[70%] overflow-hidden bg-felt-header opacity-70 sm:w-[58%] sm:opacity-85 lg:w-[48%] lg:opacity-100"
+      aria-hidden="true"
+    >
+      <Image
+        src={heroImageUrl}
+        alt=""
+        fill
+        sizes="(max-width: 639px) 70vw, (max-width: 1023px) 58vw, 48vw"
+        className="object-cover"
+        unoptimized={heroImageUrl.startsWith("/")}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(90deg, var(--felt-surface) 0%, color-mix(in srgb, var(--felt-surface) 92%, transparent) 18%, color-mix(in srgb, var(--felt-surface) 25%, transparent) 58%, color-mix(in srgb, var(--felt-header) 8%, transparent) 100%), linear-gradient(0deg, color-mix(in srgb, var(--felt-header) 40%, transparent), transparent 64%)",
+        }}
+      />
     </div>
   );
 }

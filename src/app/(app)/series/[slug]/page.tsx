@@ -6,7 +6,7 @@ import { sortSeriesDecks } from "@/lib/series-order";
 import { DeckCard } from "@/components/deck-card";
 import { EditorialProfileModal } from "@/components/editorial-profile-modal";
 import { MarkdownNote } from "@/components/markdown-note";
-import { ProfileHeaderWatermark } from "@/components/profile-monogram-art";
+import { ProfileHeaderArtwork } from "@/components/profile-monogram-art";
 import { SeriesEditor } from "@/components/series-editor";
 import { SITE_URL } from "@/lib/site";
 import { updateSeries } from "../actions";
@@ -101,7 +101,11 @@ export default async function SeriesPage({
                 "radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--brass) 13%, transparent), transparent 30%), repeating-linear-gradient(135deg, color-mix(in srgb, var(--felt-ink) 2.5%, transparent) 0 1px, transparent 1px 14px)",
             }}
           />
-          <ProfileHeaderWatermark title={series.name} seed={series.id} />
+          <ProfileHeaderArtwork
+            title={series.name}
+            seed={series.id}
+            heroImageUrl={series.heroImageUrl}
+          />
           {session.authenticated && (
             <div className="absolute right-3 top-3 z-20">
               <SeriesEditor
@@ -118,9 +122,11 @@ export default async function SeriesPage({
             </div>
           )}
           <div
-            className={`relative flex max-w-3xl flex-col justify-center gap-3 p-6 sm:p-8 lg:px-10 ${
-              hasHeaderDetails
-                ? "min-h-52 sm:min-h-56 lg:min-h-60"
+            className={`relative z-10 flex flex-col justify-center gap-3 p-6 sm:p-8 lg:px-10 ${
+              series.heroImageUrl ? "max-w-[82%] sm:max-w-[62%] xl:max-w-[58%]" : "max-w-3xl"
+            } ${
+              series.heroImageUrl || hasHeaderDetails
+                ? "min-h-48 sm:min-h-52 lg:min-h-56"
                 : "min-h-40 sm:min-h-44 lg:min-h-48"
             }`}
           >
