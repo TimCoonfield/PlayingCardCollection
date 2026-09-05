@@ -97,6 +97,8 @@ export default async function CollectionPage({
   const type: "all" | "deck" | "coin" = typeParam === "deck" || typeParam === "coin" ? typeParam : "all";
   const missingPhotoRequested = toParam(params.missingPhoto) === "1";
   const missingYearRequested = toParam(params.missingYear) === "1";
+  const missingHookRequested = toParam(params.missingHook) === "1";
+  const missingNoteRequested = toParam(params.missingNote) === "1";
   const rawSort = toParam(params.sort);
   const sort: CollectionSort = isCollectionSort(rawSort) ? rawSort : "featured";
   const randomSeed = toOptionalNumberParam(params.randomSeed) ?? 0;
@@ -121,6 +123,8 @@ export default async function CollectionPage({
   const isAuthenticated = Boolean(session.authenticated);
   const missingPhoto = isAuthenticated && missingPhotoRequested;
   const missingYear = isAuthenticated && missingYearRequested;
+  const missingHook = isAuthenticated && missingHookRequested;
+  const missingNote = isAuthenticated && missingNoteRequested;
   const matchesFilters = (item: (typeof catalog.decks)[number] | (typeof catalog.coins)[number]) =>
     (!q || matchesSearch(item, q, scope)) &&
     (designers.length === 0 || item.designers.some((designer) => designers.includes(designer))) &&
@@ -134,6 +138,8 @@ export default async function CollectionPage({
         ? item.images.length === 0
         : !item.obverseImageUrl && !item.reverseImageUrl)) &&
     (!missingYear || ("images" in item && item.releaseYear === null)) &&
+    (!missingHook || ("hasHook" in item && !item.hasHook)) &&
+    (!missingNote || ("hasHook" in item && !item.notes?.trim())) &&
     (!hasYearFilter ||
       (item.releaseYear !== null && item.releaseYear >= minYear && item.releaseYear <= maxYear));
   const deckIndexRows = wantDecks ? catalog.decks.filter(matchesFilters) : [];
@@ -197,6 +203,8 @@ export default async function CollectionPage({
   if (reason && reasonField !== "any") currentSearchParams.set("reasonField", reasonField);
   if (missingPhoto) currentSearchParams.set("missingPhoto", "1");
   if (missingYear) currentSearchParams.set("missingYear", "1");
+  if (missingHook) currentSearchParams.set("missingHook", "1");
+  if (missingNote) currentSearchParams.set("missingNote", "1");
   if (hasYearFilter) {
     currentSearchParams.set("minYear", String(minYear));
     currentSearchParams.set("maxYear", String(maxYear));

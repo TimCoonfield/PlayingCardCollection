@@ -36,6 +36,7 @@ function getBrowseDeckPage(page: number) {
           releaseYear: true,
           collectionReasonPrimary: true,
           collectionReasonSecondary: true,
+          hook: true,
           notes: true,
           createdAt: true,
           images: {
@@ -48,8 +49,9 @@ function getBrowseDeckPage(page: number) {
         skip: page * DECK_BROWSE_CACHE_PAGE_SIZE,
         take: DECK_BROWSE_CACHE_PAGE_SIZE,
       });
-      return rows.map(({ series, seriesRaw, seriesLegacy, designers, ...deck }) => ({
+      return rows.map(({ series, seriesRaw, seriesLegacy, designers, hook, ...deck }) => ({
         ...deck,
+        hasHook: Boolean(hook?.trim()),
         designers: designers.map(({ designer }) => designer.name),
         designer: designers.map(({ designer }) => designer.name).join(" / ") || null,
         series: series?.name ?? seriesRaw?.trim() ?? seriesLegacy?.trim() ?? null,
@@ -57,7 +59,7 @@ function getBrowseDeckPage(page: number) {
         seriesRaw,
       }));
     },
-    ["browse-deck-page-v5", String(page)],
+    ["browse-deck-page-v6", String(page)],
     {
       tags: [DECK_BROWSE_CACHE_TAG, deckBrowsePageCacheTag(page)],
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
@@ -185,12 +187,22 @@ export async function getBrowseCatalogCards() {
 export async function getDeckWorkCounts() {
   const decks = await getBrowseDeckCards();
   const decksWithPhoto = decks.filter((deck) => deck.images.length > 0).length;
+  const decksWithHook = decks.filter((deck) => deck.hasHook).length;
+  const decksWithNote = decks.filter((deck) => Boolean(deck.notes?.trim())).length;
 
   return {
     missingPhotoCount: decks.length - decksWithPhoto,
     missingYearCount: decks.filter((deck) => deck.releaseYear === null).length,
+    missingHookCount: decks.length - decksWithHook,
+    missingNoteCount: decks.length - decksWithNote,
     photoCompletionPercent: decks.length > 0
       ? Math.round((decksWithPhoto / decks.length) * 100)
+      : 0,
+    hookCompletionPercent: decks.length > 0
+      ? Math.round((decksWithHook / decks.length) * 100)
+      : 0,
+    noteCompletionPercent: decks.length > 0
+      ? Math.round((decksWithNote / decks.length) * 100)
       : 0,
   };
 }

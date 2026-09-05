@@ -4,7 +4,15 @@ import { StatTile } from "@/components/stat-tile";
 import { HorizontalRankedChart, PieBreakdownChart, YearHistogramChart } from "@/components/stats-charts";
 import { SeriesShowcase, type SeriesSpotlightDatum } from "@/components/series-showcase";
 import { DeckCard } from "@/components/deck-card";
-import { CardsIcon, PaletteIcon, CoinIcon, LayersIcon, CameraIcon } from "@/components/icons";
+import {
+  CardsIcon,
+  PaletteIcon,
+  CoinIcon,
+  LayersIcon,
+  CameraIcon,
+  NoteIcon,
+  PencilIcon,
+} from "@/components/icons";
 import { getSession } from "@/lib/auth";
 import { getDeckWorkCounts, getRecentDecks, getSeriesSpotlightDecks } from "@/lib/catalog-browse";
 import {
@@ -115,7 +123,7 @@ export default async function StatsPage() {
           <h2 className="font-display text-base font-semibold tracking-wide text-brass">
             Work to be Done
           </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatTile
               icon={<CameraIcon className="h-6 w-6" />}
               label={`Decks missing photo · ${workCounts.photoCompletionPercent}% complete`}
@@ -127,6 +135,18 @@ export default async function StatsPage() {
               label="Decks missing year"
               value={workCounts.missingYearCount}
               href="/decks/missing-years"
+            />
+            <StatTile
+              icon={<PencilIcon className="h-6 w-6" />}
+              label={`Decks missing hook · ${workCounts.hookCompletionPercent}% complete`}
+              value={workCounts.missingHookCount}
+              href="/collection?type=deck&missingHook=1"
+            />
+            <StatTile
+              icon={<NoteIcon className="h-6 w-6" />}
+              label={`Decks missing note · ${workCounts.noteCompletionPercent}% complete`}
+              value={workCounts.missingNoteCount}
+              href="/collection?type=deck&missingNote=1"
             />
           </div>
         </section>

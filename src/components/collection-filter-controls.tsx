@@ -4,7 +4,7 @@ import { useState } from "react";
 import { getTagStyle } from "@/lib/placeholders";
 import { TagIcon } from "@/components/tag-icon";
 import type { CollectionSort } from "@/lib/collection-sort";
-import { CameraIcon } from "./icons";
+import { CameraIcon, NoteIcon, PencilIcon } from "./icons";
 import {
   COLLECTION_REASON_DETAILS,
   COLLECTION_REASON_VALUES,
@@ -117,21 +117,81 @@ export function MissingYearFilter({
   );
 }
 
+export function MissingHookFilter({
+  selected,
+  onChange,
+}: {
+  selected: boolean;
+  onChange: (selected: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!selected)}
+      aria-pressed={selected}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/60 focus-visible:ring-offset-2 focus-visible:ring-offset-felt-surface ${
+        selected
+          ? "border-brass bg-brass/20 text-felt-ink shadow-sm"
+          : "border-felt-line bg-felt-bg/40 text-felt-sub hover:border-brass/70 hover:text-brass"
+      }`}
+    >
+      <PencilIcon className="h-3.5 w-3.5" />
+      Missing hook
+      {selected && <span aria-hidden="true">✓</span>}
+    </button>
+  );
+}
+
+export function MissingNoteFilter({
+  selected,
+  onChange,
+}: {
+  selected: boolean;
+  onChange: (selected: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!selected)}
+      aria-pressed={selected}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/60 focus-visible:ring-offset-2 focus-visible:ring-offset-felt-surface ${
+        selected
+          ? "border-brass bg-brass/20 text-felt-ink shadow-sm"
+          : "border-felt-line bg-felt-bg/40 text-felt-sub hover:border-brass/70 hover:text-brass"
+      }`}
+    >
+      <NoteIcon className="h-3.5 w-3.5" />
+      Missing note
+      {selected && <span aria-hidden="true">✓</span>}
+    </button>
+  );
+}
+
 export function CollectionMaintenanceFilters({
   missingPhoto,
   missingYear,
+  missingHook,
+  missingNote,
   onMissingPhotoChange,
   onMissingYearChange,
+  onMissingHookChange,
+  onMissingNoteChange,
 }: {
   missingPhoto: boolean;
   missingYear: boolean;
+  missingHook: boolean;
+  missingNote: boolean;
   onMissingPhotoChange: (selected: boolean) => void;
   onMissingYearChange: (selected: boolean) => void;
+  onMissingHookChange: (selected: boolean) => void;
+  onMissingNoteChange: (selected: boolean) => void;
 }) {
   return (
     <>
       <MissingPhotoFilter selected={missingPhoto} onChange={onMissingPhotoChange} />
       <MissingYearFilter selected={missingYear} onChange={onMissingYearChange} />
+      <MissingHookFilter selected={missingHook} onChange={onMissingHookChange} />
+      <MissingNoteFilter selected={missingNote} onChange={onMissingNoteChange} />
     </>
   );
 }

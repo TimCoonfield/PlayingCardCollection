@@ -23,6 +23,7 @@ import {
 
 export type FilterableScopedDeck = DeckCardData & {
   releaseYear: number | null;
+  hasHook: boolean;
   notes: string | null;
   createdAt: Date | string;
 };
@@ -57,6 +58,8 @@ export function ScopedCollectionBrowser({
   const [randomSeed, setRandomSeed] = useState(0);
   const [missingPhoto, setMissingPhoto] = useState(false);
   const [missingYear, setMissingYear] = useState(false);
+  const [missingHook, setMissingHook] = useState(false);
+  const [missingNote, setMissingNote] = useState(false);
 
   const yearValues = useMemo(
     () =>
@@ -134,6 +137,8 @@ export function ScopedCollectionBrowser({
       ("images" in item
         ? item.images.length === 0
         : !item.obverseImageUrl && !item.reverseImageUrl);
+    const matchesHook = !missingHook || ("hasHook" in item && !item.hasHook);
+    const matchesNote = !missingNote || ("hasHook" in item && !item.notes?.trim());
     return (
       matchesQuery &&
       matchesTags &&
@@ -141,7 +146,9 @@ export function ScopedCollectionBrowser({
       matchesProducer &&
       matchesSeries &&
       matchesYear &&
-      matchesPhoto
+      matchesPhoto &&
+      matchesHook &&
+      matchesNote
     );
   }
 
@@ -167,7 +174,9 @@ export function ScopedCollectionBrowser({
     series.length +
     (isFullYearRange ? 0 : 1) +
     (missingPhoto ? 1 : 0) +
-    (missingYear ? 1 : 0);
+    (missingYear ? 1 : 0) +
+    (missingHook ? 1 : 0) +
+    (missingNote ? 1 : 0);
   const advancedFilterCount =
     (type === "all" ? 0 : 1) +
     tags.length +
@@ -176,7 +185,9 @@ export function ScopedCollectionBrowser({
     series.length +
     (isFullYearRange ? 0 : 1) +
     (missingPhoto ? 1 : 0) +
-    (missingYear ? 1 : 0);
+    (missingYear ? 1 : 0) +
+    (missingHook ? 1 : 0) +
+    (missingNote ? 1 : 0);
   const availableTags = tagSet === "all" ? ALL_COLLECTION_TAGS : CURATED_COLLECTION_TAGS;
 
   function toggleTag(tag: string) {
@@ -195,6 +206,8 @@ export function ScopedCollectionBrowser({
     setYearRange([availableMinYear, availableMaxYear]);
     setMissingPhoto(false);
     setMissingYear(false);
+    setMissingHook(false);
+    setMissingNote(false);
   }
 
   function changeSort(value: CollectionSort) {
@@ -238,7 +251,11 @@ export function ScopedCollectionBrowser({
               value={type}
               onChange={(value) => {
                 setType(value);
-                if (value === "coin") setMissingYear(false);
+                if (value === "coin") {
+                  setMissingYear(false);
+                  setMissingHook(false);
+                  setMissingNote(false);
+                }
               }}
             />
                   <div className="flex flex-wrap items-center gap-2">
@@ -251,6 +268,8 @@ export function ScopedCollectionBrowser({
                       <CollectionMaintenanceFilters
                         missingPhoto={missingPhoto}
                         missingYear={missingYear}
+                        missingHook={missingHook}
+                        missingNote={missingNote}
                         onMissingPhotoChange={setMissingPhoto}
                         onMissingYearChange={(selected) => {
                           setMissingYear(selected);
@@ -258,6 +277,14 @@ export function ScopedCollectionBrowser({
                             setType("deck");
                             setYearRange([availableMinYear, availableMaxYear]);
                           }
+                        }}
+                        onMissingHookChange={(selected) => {
+                          setMissingHook(selected);
+                          if (selected) setType("deck");
+                        }}
+                        onMissingNoteChange={(selected) => {
+                          setMissingNote(selected);
+                          if (selected) setType("deck");
                         }}
                       />
                     )}
@@ -350,6 +377,18 @@ export function ScopedCollectionBrowser({
                   <CollectionActiveFilter
                     label="Missing year"
                     onRemove={() => setMissingYear(false)}
+                  />
+                )}
+                {missingHook && (
+                  <CollectionActiveFilter
+                    label="Missing hook"
+                    onRemove={() => setMissingHook(false)}
+                  />
+                )}
+                {missingNote && (
+                  <CollectionActiveFilter
+                    label="Missing note"
+                    onRemove={() => setMissingNote(false)}
                   />
                 )}
                 {!isFullYearRange && (

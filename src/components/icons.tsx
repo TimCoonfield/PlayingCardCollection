@@ -236,6 +236,24 @@ export function CameraIcon({ className }: { className?: string }) {
   );
 }
 
+export function NoteIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M6 3.5h8.5L19 8v12.5H6Z" />
+      <path d="M14.5 3.5V8H19M9 12h7M9 15.5h7" />
+    </svg>
+  );
+}
+
 export function HeartIcon({ className, filled }: { className?: string; filled?: boolean }) {
   return (
     <svg

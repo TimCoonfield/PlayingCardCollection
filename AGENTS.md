@@ -449,16 +449,17 @@ delete form submits — purely a UI courtesy, not enforced server-side.
   the shared, write-invalidated browse snapshots in `src/lib/catalog-browse.ts`, applies filters
   server-side, then merges and sorts decks and coins in application code. Deck snapshots are
   cached in 400-row pages to stay below Vercel's per-entry cache limit and include only the first
-  image; Collection Reasons add only two small enum values to these snapshots, while hook and essay
-  remain out of them and out of search. A separate favorite-image snapshot preserves the
+  image; Collection Reasons add only two small enum values, and editorial maintenance adds only a
+  derived `hasHook` boolean. Hook text and essay remain out of these snapshots and out of search. A
+  separate favorite-image snapshot preserves the
   landing-page mosaics. Do not replace
   this with per-request full-table Prisma queries or a raw SQL UNION without a measured reason.
   - **Filtering UI**: `CollectionFilters` (URL-param sync) + `CollectionFilterPanel` (collapsible
     layout: always-visible search/sort/surprise row, expandable "advanced" section) +
     `CollectionFilterControls` (the individual widgets — tag pills, designer/producer/series
-    facet pickers, year range, item-type toggle, and the maintenance filters "missing photo" /
-    "missing year" used for admin triage). Collection Reason is filterable independently by value
-    and by primary-vs-secondary position (`CollectionReasonFilter`).
+    facet pickers, year range, item-type toggle, and the maintenance filters "missing photo," "missing
+    year," "missing hook," and "missing note" used for admin triage). Collection Reason is filterable
+    independently by value and by primary-vs-secondary position (`CollectionReasonFilter`).
   - **Sort modes** (`src/lib/collection-sort.ts`, shared by `/collection` and every
     `showFilters` landing page): `featured`, `alpha-asc`/`desc`, `year-asc`/`desc`, `recent`, and
     a seeded `random`. A "Surprise Me" button (`SurpriseMeButton`) jumps to a random deck/coin,
@@ -481,10 +482,9 @@ delete form submits — purely a UI courtesy, not enforced server-side.
 - **`/stats`**: aggregate dashboard — totals, top designers, Modern/Vintage/Antique era
   breakdown (era = tag membership, not a separate column), release-year histogram, "Biggest
   series" (top 5 by Deck count, each linking to its first-class Series page and showing one
-  random member photo), a
-  photo-coverage stat (`% of decks with ≥1 photo`), and a recently-added strip. All numbers come
-  from server-side Prisma `count`/`groupBy`/`aggregate` calls (cached via `src/lib/catalog-metadata.ts`)
-  — no client-side computation.
+  random member photo), photo/hook/note coverage stats, and a recently-added strip. Aggregate chart
+  numbers come from cached server-side Prisma queries; admin work counts are derived from the same
+  cached deck-browse snapshot used by `/collection`, without an additional full-table query.
 - **`/series/[slug]`**: public page for each first-class Series — hero image or engraved suit-emblem
   fallback, description/attribution, and its member decks with a sticky-header `SeriesDeckNavigation`
   (prev/next through the Series) shown on each member deck's own detail page.
@@ -758,8 +758,9 @@ Confirmed present in the codebase as of this writing:
 - Unified search/filter/sort/paginate across decks and coins (`/collection`) — text search (name,
   series, designer, producer, notes), designer/producer/series dropdowns, multi-select tag
   filter (AND semantics), deck/coin/all type toggle, year range, Collection Reason filter
-  (value + primary/secondary position), "missing photo"/"missing year" maintenance filters, 7
-  sort modes including seeded random, and a "Surprise Me" jump-to-random-item button.
+  (value + primary/secondary position), "missing photo"/"missing year"/"missing hook"/"missing
+  note" maintenance filters, 7 sort modes including seeded random, and a "Surprise Me"
+  jump-to-random-item button.
 - A global `/`-triggered "Archive Spotlight" search palette (nav bar) searching deck names,
   creators, Series, and specialty archives in one request.
 - First-class Creator entities for every Deck/Coin designer and producer, with normalized role
@@ -785,7 +786,7 @@ Confirmed present in the codebase as of this writing:
   creators" poster-card row, a "Specialty collections" tile row (White Whales, Mini, Tarot,
   Coins, Souvenir), and a "Recently added" strip.
 - Stats dashboard: totals, top designers, era pie chart, release-year histogram, biggest-series
-  showcase, photo-coverage percentage, recently added.
+  showcase, photo/hook/note coverage percentages, recently added.
 - Four dedicated specialty landing pages plus dynamic Creator pages, with photo or inline-SVG
   hero art, gradient text-legibility overlay, and — for most pages — the full in-page sort/filter
   experience (`ScopedCollectionBrowser`) rather than a static grid.

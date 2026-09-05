@@ -74,6 +74,8 @@ export function CollectionFilters({
   const type = searchParams.get("type") ?? "all";
   const missingPhoto = isAuthenticated && searchParams.get("missingPhoto") === "1";
   const missingYear = isAuthenticated && searchParams.get("missingYear") === "1";
+  const missingHook = isAuthenticated && searchParams.get("missingHook") === "1";
+  const missingNote = isAuthenticated && searchParams.get("missingNote") === "1";
   const rawSort = searchParams.get("sort") ?? "";
   const sort: CollectionSort = isCollectionSort(rawSort) ? rawSort : "featured";
   const rawMinYear = searchParams.get("minYear");
@@ -100,7 +102,9 @@ export function CollectionFilters({
     (reason ? 1 : 0) +
     (hasYearFilter ? 1 : 0) +
     (missingPhoto ? 1 : 0) +
-    (missingYear ? 1 : 0);
+    (missingYear ? 1 : 0) +
+    (missingHook ? 1 : 0) +
+    (missingNote ? 1 : 0);
   const nonSearchFilterCount =
     advancedFilterCount + (creator ? 1 : 0);
   const hasFilters = Boolean(q) || nonSearchFilterCount > 0 || type !== "all";
@@ -161,7 +165,11 @@ export function CollectionFilters({
     pushParams((params) => {
       if (value === "all") params.delete("type");
       else params.set("type", value);
-      if (value === "coin") params.delete("missingYear");
+      if (value === "coin") {
+        params.delete("missingYear");
+        params.delete("missingHook");
+        params.delete("missingNote");
+      }
     });
   }
 
@@ -297,6 +305,8 @@ export function CollectionFilters({
                 <CollectionMaintenanceFilters
                   missingPhoto={missingPhoto}
                   missingYear={missingYear}
+                  missingHook={missingHook}
+                  missingNote={missingNote}
                   onMissingPhotoChange={(selected) =>
                     pushParams((params) => {
                       if (selected) params.set("missingPhoto", "1");
@@ -312,6 +322,26 @@ export function CollectionFilters({
                         params.delete("maxYear");
                       } else {
                         params.delete("missingYear");
+                      }
+                    })
+                  }
+                  onMissingHookChange={(selected) =>
+                    pushParams((params) => {
+                      if (selected) {
+                        params.set("missingHook", "1");
+                        params.set("type", "deck");
+                      } else {
+                        params.delete("missingHook");
+                      }
+                    })
+                  }
+                  onMissingNoteChange={(selected) =>
+                    pushParams((params) => {
+                      if (selected) {
+                        params.set("missingNote", "1");
+                        params.set("type", "deck");
+                      } else {
+                        params.delete("missingNote");
                       }
                     })
                   }
@@ -410,6 +440,18 @@ export function CollectionFilters({
             <CollectionActiveFilter
               label="Missing year"
               onRemove={() => removeParam("missingYear")}
+            />
+          )}
+          {missingHook && (
+            <CollectionActiveFilter
+              label="Missing hook"
+              onRemove={() => removeParam("missingHook")}
+            />
+          )}
+          {missingNote && (
+            <CollectionActiveFilter
+              label="Missing note"
+              onRemove={() => removeParam("missingNote")}
             />
           )}
           {hasYearFilter && (

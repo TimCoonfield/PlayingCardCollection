@@ -264,6 +264,7 @@ export async function updateDeck(
       producerCreatorId: true,
       qty: true,
       releaseYear: true,
+      hook: true,
       notes: true,
       tags: true,
       collectionReasonPrimary: true,
@@ -361,6 +362,7 @@ export async function updateDeck(
     producerChanged ||
     quantityChanged ||
     releaseYearChanged ||
+    existingDeck.hook !== (parsed.data.hook ?? null) ||
     existingDeck.notes !== (parsed.data.notes ?? null) ||
     tagsChanged ||
     existingDeck.collectionReasonPrimary !== (parsed.data.collectionReasonPrimary ?? null) ||
