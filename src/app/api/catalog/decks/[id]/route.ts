@@ -1,4 +1,6 @@
 import { getPublicDeckDetail } from "@/lib/public-deck-api";
+import { getSeriesDeckNavigation } from "@/lib/series-data";
+import { hasSeriesPage } from "@/lib/series-visibility";
 
 const PUBLIC_API_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -12,8 +14,12 @@ export async function GET(
 ) {
   const { id } = await params;
   let deck: Awaited<ReturnType<typeof getPublicDeckDetail>>;
+  let seriesDeckCount = 0;
   try {
     deck = await getPublicDeckDetail(id);
+    if (deck?.series) {
+      seriesDeckCount = (await getSeriesDeckNavigation(deck.series.slug)).length;
+    }
   } catch {
     return Response.json(
       { error: "The catalog is temporarily unavailable." },
@@ -44,7 +50,10 @@ export async function GET(
               name: deck.series.name,
               slug: deck.series.slug,
               subtitle: deck.series.subtitle,
-              pageUrl: new URL(`/series/${deck.series.slug}`, origin).toString(),
+              deckCount: seriesDeckCount,
+              pageUrl: hasSeriesPage(seriesDeckCount)
+                ? new URL(`/series/${deck.series.slug}`, origin).toString()
+                : null,
               deckOrder: deck.seriesOrder,
               variantNote: deck.variantNote,
             }

@@ -9,6 +9,7 @@ import {
   PaletteIcon,
   CoinIcon,
   LayersIcon,
+  HourglassIcon,
   CameraIcon,
   NoteIcon,
   PencilIcon,
@@ -115,7 +116,12 @@ export default async function StatsPage() {
         <StatTile icon={<CardsIcon className="h-6 w-6" />} label="Total decks" value={summaryMetadata.totalQuantity} href="/collection?type=deck" />
         <StatTile icon={<PaletteIcon className="h-6 w-6" />} label="Designers" value={metadata.designerCount} href="#top-designers" />
         <StatTile icon={<CoinIcon className="h-6 w-6" />} label="Coins" value={metadata.coinCount} href="/collection?type=coin" />
-        <StatTile icon={<LayersIcon className="h-6 w-6" />} label="Series" value={metadata.seriesCount} href="#biggest-series" />
+        <StatTile
+          icon={<HourglassIcon className="h-6 w-6" />}
+          label={metadata.oldestDeckYear ? `Oldest deck · ${metadata.oldestDeckYear}` : "Oldest deck"}
+          value={metadata.oldestDeckAge === null ? "—" : `${metadata.oldestDeckAge} years`}
+          href="/collection?type=deck&sort=year-asc"
+        />
       </div>
 
       {workCounts && (

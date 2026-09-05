@@ -6,7 +6,7 @@ import { SpecialtyCollectionCard } from "@/components/specialty-collection-card"
 import {
   CardsIcon,
   PaletteIcon,
-  LayersIcon,
+  HourglassIcon,
   CoinIcon,
   CameraIcon,
   SearchIcon,
@@ -135,9 +135,10 @@ export default async function HomePage() {
             href="/collection?type=coin"
           />
           <HeroStat
-            icon={<LayersIcon className="h-7 w-7" />}
-            label="Series"
-            value={metadata.seriesCount}
+            icon={<HourglassIcon className="h-7 w-7" />}
+            label={metadata.oldestDeckYear ? `Oldest deck · ${metadata.oldestDeckYear}` : "Oldest deck"}
+            value={metadata.oldestDeckAge === null ? "—" : `${metadata.oldestDeckAge} years`}
+            href="/collection?type=deck&sort=year-asc"
           />
         </div>
       </section>
@@ -207,14 +208,14 @@ function HeroStat({
 }: {
   icon: ReactNode;
   label: string;
-  value: number;
+  value: string | number;
   href?: string;
 }) {
   const content = (
     <>
       <span className="text-brass">{icon}</span>
       <span className="font-display text-4xl font-semibold tabular-nums leading-none text-felt-ink sm:text-5xl">
-        {value.toLocaleString()}
+        {typeof value === "number" ? value.toLocaleString() : value}
       </span>
       <span className="text-[10px] uppercase tracking-[0.16em] text-felt-ink/80 sm:text-xs">
         {label}

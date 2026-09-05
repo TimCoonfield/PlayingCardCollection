@@ -375,7 +375,7 @@ export async function updateDeck(
     else invalidateDeckBrowsePage(existingBrowsePage);
     invalidateRecentDecksCache();
   }
-  if (designerChanged || savedRelations.creatorIsNew || savedRelations.seriesIsNew) {
+  if (designerChanged || releaseYearChanged || savedRelations.creatorIsNew || savedRelations.seriesIsNew) {
     invalidateCoreCatalogMetadataCache();
   }
   if (designerChanged || producerChanged || releaseYearChanged || savedRelations.seriesIsNew) {
@@ -444,6 +444,7 @@ export async function updateDeckReleaseYear(
   }
 
   invalidateDeckBrowsePage(browsePage);
+  invalidateCoreCatalogMetadataCache();
   invalidateCollectionCatalogMetadataCache();
   invalidateStatsCatalogMetadataCache();
   invalidatePublicDeckDetail(deckId);

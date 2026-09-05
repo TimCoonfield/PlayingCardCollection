@@ -39,7 +39,9 @@ Major content types (see [§6 Data model](#6-data-model) for details):
   on landing pages; White Whale marks the rarest/hardest-won pieces and powers the dedicated
   `/white-whales` page.
 - **Series** — a first-class entity (`Series` model, not just a text field) that decks optionally
-  belong to, each with its own public `/series/[slug]` page. See [§6](#6-data-model).
+  belong to. A standalone public `/series/[slug]` page is exposed only when at least two distinct
+  Deck records belong to it; singleton membership remains stored as factual Deck metadata. See
+  [§6](#6-data-model).
 
 **Inferred design principles** (from the implementation, not stated anywhere explicitly):
 
@@ -290,11 +292,14 @@ The primary entity. Key fields beyond the obvious (`name`, `designers`, `produce
 ### Series
 First-class canonical Deck families. A Series owns its display name, stable unique slug, optional
 subtitle, Markdown description, hero override, and free-text attribution label/text. Attribution
-is never inferred from member Decks. Every Series is public at `/series/[slug]`. Series and Creator
-pages use restrained, type-led headers; when a saved hero exists, it occupies the right edge of the
-header behind a strong fade and also appears in the editorial About modal. Without a saved hero, the
-header and modal generate stable archival artwork with a title-derived monogram and suit motif. Member
-Deck imagery is not used as a fallback. Legacy
+is never inferred from member Decks. A Series becomes a public `/series/[slug]` destination only
+when it has at least two distinct Deck records. Singleton Series remain assigned and searchable as
+Deck metadata, but are omitted from Series filter options and Archive Spotlight Series results; the
+Deck detail page renders their name as unlinked text. This is a presentation rule, not a rewrite of
+the relationship. Eligible Series and Creator pages use restrained, type-led headers; when a saved
+hero exists, it occupies the right edge of the header behind a strong fade and also appears in the
+editorial About modal. Without a saved hero, the header and modal generate stable archival artwork
+with a title-derived monogram and suit motif. Member Deck imagery is not used as a fallback. Legacy
 `/collection?series=...` filters remain supported. Backfill, duplicate-review, merge, and rollback
 tooling lives in `scripts/series-migration.ts`.
 
@@ -485,9 +490,11 @@ delete form submits — purely a UI courtesy, not enforced server-side.
   random member photo), photo/hook/note coverage stats, and a recently-added strip. Aggregate chart
   numbers come from cached server-side Prisma queries; admin work counts are derived from the same
   cached deck-browse snapshot used by `/collection`, without an additional full-table query.
-- **`/series/[slug]`**: public page for each first-class Series — hero image or engraved suit-emblem
-  fallback, description/attribution, and its member decks with a sticky-header `SeriesDeckNavigation`
-  (prev/next through the Series) shown on each member deck's own detail page.
+- **`/series/[slug]`**: public page for each first-class Series with at least two distinct Deck
+  records — hero image or engraved suit-emblem fallback, description/attribution, and its member
+  decks with a sticky-header `SeriesDeckNavigation` (prev/next through the Series) shown on each
+  member deck's own detail page. Singleton Series retain their relationship but do not expose this
+  page or navigation.
 - **Landing pages** (`/white-whales`, `/souvenir`, `/mini`, `/tarot`, `/creators/[slug]`) — see
   [§4](#4-architecture) and [§11](#11-coding-conventions) for the shared-component pattern. The
   four specialty pages are thin `DecksLandingPage` wrappers; the dynamic Creator route supplies

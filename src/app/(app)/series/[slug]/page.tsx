@@ -9,6 +9,7 @@ import { MarkdownNote } from "@/components/markdown-note";
 import { ProfileHeaderArtwork } from "@/components/profile-monogram-art";
 import { SeriesEditor } from "@/components/series-editor";
 import { SITE_URL } from "@/lib/site";
+import { hasSeriesPage } from "@/lib/series-visibility";
 import { updateSeries } from "../actions";
 
 /** Strips Markdown syntax down to plain text for a meta description, truncated to ~155 chars. */
@@ -28,7 +29,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const series = await getSeriesPageData(slug);
-  if (!series) return { title: "Series Not Found" };
+  if (!series || !hasSeriesPage(series.decks.length)) return { title: "Series Not Found" };
 
   const description =
     series.subtitle ??
@@ -49,7 +50,7 @@ export default async function SeriesPage({
     getSession(),
   ]);
 
-  if (!series) notFound();
+  if (!series || !hasSeriesPage(series.decks.length)) notFound();
 
   const decks = sortSeriesDecks(series.decks);
   const updateSeriesWithId = updateSeries.bind(null, series.id);

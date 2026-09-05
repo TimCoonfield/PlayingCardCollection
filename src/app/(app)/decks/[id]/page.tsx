@@ -24,6 +24,7 @@ import {
   serializeJsonLd,
 } from "@/lib/seo";
 import type { CollectionReasonValue } from "@/lib/collection-reasons";
+import { hasSeriesPage } from "@/lib/series-visibility";
 
 export async function generateMetadata({
   params,
@@ -68,6 +69,7 @@ export default async function DeckDetailPage({
   const isAuthenticated = Boolean(session.authenticated);
   const deleteDeckWithId = deleteDeck.bind(null, deck.id);
   const seriesDecks = deck.series ? await getSeriesDeckNavigation(deck.series.slug) : [];
+  const seriesHasPage = hasSeriesPage(seriesDecks.length);
   const orderedSeriesDecks = sortSeriesDecks(seriesDecks);
   const seriesIndex = orderedSeriesDecks.findIndex((member) => member.id === deck.id);
   const previousDeck = seriesIndex > 0 ? orderedSeriesDecks[seriesIndex - 1] : null;
@@ -151,9 +153,13 @@ export default async function DeckDetailPage({
         isPartOf: deck.series
           ? {
               "@type": "CreativeWorkSeries",
-              "@id": `${SITE_URL}/series/${deck.series.slug}#series`,
               name: deck.series.name,
-              url: `${SITE_URL}/series/${deck.series.slug}`,
+              ...(seriesHasPage
+                ? {
+                    "@id": `${SITE_URL}/series/${deck.series.slug}#series`,
+                    url: `${SITE_URL}/series/${deck.series.slug}`,
+                  }
+                : {}),
             }
           : undefined,
         additionalProperty: additionalProperty.length > 0 ? additionalProperty : undefined,
@@ -161,7 +167,7 @@ export default async function DeckDetailPage({
       breadcrumbJsonLd(
         [
           { name: "Collection", path: "/collection" },
-          ...(deck.series
+          ...(deck.series && seriesHasPage
             ? [{ name: deck.series.name, path: `/series/${deck.series.slug}` }]
             : []),
           { name: deck.name, path: `/decks/${deck.id}` },
@@ -177,7 +183,7 @@ export default async function DeckDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(deckJsonLd) }}
       />
-      {deck.series && (
+      {deck.series && seriesHasPage && (
         <SeriesDeckNavigation
           series={deck.series}
           previousDeck={previousDeck}
@@ -220,6 +226,7 @@ export default async function DeckDetailPage({
           <DeckHeading
             name={deck.name}
             series={deck.series}
+            seriesHasPage={seriesHasPage}
             qty={deck.qty}
             favorite={deck.favorite}
             whiteWhale={deck.whiteWhale}
@@ -236,6 +243,7 @@ export default async function DeckDetailPage({
             <DeckHeading
               name={deck.name}
               series={deck.series}
+              seriesHasPage={seriesHasPage}
               qty={deck.qty}
               favorite={deck.favorite}
               whiteWhale={deck.whiteWhale}
@@ -353,6 +361,7 @@ export default async function DeckDetailPage({
 function DeckHeading({
   name,
   series,
+  seriesHasPage,
   qty,
   favorite,
   whiteWhale,
@@ -360,6 +369,7 @@ function DeckHeading({
 }: {
   name: string;
   series: { name: string; slug: string } | null;
+  seriesHasPage: boolean;
   qty: number;
   favorite: boolean;
   whiteWhale: boolean;
@@ -368,17 +378,26 @@ function DeckHeading({
   return (
     <div className="flex flex-col gap-1">
       {mobile ? (
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brass">
-          Playing card deck
-        </p>
+        <>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brass">
+            Playing card deck
+          </p>
+          {series && !seriesHasPage && (
+            <p className="text-sm text-felt-sub">{series.name}</p>
+          )}
+        </>
       ) : (
         series && (
-          <Link
-            href={`/series/${series.slug}`}
-            className="text-sm text-felt-sub hover:text-brass"
-          >
-            {series.name}
-          </Link>
+          seriesHasPage ? (
+            <Link
+              href={`/series/${series.slug}`}
+              className="text-sm text-felt-sub hover:text-brass"
+            >
+              {series.name}
+            </Link>
+          ) : (
+            <p className="text-sm text-felt-sub">{series.name}</p>
+          )
         )
       )}
       <div className="flex items-center gap-2.5">

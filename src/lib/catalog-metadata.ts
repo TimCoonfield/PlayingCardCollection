@@ -11,6 +11,7 @@ import {
   HOME_CATALOG_METADATA_CACHE_TAG,
   STATS_CATALOG_METADATA_CACHE_TAG,
 } from "@/lib/catalog-cache";
+import { hasSeriesPage, MIN_DECKS_FOR_SERIES_PAGE } from "@/lib/series-visibility";
 
 // Writes invalidate these snapshots immediately. The one-day lifetime is only a safety net for
 // out-of-band database changes, not the normal freshness mechanism.
@@ -20,25 +21,30 @@ export const getCoreCatalogMetadata = unstable_cache(
     const [
       totalDecks,
       designerCount,
-      seriesCount,
       coinCount,
+      oldestDeck,
     ] = await Promise.all([
       prisma.deck.count(),
       prisma.creator.count({
         where: { OR: [{ decksDesigned: { some: {} } }, { coinsDesigned: { some: {} } }] },
       }),
-      prisma.series.count(),
       prisma.coin.count(),
+      prisma.deck.aggregate({ _min: { releaseYear: true } }),
     ]);
+
+    const oldestDeckYear = oldestDeck._min.releaseYear;
 
     return {
       totalDecks,
       designerCount,
-      seriesCount,
       coinCount,
+      oldestDeckYear,
+      oldestDeckAge: oldestDeckYear === null
+        ? null
+        : Math.max(0, new Date().getFullYear() - oldestDeckYear),
     };
   },
-  ["core-catalog-metadata-v3"],
+  ["core-catalog-metadata-v4"],
   { tags: [CORE_CATALOG_METADATA_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
@@ -107,7 +113,12 @@ export const getCollectionMetadata = unstable_cache(
         where: { coinsProduced: { some: {} } },
         select: { name: true },
       }),
-      prisma.series.findMany({ select: { name: true } }),
+      prisma.series.findMany({
+        select: {
+          name: true,
+          decks: { select: { id: true }, take: MIN_DECKS_FOR_SERIES_PAGE },
+        },
+      }),
       prisma.coin.findMany({
         distinct: ["series"],
         where: { series: { not: null } },
@@ -145,7 +156,9 @@ export const getCollectionMetadata = unstable_cache(
       ).sort(),
       series: Array.from(
         new Set([
-          ...deckSeries.map(({ name }) => name),
+          ...deckSeries
+            .filter(({ decks }) => hasSeriesPage(decks.length))
+            .map(({ name }) => name),
           ...coinSeries
             .map(({ series }) => series)
             .filter((value): value is string => Boolean(value)),
@@ -153,7 +166,7 @@ export const getCollectionMetadata = unstable_cache(
       ).sort(),
     };
   },
-  ["collection-metadata-v3"],
+  ["collection-metadata-v4"],
   { tags: [COLLECTION_CATALOG_METADATA_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
@@ -284,8 +297,9 @@ export const getFavoriteCreators = cache(getCachedFavoriteCreators);
 export const getArchiveSearchSeries = unstable_cache(
   async () =>
     prisma.series.findMany({
+      where: { decks: { some: {} } },
       select: { name: true, slug: true, _count: { select: { decks: true } } },
-    }),
-  ["archive-search-series-v1"],
+    }).then((series) => series.filter(({ _count }) => hasSeriesPage(_count.decks))),
+  ["archive-search-series-v2"],
   { tags: [ARCHIVE_SERIES_METADATA_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );

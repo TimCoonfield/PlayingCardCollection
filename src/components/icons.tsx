@@ -199,6 +199,24 @@ export function LayersIcon({ className }: { className?: string }) {
   );
 }
 
+export function HourglassIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M6 3h12M6 21h12" />
+      <path d="M7 3c0 4 1.7 6.5 5 9-3.3 2.5-5 5-5 9M17 3c0 4-1.7 6.5-5 9 3.3 2.5 5 5 5 9" />
+    </svg>
+  );
+}
+
 export function CoinIcon({ className }: { className?: string }) {
   return (
     <svg
