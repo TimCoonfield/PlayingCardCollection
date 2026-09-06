@@ -6,6 +6,8 @@ import {
   publicDeckDetailCacheTag,
 } from "@/lib/catalog-cache";
 import { prisma } from "@/lib/prisma";
+import { flattenDeckTags } from "@/lib/tags";
+import { computeEra } from "@/lib/era";
 
 export const PUBLIC_DECK_SEARCH_SCOPES = [
   "all",
@@ -163,7 +165,8 @@ export function getPublicDeckDetail(id: string) {
           releaseYear: true,
           seriesOrder: true,
           variantNote: true,
-          tags: true,
+          tags: { select: { tag: { select: { name: true } } } },
+          manualEra: true,
           collectionReasonPrimary: true,
           collectionReasonSecondary: true,
           hook: true,
@@ -194,11 +197,16 @@ export function getPublicDeckDetail(id: string) {
         },
       });
       if (!deck) return null;
-      const { designers, ...rest } = deck;
+      const { designers, tags, manualEra, ...rest } = deck;
       const names = designers.map(({ designer }) => designer.name);
-      return { ...rest, designers: names, designer: names.join(" / ") || null };
+      return {
+        ...rest,
+        designers: names,
+        designer: names.join(" / ") || null,
+        tags: flattenDeckTags(tags, computeEra(rest.releaseYear, manualEra)),
+      };
     },
-    ["public-deck-detail-v3", id],
+    ["public-deck-detail-v5", id],
     {
       tags: [PUBLIC_DECK_DETAILS_CACHE_TAG, publicDeckDetailCacheTag(id)],
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,

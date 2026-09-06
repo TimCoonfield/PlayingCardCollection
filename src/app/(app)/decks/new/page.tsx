@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { DeckForm } from "@/components/deck-form";
 import { createDeck } from "../actions";
+import { getAllTags } from "@/lib/tags";
 
 export const metadata: Metadata = {
   title: "Add Deck",
@@ -9,12 +10,13 @@ export const metadata: Metadata = {
 };
 
 export default async function NewDeckPage() {
-  const [creators, seriesOptions] = await Promise.all([
+  const [creators, seriesOptions, availableTags] = await Promise.all([
     prisma.creator.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.series.findMany({
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
+    getAllTags(),
   ]);
 
   return (
@@ -24,6 +26,7 @@ export default async function NewDeckPage() {
         action={createDeck}
         creators={creators}
         seriesOptions={seriesOptions}
+        availableTags={availableTags}
         submitLabel="Save deck"
         enableAiIdentify
       />

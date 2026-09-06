@@ -6,6 +6,8 @@ import {
   PUBLIC_DECK_DETAILS_CACHE_TAG,
   publicDeckDetailCacheTag,
 } from "@/lib/catalog-cache";
+import { flattenDeckTags } from "@/lib/tags";
+import { computeEra } from "@/lib/era";
 
 const getCachedDeckPageData = (id: string) =>
   unstable_cache(
@@ -28,9 +30,10 @@ const getCachedDeckPageData = (id: string) =>
               subtitle: true,
             },
           },
+          tags: { select: { tag: { select: { name: true } } } },
         },
       }),
-    ["deck-page-v1", id],
+    ["deck-page-v3", id],
     {
       tags: [PUBLIC_DECK_DETAILS_CACHE_TAG, publicDeckDetailCacheTag(id)],
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
@@ -56,5 +59,6 @@ export const getDeckPageData = cache(async (id: string) => {
       ...edition,
       createdAt: new Date(edition.createdAt),
     })),
+    tags: flattenDeckTags(deck.tags, computeEra(deck.releaseYear, deck.manualEra)),
   };
 });

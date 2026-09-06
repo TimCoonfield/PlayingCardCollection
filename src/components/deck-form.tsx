@@ -8,7 +8,7 @@ import {
   CreatorSelector,
   type CreatorOption,
 } from "./creator-selector";
-import { ALL_TAGS } from "@/lib/schemas";
+import { ERA_VALUES, type EraValue } from "@/lib/era";
 import {
   COLLECTION_REASON_DETAILS,
   COLLECTION_REASON_VALUES,
@@ -17,6 +17,11 @@ import {
 import type { DeckIdentification } from "@/lib/anthropic";
 import type { DeckFormState } from "@/app/(app)/decks/actions";
 import { splitLegacyDesignerCredit } from "@/lib/designers";
+
+export interface TagOption {
+  id: string;
+  name: string;
+}
 
 export interface DeckFormDefaultValues {
   name?: string;
@@ -38,7 +43,8 @@ export interface DeckFormDefaultValues {
   essay?: string;
   notesReviewedAt?: string;
   catalogNumber?: string;
-  tags?: string[];
+  tagIds?: string[];
+  manualEra?: EraValue;
 }
 
 export function DeckForm({
@@ -47,6 +53,7 @@ export function DeckForm({
   initialImages = [],
   creators,
   seriesOptions,
+  availableTags,
   submitLabel,
   enableAiIdentify = false,
   showEditorialFields = false,
@@ -56,12 +63,14 @@ export function DeckForm({
   initialImages?: { url: string }[];
   creators: CreatorOption[];
   seriesOptions: SeriesOption[];
+  availableTags: TagOption[];
   submitLabel: string;
   enableAiIdentify?: boolean;
   showEditorialFields?: boolean;
 }) {
   const [state, formAction, pending] = useActionState<DeckFormState, FormData>(action, {});
-  const [tags, setTags] = useState<string[]>(defaultValues.tags ?? []);
+  const [tagIds, setTagIds] = useState<string[]>(defaultValues.tagIds ?? []);
+  const [manualEra, setManualEra] = useState<EraValue | "">(defaultValues.manualEra ?? "");
   const [imageUrls, setImageUrls] = useState<string[]>(initialImages.map((i) => i.url));
   const [editionNumbers, setEditionNumbers] = useState<string[]>(
     (defaultValues.editionNumbers ?? []).map(String)
@@ -114,7 +123,18 @@ export function DeckForm({
       if (releaseYearRef.current && result.releaseYear)
         releaseYearRef.current.value = String(result.releaseYear);
       if (notesRef.current && result.notes) notesRef.current.value = result.notes;
-      if (result.tags?.length) setTags((prev) => Array.from(new Set([...prev, ...result.tags])));
+      if (result.tags?.length) {
+        const suggestedEra = result.tags.find((tag): tag is EraValue =>
+          (ERA_VALUES as readonly string[]).includes(tag)
+        );
+        const suggestedTagIds = result.tags
+          .map((tag) => availableTags.find((option) => option.name === tag)?.id)
+          .filter((id): id is string => Boolean(id));
+        if (suggestedEra) setManualEra(suggestedEra);
+        if (suggestedTagIds.length) {
+          setTagIds((prev) => Array.from(new Set([...prev, ...suggestedTagIds])));
+        }
+      }
       setIdentified(true);
     } catch (err) {
       setIdentifyError(err instanceof Error ? err.message : "Identification failed");
@@ -308,25 +328,44 @@ export function DeckForm({
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 text-sm font-medium text-felt-sub">Tags</legend>
         <div className="flex flex-wrap gap-x-4 gap-y-2">
-          {ALL_TAGS.map((tag) => (
-            <label key={tag} className="flex items-center gap-1.5 text-sm text-felt-sub">
+          {availableTags.map((tag) => (
+            <label key={tag.id} className="flex items-center gap-1.5 text-sm text-felt-sub">
               <input
                 type="checkbox"
-                name="tags"
-                value={tag}
-                checked={tags.includes(tag)}
+                name="tagIds"
+                value={tag.id}
+                checked={tagIds.includes(tag.id)}
                 onChange={(e) =>
-                  setTags((prev) =>
-                    e.target.checked ? [...prev, tag] : prev.filter((t) => t !== tag)
+                  setTagIds((prev) =>
+                    e.target.checked ? [...prev, tag.id] : prev.filter((id) => id !== tag.id)
                   )
                 }
                 className="accent-brass"
               />
-              {tag}
+              {tag.name}
             </label>
           ))}
         </div>
       </fieldset>
+
+      <Field label="Era" error={state?.fieldErrors?.manualEra}>
+        <select
+          name="manualEra"
+          value={manualEra}
+          onChange={(event) => setManualEra(event.target.value as EraValue | "")}
+          className={inputClass}
+        >
+          <option value="">Not set</option>
+          {ERA_VALUES.map((era) => (
+            <option key={era} value={era}>
+              {era}
+            </option>
+          ))}
+        </select>
+        <span className="text-xs text-felt-sub/80">
+          Used only when no Release year is set — a Release year computes this automatically.
+        </span>
+      </Field>
 
       {showEditorialFields && (
         <fieldset className="flex flex-col gap-5 border-t border-felt-line pt-6">

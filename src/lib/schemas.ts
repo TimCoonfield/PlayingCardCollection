@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { COLLECTION_REASON_VALUES } from "@/lib/collection-reasons";
 import { uniqueDesignerNames } from "@/lib/designers";
+import { ERA_VALUES } from "@/lib/era";
 
 const optionalString = z
   .string()
@@ -35,6 +36,12 @@ const optionalCollectionReason = z
   .transform((v) => (v.length > 0 ? v : undefined))
   .pipe(z.enum(COLLECTION_REASON_VALUES).optional());
 
+const optionalEra = z
+  .string()
+  .transform((v) => v.trim())
+  .transform((v) => (v.length > 0 ? v : undefined))
+  .pipe(z.enum(ERA_VALUES).optional());
+
 export const deckFormSchema = z
   .object({
     name: z.string().trim().min(1, "Name is required"),
@@ -68,7 +75,11 @@ export const deckFormSchema = z
     essay: optionalVerbatimText,
     notesReviewed: z.boolean().default(false),
     catalogNumber: optionalString,
-    tags: z.array(z.string()).default([]),
+    tagIds: z.array(z.string()).default([]),
+    // Era is a code-level calculated field when releaseYear is known (see src/lib/era.ts's
+    // computeEra); this is only the manual fallback for decks with no releaseYear, and gets
+    // nulled out server-side whenever a releaseYear is present (see toDeckData in actions.ts).
+    manualEra: optionalEra,
     imageUrls: z.array(z.string().url()).default([]),
   })
   .refine((data) => data.editionNumbers.length <= data.qty, {
@@ -181,7 +192,8 @@ export function parseDeckFormData(formData: FormData) {
     essay: formData.get("essay") ?? "",
     notesReviewed: formData.has("notesReviewed"),
     catalogNumber: formData.get("catalogNumber") ?? "",
-    tags: formData.getAll("tags").map(String),
+    tagIds: formData.getAll("tagIds").map(String),
+    manualEra: formData.get("manualEra") ?? "",
     imageUrls: formData.getAll("imageUrls").map(String),
   });
 }

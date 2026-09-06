@@ -12,6 +12,7 @@ import {
   STATS_CATALOG_METADATA_CACHE_TAG,
 } from "@/lib/catalog-cache";
 import { hasSeriesPage, MIN_DECKS_FOR_SERIES_PAGE } from "@/lib/series-visibility";
+import { ANTIQUE_MIN_AGE_YEARS, VINTAGE_MIN_AGE_YEARS } from "@/lib/era";
 
 // Writes invalidate these snapshots immediately. The one-day lifetime is only a safety net for
 // out-of-band database changes, not the normal freshness mechanism.
@@ -51,8 +52,8 @@ export const getCoreCatalogMetadata = unstable_cache(
 export const getHomePageMetadata = unstable_cache(
   async () => {
     const [miniCount, tarotCount, souvenirCount, whiteWhaleCount] = await Promise.all([
-      prisma.deck.count({ where: { tags: { has: "Mini" } } }),
-      prisma.deck.count({ where: { tags: { has: "Tarot" } } }),
+      prisma.deck.count({ where: { tags: { some: { tag: { name: "Mini" } } } } }),
+      prisma.deck.count({ where: { tags: { some: { tag: { name: "Tarot" } } } } }),
       prisma.deck.count({ where: { series: { is: { slug: "souvenir-decks" } } } }),
       prisma.deck.count({ where: { whiteWhale: true } }),
     ]);
@@ -65,11 +66,39 @@ export const getHomePageMetadata = unstable_cache(
 
 export const getStatsSummaryMetadata = unstable_cache(
   async () => {
+    // Era is a code-level calculated field (src/lib/era.ts's computeEra), not a stored value, so
+    // these counts are expressed as releaseYear cutoffs rather than a `tags`/`tagsLegacy` lookup.
+    // manualEra is only consulted for the releaseYear-less decks that fall through every clause.
+    const currentYear = new Date().getFullYear();
+    const antiqueMaxYear = currentYear - ANTIQUE_MIN_AGE_YEARS;
+    const vintageMaxYear = currentYear - VINTAGE_MIN_AGE_YEARS;
+
     const [qtySum, modernCount, vintageCount, antiqueCount] = await Promise.all([
       prisma.deck.aggregate({ _sum: { qty: true } }),
-      prisma.deck.count({ where: { tags: { has: "Modern" } } }),
-      prisma.deck.count({ where: { tags: { has: "Vintage" } } }),
-      prisma.deck.count({ where: { tags: { has: "Antique" } } }),
+      prisma.deck.count({
+        where: {
+          OR: [
+            { releaseYear: { gt: vintageMaxYear } },
+            { releaseYear: null, manualEra: "Modern" },
+          ],
+        },
+      }),
+      prisma.deck.count({
+        where: {
+          OR: [
+            { releaseYear: { lte: vintageMaxYear, gt: antiqueMaxYear } },
+            { releaseYear: null, manualEra: "Vintage" },
+          ],
+        },
+      }),
+      prisma.deck.count({
+        where: {
+          OR: [
+            { releaseYear: { lte: antiqueMaxYear } },
+            { releaseYear: null, manualEra: "Antique" },
+          ],
+        },
+      }),
     ]);
 
     return {
@@ -79,7 +108,7 @@ export const getStatsSummaryMetadata = unstable_cache(
       antiqueCount,
     };
   },
-  ["stats-summary-metadata-v2"],
+  ["stats-summary-metadata-v3"],
   { tags: [STATS_CATALOG_METADATA_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 

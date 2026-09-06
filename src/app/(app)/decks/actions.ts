@@ -25,6 +25,7 @@ import {
   invalidateStatsCatalogMetadataCache,
 } from "@/lib/catalog-cache";
 import { parseDeckFormData, type DeckFormValues } from "@/lib/schemas";
+import { computeEra } from "@/lib/era";
 import { seriesCollisionSlug, seriesSlugBase } from "@/lib/series-slug";
 import { joinDesignerNames } from "@/lib/designers";
 import {
@@ -74,6 +75,13 @@ function sameStrings(left: string[], right: string[]) {
   return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
+// Tags have no meaningful order, unlike designer credits — compare as sets.
+function sameStringSets(left: string[], right: string[]) {
+  if (left.length !== right.length) return false;
+  const rightSet = new Set(right);
+  return left.every((value) => rightSet.has(value));
+}
+
 function toDeckData(
   values: DeckFormValues,
   series: { id: string; name: string } | null,
@@ -95,7 +103,12 @@ function toDeckData(
     releaseYear: values.releaseYear ?? null,
     notes: values.notes ?? null,
     catalogNumber: values.catalogNumber ?? null,
-    tags: values.tags,
+    // No longer written to — the normalized tags relation and manualEra below are now the sole
+    // sources of truth (see the field comment on Deck.tagsLegacy in schema.prisma).
+    tagsLegacy: [],
+    // Era is calculated from releaseYear whenever one is known (src/lib/era.ts's computeEra), so
+    // the manual fallback is meaningless — and would go stale — once a releaseYear exists.
+    manualEra: values.releaseYear ? null : values.manualEra ?? null,
   };
 }
 
@@ -211,6 +224,9 @@ export async function createDeck(
               sortOrder,
             })),
           },
+          tags: {
+            create: parsed.data.tagIds.map((tagId) => ({ tagId })),
+          },
         },
         select: { id: true },
       });
@@ -266,7 +282,8 @@ export async function updateDeck(
       releaseYear: true,
       hook: true,
       notes: true,
-      tags: true,
+      manualEra: true,
+      tags: { select: { tagId: true } },
       collectionReasonPrimary: true,
       collectionReasonSecondary: true,
       favorite: true,
@@ -316,6 +333,10 @@ export async function updateDeck(
               sortOrder,
             })),
           },
+          tags: {
+            deleteMany: {},
+            create: parsed.data.tagIds.map((tagId) => ({ tagId })),
+          },
         },
       });
       return {
@@ -355,7 +376,15 @@ export async function updateDeck(
   const producerChanged = existingDeck.producerCreatorId !== savedRelations.producerId;
   const quantityChanged = existingDeck.qty !== parsed.data.qty;
   const releaseYearChanged = existingDeck.releaseYear !== (parsed.data.releaseYear ?? null);
-  const tagsChanged = !sameStrings(existingDeck.tags, parsed.data.tags);
+  const newManualEra = parsed.data.releaseYear ? null : parsed.data.manualEra ?? null;
+  const eraChanged =
+    computeEra(existingDeck.releaseYear, existingDeck.manualEra) !==
+    computeEra(parsed.data.releaseYear ?? null, newManualEra);
+  const tagsChanged =
+    !sameStringSets(
+      existingDeck.tags.map(({ tagId }) => tagId),
+      parsed.data.tagIds
+    ) || eraChanged;
   const browseChanged = nameChanged ||
     seriesChanged ||
     designerChanged ||

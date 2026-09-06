@@ -6,6 +6,8 @@ import {
   SERIES_PAGES_CACHE_TAG,
   seriesPageCacheTag,
 } from "@/lib/catalog-cache";
+import { flattenDeckTags } from "@/lib/tags";
+import { computeEra } from "@/lib/era";
 
 export const getSeriesPageData = cache((slug: string) =>
   unstable_cache(
@@ -23,7 +25,8 @@ export const getSeriesPageData = cache((slug: string) =>
               },
               producer: true,
               qty: true,
-              tags: true,
+              tags: { select: { tag: { select: { name: true } } } },
+              manualEra: true,
               favorite: true,
               whiteWhale: true,
               releaseYear: true,
@@ -36,13 +39,15 @@ export const getSeriesPageData = cache((slug: string) =>
       if (!series) return null;
       return {
         ...series,
-        decks: series.decks.map(({ designers, ...deck }) => ({
+        decks: series.decks.map(({ designers, tags, manualEra, releaseYear, ...deck }) => ({
           ...deck,
+          releaseYear,
           designers: designers.map(({ designer }) => designer.name),
+          tags: flattenDeckTags(tags, computeEra(releaseYear, manualEra)),
         })),
       };
     },
-    ["series-page-v1", slug],
+    ["series-page-v3", slug],
     {
       tags: [SERIES_PAGES_CACHE_TAG, seriesPageCacheTag(slug)],
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,

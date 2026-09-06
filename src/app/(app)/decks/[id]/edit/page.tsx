@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { DeckForm } from "@/components/deck-form";
 import { updateDeck } from "../../actions";
+import { getAllTags } from "@/lib/tags";
 
 export const metadata: Metadata = {
   title: "Edit Deck",
@@ -16,7 +17,7 @@ export default async function EditDeckPage({
 }) {
   const { id } = await params;
 
-  const [deck, creators, seriesOptions] = await Promise.all([
+  const [deck, creators, seriesOptions, availableTags] = await Promise.all([
     prisma.deck.findUnique({
       where: { id },
       include: {
@@ -25,6 +26,7 @@ export default async function EditDeckPage({
         producerCreator: true,
         images: { orderBy: { sortOrder: "asc" } },
         editions: { orderBy: { deckNumber: "asc" } },
+        tags: { select: { tagId: true } },
       },
     }),
     prisma.creator.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
@@ -32,6 +34,7 @@ export default async function EditDeckPage({
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
+    getAllTags(),
   ]);
 
   if (!deck) notFound();
@@ -65,11 +68,13 @@ export default async function EditDeckPage({
           essay: deck.essay ?? undefined,
           notesReviewedAt: deck.notesReviewedAt?.toISOString(),
           catalogNumber: deck.catalogNumber ?? undefined,
-          tags: deck.tags,
+          tagIds: deck.tags.map(({ tagId }) => tagId),
+          manualEra: deck.manualEra ?? undefined,
         }}
         initialImages={deck.images.map((i) => ({ url: i.url }))}
         creators={creators}
         seriesOptions={seriesOptions}
+        availableTags={availableTags}
         submitLabel="Save changes"
         showEditorialFields
       />

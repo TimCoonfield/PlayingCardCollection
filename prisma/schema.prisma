@@ -10,6 +10,14 @@ datasource db {
   provider = "postgresql"
 }
 
+// Values deliberately match src/lib/era.ts's ERA_VALUES display strings exactly (unlike
+// CollectionReason's ALL_CAPS-plus-label-map pattern) since there's no separate label to carry.
+enum Era {
+  Modern
+  Vintage
+  Antique
+}
+
 enum CollectionReason {
   ARTISTRY
   CRAFT
@@ -67,7 +75,17 @@ model Deck {
   producer                  String?
   producerCreatorId         String?
   producerCreator           Creator?          @relation("DeckProducer", fields: [producerCreatorId], references: [id], onDelete: Restrict)
-  tags                      String[]          @default([])
+  // Legacy free-text tag array, kept only as a historical compatibility mirror of the original
+  // imported column. No longer written to by the app: Gilded/Signed/Mini/Tarot/Prototype/Edge
+  // Painted live in the normalized `tags` relation below, and Modern/Vintage/Antique are now a
+  // code-level calculated field (src/lib/era.ts's computeEra) backed by `manualEra` as the
+  // fallback for decks with no releaseYear.
+  tagsLegacy                String[]          @default([]) @map("tags")
+  tags                      DeckTag[]
+  // Fallback era classification, used only when releaseYear is null — computeEra() always
+  // derives era from releaseYear's age when one is known, and this field is nulled out on save
+  // whenever a releaseYear is present (see toDeckData in decks/actions.ts).
+  manualEra                 Era?
   ownershipStatus           String            @default("Owned")
   qty                       Int               @default(1)
   productionRun             Int?
@@ -86,7 +104,7 @@ model Deck {
   createdAt                 DateTime          @default(now())
   updatedAt                 DateTime          @updatedAt
 
-  @@index([tags], type: Gin)
+  @@index([tagsLegacy], type: Gin, map: "Deck_tags_idx")
   @@index([designerLegacy], map: "Deck_designer_idx")
   @@index([producer])
   @@index([producerCreatorId])
@@ -106,6 +124,27 @@ model DeckDesigner {
   @@id([deckId, designerId])
   @@unique([deckId, sortOrder])
   @@index([designerId])
+}
+
+// Normalized, extensible deck tags. New tags are added by inserting a row here — no migration or
+// code change needed for the tag itself, just the resulting checkbox showing up in the deck form.
+// Era (Modern/Vintage/Antique) deliberately does not live here; see Deck.manualEra and
+// src/lib/era.ts's computeEra.
+model Tag {
+  id        String    @id @default(cuid())
+  name      String    @unique @db.VarChar(60)
+  decks     DeckTag[]
+  createdAt DateTime  @default(now())
+}
+
+model DeckTag {
+  deckId String
+  tagId  String
+  deck   Deck   @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Restrict)
+
+  @@id([deckId, tagId])
+  @@index([tagId])
 }
 
 model DeckImage {

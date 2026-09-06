@@ -11,6 +11,8 @@ import {
   deckBrowsePageCacheTag,
 } from "@/lib/catalog-cache";
 import { getCoreCatalogMetadata } from "@/lib/catalog-metadata";
+import { flattenDeckTags } from "@/lib/tags";
+import { computeEra } from "@/lib/era";
 
 // Vercel cache entries have a 2 MB ceiling. Paging the archive keeps each entry comfortably
 // below it as notes and image URLs accumulate, while still hydrating Neon only once per write.
@@ -30,7 +32,8 @@ function getBrowseDeckPage(page: number) {
           },
           producer: true,
           qty: true,
-          tags: true,
+          tags: { select: { tag: { select: { name: true } } } },
+          manualEra: true,
           favorite: true,
           whiteWhale: true,
           releaseYear: true,
@@ -49,17 +52,19 @@ function getBrowseDeckPage(page: number) {
         skip: page * DECK_BROWSE_CACHE_PAGE_SIZE,
         take: DECK_BROWSE_CACHE_PAGE_SIZE,
       });
-      return rows.map(({ series, seriesRaw, seriesLegacy, designers, hook, ...deck }) => ({
+      return rows.map(({ series, seriesRaw, seriesLegacy, designers, hook, tags, manualEra, releaseYear, ...deck }) => ({
         ...deck,
+        releaseYear,
         hasHook: Boolean(hook?.trim()),
         designers: designers.map(({ designer }) => designer.name),
         designer: designers.map(({ designer }) => designer.name).join(" / ") || null,
         series: series?.name ?? seriesRaw?.trim() ?? seriesLegacy?.trim() ?? null,
         seriesSlug: series?.slug ?? null,
         seriesRaw,
+        tags: flattenDeckTags(tags, computeEra(releaseYear, manualEra)),
       }));
     },
-    ["browse-deck-page-v6", String(page)],
+    ["browse-deck-page-v8", String(page)],
     {
       tags: [DECK_BROWSE_CACHE_TAG, deckBrowsePageCacheTag(page)],
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
@@ -125,17 +130,21 @@ export const getRecentDecks = unstable_cache(
         },
         producer: true,
         qty: true,
-        tags: true,
+        tags: { select: { tag: { select: { name: true } } } },
+        manualEra: true,
+        releaseYear: true,
         favorite: true,
         whiteWhale: true,
         images: { orderBy: { sortOrder: "asc" }, take: 1, select: { url: true } },
       },
-    }).then((decks) => decks.map(({ designers, ...deck }) => ({
+    }).then((decks) => decks.map(({ designers, tags, manualEra, releaseYear, ...deck }) => ({
       ...deck,
+      releaseYear,
       designers: designers.map(({ designer }) => designer.name),
       designer: designers.map(({ designer }) => designer.name).join(" / ") || null,
+      tags: flattenDeckTags(tags, computeEra(releaseYear, manualEra)),
     }))),
-  ["recent-decks-v2"],
+  ["recent-decks-v4"],
   { tags: [RECENT_DECKS_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
@@ -148,11 +157,19 @@ const getSeriesSpotlightRows = unstable_cache(
         id: true,
         name: true,
         seriesId: true,
-        tags: true,
+        tags: { select: { tag: { select: { name: true } } } },
+        manualEra: true,
+        releaseYear: true,
         images: { orderBy: { sortOrder: "asc" }, take: 1, select: { url: true } },
       },
-    }),
-  ["series-spotlight-rows-v1"],
+    }).then((rows) =>
+      rows.map(({ tags, manualEra, releaseYear, ...deck }) => ({
+        ...deck,
+        releaseYear,
+        tags: flattenDeckTags(tags, computeEra(releaseYear, manualEra)),
+      }))
+    ),
+  ["series-spotlight-rows-v3"],
   { tags: [SERIES_SPOTLIGHT_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
