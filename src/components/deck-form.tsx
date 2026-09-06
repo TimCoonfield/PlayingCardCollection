@@ -71,6 +71,7 @@ export function DeckForm({
   const [state, formAction, pending] = useActionState<DeckFormState, FormData>(action, {});
   const [tagIds, setTagIds] = useState<string[]>(defaultValues.tagIds ?? []);
   const [manualEra, setManualEra] = useState<EraValue | "">(defaultValues.manualEra ?? "");
+  const [hasReleaseYear, setHasReleaseYear] = useState(Boolean(defaultValues.releaseYear));
   const [imageUrls, setImageUrls] = useState<string[]>(initialImages.map((i) => i.url));
   const [editionNumbers, setEditionNumbers] = useState<string[]>(
     (defaultValues.editionNumbers ?? []).map(String)
@@ -120,8 +121,10 @@ export function DeckForm({
       }
       if (productionRunRef.current && result.productionRun)
         productionRunRef.current.value = String(result.productionRun);
-      if (releaseYearRef.current && result.releaseYear)
+      if (releaseYearRef.current && result.releaseYear) {
         releaseYearRef.current.value = String(result.releaseYear);
+        setHasReleaseYear(true);
+      }
       if (notesRef.current && result.notes) notesRef.current.value = result.notes;
       if (result.tags?.length) {
         const suggestedEra = result.tags.find((tag): tag is EraValue =>
@@ -253,6 +256,7 @@ export function DeckForm({
             type="number"
             min={1}
             defaultValue={defaultValues.releaseYear ?? ""}
+            onChange={(e) => setHasReleaseYear(e.target.value.trim().length > 0)}
             className={inputClass}
           />
         </Field>
@@ -348,24 +352,26 @@ export function DeckForm({
         </div>
       </fieldset>
 
-      <Field label="Era" error={state?.fieldErrors?.manualEra}>
-        <select
-          name="manualEra"
-          value={manualEra}
-          onChange={(event) => setManualEra(event.target.value as EraValue | "")}
-          className={inputClass}
-        >
-          <option value="">Not set</option>
-          {ERA_VALUES.map((era) => (
-            <option key={era} value={era}>
-              {era}
-            </option>
-          ))}
-        </select>
-        <span className="text-xs text-felt-sub/80">
-          Used only when no Release year is set — a Release year computes this automatically.
-        </span>
-      </Field>
+      {!hasReleaseYear && (
+        <Field label="Era" error={state?.fieldErrors?.manualEra}>
+          <select
+            name="manualEra"
+            value={manualEra}
+            onChange={(event) => setManualEra(event.target.value as EraValue | "")}
+            className={inputClass}
+          >
+            <option value="">Not set</option>
+            {ERA_VALUES.map((era) => (
+              <option key={era} value={era}>
+                {era}
+              </option>
+            ))}
+          </select>
+          <span className="text-xs text-felt-sub/80">
+            Used only when no Release year is set — a Release year computes this automatically.
+          </span>
+        </Field>
+      )}
 
       {showEditorialFields && (
         <fieldset className="flex flex-col gap-5 border-t border-felt-line pt-6">
