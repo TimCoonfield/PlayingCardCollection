@@ -117,7 +117,8 @@ export function ScopedCollectionBrowser({
       [item.name, item.series, ...item.designers, item.producer, item.notes]
         .filter(Boolean)
         .some((value) => value!.toLocaleLowerCase().includes(normalizedQuery));
-    const matchesTags = tags.every((tag) => item.tags.includes(tag));
+    const matchesTags =
+      tags.length === 0 || ("tags" in item && tags.every((tag) => item.tags.includes(tag)));
     const matchesDesigner =
       designers.length === 0 ||
       item.designers.some((designer) => designers.includes(designer));
@@ -252,6 +253,7 @@ export function ScopedCollectionBrowser({
               onChange={(value) => {
                 setType(value);
                 if (value === "coin") {
+                  setTags([]);
                   setMissingYear(false);
                   setMissingHook(false);
                   setMissingNote(false);
@@ -259,11 +261,13 @@ export function ScopedCollectionBrowser({
               }}
             />
                   <div className="flex flex-wrap items-center gap-2">
-                    <CollectionTagPills
-                      availableTags={availableTags}
-                      selectedTags={tags}
-                      onToggle={(tag) => toggleTag(tag)}
-                    />
+                    {type !== "coin" && (
+                      <CollectionTagPills
+                        availableTags={availableTags}
+                        selectedTags={tags}
+                        onToggle={(tag) => toggleTag(tag)}
+                      />
+                    )}
                     {isAuthenticated && (
                       <CollectionMaintenanceFilters
                         missingPhoto={missingPhoto}

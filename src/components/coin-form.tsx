@@ -1,9 +1,8 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useRef } from "react";
 import { CoinPhotoSlots } from "./coin-photo-slots";
 import { CreatorSelector, type CreatorOption } from "./creator-selector";
-import { COIN_TAGS } from "@/lib/coin-schemas";
 import type { CoinFormState } from "@/app/(app)/coins/actions";
 
 export interface CoinFormDefaultValues {
@@ -17,7 +16,6 @@ export interface CoinFormDefaultValues {
   releaseYear?: number | null;
   notes?: string;
   catalogNumber?: string;
-  tags?: string[];
 }
 
 export function CoinForm({
@@ -36,7 +34,6 @@ export function CoinForm({
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState<CoinFormState, FormData>(action, {});
-  const [tags, setTags] = useState<string[]>(defaultValues.tags ?? []);
 
   const nameRef = useRef<HTMLInputElement>(null);
   const seriesRef = useRef<HTMLInputElement>(null);
@@ -117,29 +114,6 @@ export function CoinForm({
           />
         </Field>
       </div>
-
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-sm font-medium text-felt-sub">Tags</legend>
-        <div className="flex flex-wrap gap-x-4 gap-y-2">
-          {COIN_TAGS.map((tag) => (
-            <label key={tag} className="flex items-center gap-1.5 text-sm text-felt-sub">
-              <input
-                type="checkbox"
-                name="tags"
-                value={tag}
-                checked={tags.includes(tag)}
-                onChange={(e) =>
-                  setTags((prev) =>
-                    e.target.checked ? [...prev, tag] : prev.filter((t) => t !== tag)
-                  )
-                }
-                className="accent-brass"
-              />
-              {tag}
-            </label>
-          ))}
-        </div>
-      </fieldset>
 
       <Field label="Notes">
         <textarea

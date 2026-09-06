@@ -143,7 +143,6 @@ model Coin {
   diameter          String?
   obverseImageUrl   String?
   reverseImageUrl   String?
-  tags              String[] @default([])
   ownershipStatus   String   @default("Owned")
   qty               Int      @default(1)
   releaseYear       Int?
@@ -152,7 +151,6 @@ model Coin {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  @@index([tags], type: Gin)
   @@index([designer])
   @@index([designerCreatorId])
   @@index([producer])

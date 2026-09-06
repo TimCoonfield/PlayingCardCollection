@@ -1,0 +1,1 @@
+ALTER TABLE "Coin" DROP COLUMN "tags";

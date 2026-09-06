@@ -48,7 +48,6 @@ export default async function EditCoinPage({
           releaseYear: coin.releaseYear,
           notes: coin.notes ?? undefined,
           catalogNumber: coin.catalogNumber ?? undefined,
-          tags: coin.tags,
         }}
         initialObverseUrl={coin.obverseImageUrl ?? undefined}
         initialReverseUrl={coin.reverseImageUrl ?? undefined}

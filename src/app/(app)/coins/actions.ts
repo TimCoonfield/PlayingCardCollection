@@ -52,7 +52,6 @@ function toCoinData(
     releaseYear: values.releaseYear ?? null,
     notes: values.notes ?? null,
     catalogNumber: values.catalogNumber ?? null,
-    tags: values.tags,
     obverseImageUrl: values.obverseImageUrl ?? null,
     reverseImageUrl: values.reverseImageUrl ?? null,
   };

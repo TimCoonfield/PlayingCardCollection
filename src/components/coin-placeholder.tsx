@@ -16,15 +16,13 @@ const ACCENT_CLASSES: Record<string, { text: string; bar: string }> = {
 };
 
 export function CoinPlaceholder({
-  tags,
   size = "md",
   thickAccent = false,
 }: {
-  tags: string[];
   size?: "sm" | "md" | "lg";
   thickAccent?: boolean;
 }) {
-  const style = getDeckPlaceholder(tags);
+  const style = getDeckPlaceholder([]);
   const accent = ACCENT_CLASSES[style.accent] ?? ACCENT_CLASSES.brass;
 
   return (
@@ -34,14 +32,14 @@ export function CoinPlaceholder({
         fallback="coin"
         className={`${ICON_SIZE_CLASSES[size]} ${accent.text} opacity-90 drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)]`}
       />
-      <CoinAccentBar tags={tags} thick={thickAccent} />
+      <CoinAccentBar thick={thickAccent} />
     </div>
   );
 }
 
 /** The same bottom accent bar the deck placeholder uses, for reuse over a real photo. */
-export function CoinAccentBar({ tags, thick = false }: { tags: string[]; thick?: boolean }) {
-  const style = getDeckPlaceholder(tags);
+export function CoinAccentBar({ thick = false }: { thick?: boolean }) {
+  const style = getDeckPlaceholder([]);
   const accent = ACCENT_CLASSES[style.accent] ?? ACCENT_CLASSES.brass;
   return (
     <span className={`absolute inset-x-0 bottom-0 ${thick ? "h-[9px]" : "h-[3px]"} ${accent.bar} opacity-70`} />

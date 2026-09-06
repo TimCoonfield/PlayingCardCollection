@@ -77,7 +77,6 @@ const getBrowseCoins = unstable_cache(
         designer: true,
         producer: true,
         qty: true,
-        tags: true,
         obverseImageUrl: true,
         reverseImageUrl: true,
         releaseYear: true,
@@ -91,7 +90,7 @@ const getBrowseCoins = unstable_cache(
       designers: coin.designer ? [coin.designer] : [],
     }));
   },
-  ["browse-coins-v2"],
+  ["browse-coins-v3"],
   { tags: [COIN_BROWSE_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
@@ -251,12 +250,12 @@ export async function getProducerOrDesignerLandingCatalog(
   };
 }
 
+// Coins have no tags at all — a tag-scoped landing page (Mini, Tarot, etc.) never has any coins.
 export async function getTaggedLandingCatalog(tag: string) {
   const catalog = await getLandingPageCatalog();
-  const matches = (item: { tags: string[] }) => item.tags.includes(tag);
   return {
-    decks: catalog.decks.filter(matches),
-    coins: catalog.coins.filter(matches),
+    decks: catalog.decks.filter((deck) => deck.tags.includes(tag)),
+    coins: [],
   };
 }
 

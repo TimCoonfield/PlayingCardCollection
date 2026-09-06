@@ -166,6 +166,7 @@ export function CollectionFilters({
       if (value === "all") params.delete("type");
       else params.set("type", value);
       if (value === "coin") {
+        params.delete("tag");
         params.delete("missingYear");
         params.delete("missingHook");
         params.delete("missingNote");
@@ -295,12 +296,14 @@ export function CollectionFilters({
               onChange={handleReasonChange}
             />
             <div className="flex flex-wrap items-center gap-2">
-              <CollectionTagPills
-                availableTags={ALL_COLLECTION_TAGS}
-                selectedTags={tags}
-                onToggle={handleTagToggle}
-                useCheckboxes
-              />
+              {type !== "coin" && (
+                <CollectionTagPills
+                  availableTags={ALL_COLLECTION_TAGS}
+                  selectedTags={tags}
+                  onToggle={handleTagToggle}
+                  useCheckboxes
+                />
+              )}
               {isAuthenticated && (
                 <CollectionMaintenanceFilters
                   missingPhoto={missingPhoto}

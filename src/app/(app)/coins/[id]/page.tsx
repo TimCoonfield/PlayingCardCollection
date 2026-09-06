@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { getCoinPageData } from "@/lib/coin-data";
 import { CoinGallery } from "@/components/coin-gallery";
 import { BackLink } from "@/components/back-link";
-import { CoinTagChip } from "@/components/coin-tag-chip";
 import { PencilIcon, TrashIcon } from "@/components/icons";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { MarkdownNote } from "@/components/markdown-note";
@@ -37,7 +36,7 @@ export async function generateMetadata({
     path: `/coins/${coin.id}`,
     image,
     imageAlt: `${coin.name} collector coin`,
-    keywords: ["collector coin", ...coin.tags],
+    keywords: ["collector coin"],
   });
 }
 
@@ -106,7 +105,6 @@ export default async function CoinDetailPage({
         datePublished: coin.releaseYear ? String(coin.releaseYear) : undefined,
         material: coin.material ?? undefined,
         size: coin.diameter ?? undefined,
-        keywords: coin.tags.length > 0 ? coin.tags : undefined,
         identifier: coin.catalogNumber
           ? {
               "@type": "PropertyValue",
@@ -168,7 +166,7 @@ export default async function CoinDetailPage({
       </div>
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-        <CoinGallery images={galleryImages} tags={coin.tags} coinName={coin.name} />
+        <CoinGallery images={galleryImages} coinName={coin.name} />
 
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-1">
@@ -217,14 +215,6 @@ export default async function CoinDetailPage({
               {coin.material && <CreditRow label="Material" value={coin.material} />}
               {coin.diameter && <CreditRow label="Diameter" value={coin.diameter} />}
               {coin.releaseYear && <CreditRow label="Release year" value={String(coin.releaseYear)} />}
-            </div>
-          )}
-
-          {coin.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {coin.tags.map((tag) => (
-                <CoinTagChip key={tag} tag={tag} />
-              ))}
             </div>
           )}
 

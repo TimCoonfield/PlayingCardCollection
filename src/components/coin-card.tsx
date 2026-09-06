@@ -9,7 +9,6 @@ export interface CoinCardData {
   designer: string | null;
   producer: string | null;
   qty: number;
-  tags: string[];
   obverseImageUrl: string | null;
   reverseImageUrl: string | null;
 }
@@ -50,10 +49,10 @@ export function CoinCard({ coin }: { coin: CoinCardData }) {
                 } ${!canFlip && hasObverse ? "hidden" : ""}`}
               />
             )}
-            <CoinAccentBar tags={coin.tags} />
+            <CoinAccentBar />
           </>
         ) : (
-          <CoinPlaceholder tags={coin.tags} size="md" />
+          <CoinPlaceholder size="md" />
         )}
         {coin.qty > 1 && (
           <span className="absolute right-1.5 top-1.5 rounded-full bg-felt-bg/80 px-2 py-0.5 text-xs font-medium text-felt-ink">

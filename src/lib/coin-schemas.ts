@@ -37,7 +37,6 @@ export const coinFormSchema = z.object({
   releaseYear: optionalInt,
   notes: optionalString,
   catalogNumber: optionalString,
-  tags: z.array(z.string()).default([]),
   obverseImageUrl: optionalUrl,
   reverseImageUrl: optionalUrl,
 })
@@ -70,15 +69,6 @@ export const coinFormSchema = z.object({
 
 export type CoinFormValues = z.infer<typeof coinFormSchema>;
 
-export const COIN_TAGS = [
-  "Modern",
-  "Vintage",
-  "Antique",
-  "Gilded",
-  "Signed",
-  "Prototype",
-] as const;
-
 export function parseCoinFormData(formData: FormData) {
   return coinFormSchema.safeParse({
     name: formData.get("name") ?? "",
@@ -96,7 +86,6 @@ export function parseCoinFormData(formData: FormData) {
     releaseYear: formData.get("releaseYear") ?? "",
     notes: formData.get("notes") ?? "",
     catalogNumber: formData.get("catalogNumber") ?? "",
-    tags: formData.getAll("tags").map(String),
     obverseImageUrl: formData.get("obverseImageUrl") ?? "",
     reverseImageUrl: formData.get("reverseImageUrl") ?? "",
   });

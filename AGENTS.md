@@ -127,7 +127,7 @@ src/
     prisma.ts               # singleton PrismaClient (dev-mode global caching)
     auth.ts                 # iron-session config + getSession()
     schemas.ts               # deck zod schema + ALL_TAGS + parseDeckFormData()
-    coin-schemas.ts           # coin zod schema + COIN_TAGS + parseCoinFormData()
+    coin-schemas.ts           # coin zod schema + parseCoinFormData() (coins have no tags)
     creator-data.ts            # cached dynamic Creator-profile lookup
     creator-schemas.ts         # Creator editor validation
     creator-slug.ts            # stable collision-safe Creator slug helpers
@@ -334,9 +334,10 @@ Structurally parallel to Deck (`name`, `series`, `designer`, `producer`, `tags`,
 - `material` and `diameter` are coin-only free-text fields (no unit enforced, e.g. `"38mm"`).
 - No `favorite` field, no `DeckEdition`-equivalent (coins are never "numbered editions" in this
   data model).
-- Coin tag allowlist (`COIN_TAGS` in `src/lib/coin-schemas.ts`) is a **different, smaller list**
-  than deck tags (`ALL_TAGS`) — Modern/Vintage/Antique/Gilded/Signed/Prototype only, no
-  Mini/Tarot/Edge Painted. Don't assume the two are interchangeable.
+- **No `tags` field at all** — coins had a tag allowlist early on, but it was removed (column
+  dropped, not just hidden) since era/format tags didn't carry their weight for coins;
+  `releaseYear` covers what "Antique"/"Vintage"/"Modern" would have. Deck tags (`ALL_TAGS`) don't
+  apply to coins in any form. Don't reintroduce a coin tag list without a real product reason.
 
 ### Creator
 `Creator` is the canonical identity for both designer and producer credits. Deck designers use
@@ -445,8 +446,9 @@ delete form submits — purely a UI courtesy, not enforced server-side.
   separate publish step, draft state, or review queue. A save is live immediately.
 - **Cross-screen consistency to watch**: `ALL_TAGS` (deck tags, `lib/schemas.ts`) is
   hand-duplicated as `ALL_COLLECTION_TAGS` in `src/components/collection-filter-controls.tsx` for
-  the filter checkboxes — if you add/remove a deck tag, update both places. Coin tags
-  (`COIN_TAGS`) do not have this duplication problem (only used in `coin-form.tsx`).
+  the filter checkboxes — if you add/remove a deck tag, update both places. Coins have no tags at
+  all, so the merged `/collection` tag-filter pills are hidden whenever the type toggle is set to
+  "Coins" (`type !== "coin"` guards in `collection-filters.tsx` and `scoped-collection-browser.tsx`).
 
 ## 9. Public browsing flows
 

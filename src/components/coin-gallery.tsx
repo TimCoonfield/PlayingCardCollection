@@ -6,11 +6,9 @@ import { CoinPlaceholder, CoinAccentBar } from "./coin-placeholder";
 
 export function CoinGallery({
   images,
-  tags,
   coinName,
 }: {
   images: { url: string }[];
-  tags: string[];
   coinName: string;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -18,7 +16,7 @@ export function CoinGallery({
   if (images.length === 0) {
     return (
       <div className="aspect-[3/4] overflow-hidden rounded-lg border border-felt-line">
-        <CoinPlaceholder tags={tags} size="lg" thickAccent />
+        <CoinPlaceholder size="lg" thickAccent />
       </div>
     );
   }
@@ -37,7 +35,7 @@ export function CoinGallery({
           sizes="(max-width: 768px) 100vw, 50vw"
           className="object-cover"
         />
-        <CoinAccentBar tags={tags} thick />
+        <CoinAccentBar thick />
 
         {hasMultiple && (
           <>

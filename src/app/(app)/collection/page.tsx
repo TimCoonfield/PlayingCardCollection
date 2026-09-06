@@ -131,7 +131,7 @@ export default async function CollectionPage({
     (producers.length === 0 || (item.producer !== null && producers.includes(item.producer))) &&
     (!creator || item.designers.includes(creator) || item.producer === creator) &&
     matchesSeriesFilter(item, selectedSeries) &&
-    tags.every((tag) => item.tags.includes(tag)) &&
+    matchesTags(item, tags) &&
     matchesCollectionReason(item, reason, reasonField) &&
     (!missingPhoto ||
       ("images" in item
@@ -310,6 +310,17 @@ function matchesSeriesFilter(
       item.seriesRaw !== null &&
       selectedSeries.includes(item.seriesRaw.trim()))
   );
+}
+
+// Coins have no tags column at all — any tag filter selection excludes every coin.
+function matchesTags(
+  item: (Awaited<ReturnType<typeof getBrowseCatalogCards>>)["decks"][number] |
+    (Awaited<ReturnType<typeof getBrowseCatalogCards>>)["coins"][number],
+  tags: string[]
+) {
+  if (tags.length === 0) return true;
+  if (!("tags" in item)) return false;
+  return tags.every((tag) => item.tags.includes(tag));
 }
 
 function matchesCollectionReason(
