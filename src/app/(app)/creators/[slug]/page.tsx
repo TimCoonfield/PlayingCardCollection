@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { getCreatorPageData } from "@/lib/creator-data";
 import { getCreatorLandingCatalog } from "@/lib/catalog-browse";
+import { getAllTags } from "@/lib/tags";
 import { SITE_URL } from "@/lib/site";
 import { buildPageMetadata, serializeJsonLd } from "@/lib/seo";
 import { CreatorEditor } from "@/components/creator-editor";
@@ -52,7 +53,10 @@ export default async function CreatorPage({
   const [creator, session] = await Promise.all([getCreatorPageData(slug), getSession()]);
   if (!creator) notFound();
 
-  const { decks, coins } = await getCreatorLandingCatalog(creator.name, true);
+  const [{ decks, coins }, allTags] = await Promise.all([
+    getCreatorLandingCatalog(creator.name, true),
+    getAllTags(),
+  ]);
   const title = creator.displayName ?? creator.name;
   const updateCreatorWithId = updateCreator.bind(null, creator.id);
   const itemCount = decks.length + coins.length;
@@ -174,6 +178,7 @@ export default async function CreatorPage({
           coins={coins}
           showFeaturedDecks
           tagSet="all"
+          tagOptions={allTags.map((tag) => tag.name)}
           isAuthenticated={Boolean(session.authenticated)}
         />
       )}

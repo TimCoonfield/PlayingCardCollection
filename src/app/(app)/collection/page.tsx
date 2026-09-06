@@ -11,6 +11,7 @@ import { isCollectionSort, sortCollectionItems, type CollectionSort } from "@/li
 import { isArchiveSearchScope, type ArchiveSearchScope } from "@/lib/archive-search";
 import { getCollectionMetadata } from "@/lib/catalog-metadata";
 import { getBrowseCatalogCards } from "@/lib/catalog-browse";
+import { getAllTags } from "@/lib/tags";
 import {
   isCollectionReason,
   type CollectionReasonValue,
@@ -116,9 +117,10 @@ export default async function CollectionPage({
   const wantDecks = type !== "coin";
   const wantCoins = type !== "deck";
 
-  const [catalog, session] = await Promise.all([
+  const [catalog, session, allTags] = await Promise.all([
     getBrowseCatalogCards(),
     getSession(),
+    getAllTags(),
   ]);
   const isAuthenticated = Boolean(session.authenticated);
   const missingPhoto = isAuthenticated && missingPhotoRequested;
@@ -252,6 +254,7 @@ export default async function CollectionPage({
           designers={collectionMetadata.designers}
           producers={collectionMetadata.producers}
           seriesList={collectionMetadata.series}
+          tagOptions={allTags.map((tag) => tag.name)}
           availableMinYear={availableMinYear}
           availableMaxYear={availableMaxYear}
           surpriseDeckIds={deckIndexRows.map((deck) => deck.id)}

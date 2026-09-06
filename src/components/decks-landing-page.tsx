@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { getSession } from "@/lib/auth";
+import { getAllTags } from "@/lib/tags";
 import { SITE_URL } from "@/lib/site";
 import { DeckCard, type DeckCardData } from "./deck-card";
 import { DeckSpotlightCard } from "./deck-spotlight-card";
@@ -56,6 +57,7 @@ export async function DecksLandingPage({
   emptyMessage?: string;
 }) {
   const isAuthenticated = showFilters && Boolean((await getSession()).authenticated);
+  const tagOptions = showFilters ? (await getAllTags()).map((tag) => tag.name) : [];
   const favoriteDecks = decks.filter((d) => d.favorite).slice(0, 3);
 
   const landingJsonLd = {
@@ -137,6 +139,7 @@ export async function DecksLandingPage({
           coins={coins as FilterableScopedCoin[]}
           showFeaturedDecks={showFeaturedDecks}
           tagSet={filterTagSet}
+          tagOptions={tagOptions}
           isAuthenticated={isAuthenticated}
         />
       ) : decks.length === 0 ? (

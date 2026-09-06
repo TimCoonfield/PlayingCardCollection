@@ -196,26 +196,6 @@ export function CollectionMaintenanceFilters({
   );
 }
 
-export const ALL_COLLECTION_TAGS = [
-  "Modern",
-  "Vintage",
-  "Antique",
-  "Gilded",
-  "Signed",
-  "Mini",
-  "Tarot",
-  "Prototype",
-  "Edge Painted",
-] as const;
-
-export const CURATED_COLLECTION_TAGS = [
-  "Gilded",
-  "Signed",
-  "Mini",
-  "Prototype",
-  "Edge Painted",
-] as const;
-
 const TAG_PILL_CLASSES: Record<string, { idle: string; selected: string }> = {
   plum: {
     idle: "hover:border-plum/70 hover:text-plum",

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { SurpriseMeButton } from "./surprise-me-button";
 import { CollectionFilterPanel } from "./collection-filter-panel";
 import { isCollectionSort, type CollectionSort } from "@/lib/collection-sort";
+import { ERA_VALUES } from "@/lib/era";
 import {
   ARCHIVE_SEARCH_SCOPE_LABELS,
   isArchiveSearchScope,
@@ -17,7 +18,6 @@ import {
   CollectionSortSelector,
   CollectionTypeSelector,
   CollectionYearRange,
-  ALL_COLLECTION_TAGS,
   CollectionMaintenanceFilters,
   CollectionReasonFilter,
   type CollectionReasonField,
@@ -35,6 +35,7 @@ export function CollectionFilters({
   designers,
   producers,
   seriesList,
+  tagOptions,
   availableMinYear,
   availableMaxYear,
   surpriseDeckIds,
@@ -46,6 +47,8 @@ export function CollectionFilters({
   designers: string[];
   producers: string[];
   seriesList: string[];
+  /** Normalized deck tag names from the Tag table (see src/lib/tags.ts's getAllTags). */
+  tagOptions: string[];
   availableMinYear: number;
   availableMaxYear: number;
   surpriseDeckIds: string[];
@@ -298,7 +301,7 @@ export function CollectionFilters({
             <div className="flex flex-wrap items-center gap-2">
               {type !== "coin" && (
                 <CollectionTagPills
-                  availableTags={ALL_COLLECTION_TAGS}
+                  availableTags={[...ERA_VALUES, ...tagOptions]}
                   selectedTags={tags}
                   onToggle={handleTagToggle}
                   useCheckboxes

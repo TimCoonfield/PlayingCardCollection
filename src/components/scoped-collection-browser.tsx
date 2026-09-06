@@ -8,9 +8,8 @@ import { SearchIcon } from "./icons";
 import { SurpriseMeButton } from "./surprise-me-button";
 import { CollectionFilterPanel } from "./collection-filter-panel";
 import { sortCollectionItems, type CollectionSort } from "@/lib/collection-sort";
+import { ERA_VALUES } from "@/lib/era";
 import {
-  ALL_COLLECTION_TAGS,
-  CURATED_COLLECTION_TAGS,
   CollectionActiveFilter,
   CollectionFacetPicker,
   CollectionTagPills,
@@ -40,12 +39,15 @@ export function ScopedCollectionBrowser({
   coins,
   showFeaturedDecks,
   tagSet = "curated",
+  tagOptions,
   isAuthenticated = false,
 }: {
   decks: FilterableScopedDeck[];
   coins: FilterableScopedCoin[];
   showFeaturedDecks: boolean;
   tagSet?: "curated" | "all";
+  /** Normalized deck tag names from the Tag table (see src/lib/tags.ts's getAllTags). */
+  tagOptions: string[];
   isAuthenticated?: boolean;
 }) {
   const [query, setQuery] = useState("");
@@ -189,7 +191,7 @@ export function ScopedCollectionBrowser({
     (missingYear ? 1 : 0) +
     (missingHook ? 1 : 0) +
     (missingNote ? 1 : 0);
-  const availableTags = tagSet === "all" ? ALL_COLLECTION_TAGS : CURATED_COLLECTION_TAGS;
+  const availableTags = tagSet === "all" ? [...ERA_VALUES, ...tagOptions] : tagOptions;
 
   function toggleTag(tag: string) {
     setTags((current) =>
