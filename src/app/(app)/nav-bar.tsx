@@ -6,7 +6,6 @@ import { ArchiveSpotlightTrigger } from "@/components/archive-spotlight";
 import { AddMenu } from "@/components/add-menu";
 import { SpecialtyCollectionsMenu } from "@/components/specialty-collections-menu";
 import { CollectionIcon, StatsIcon } from "@/components/icons";
-import { logout } from "./logout-action";
 
 const navLinks = [
   { href: "/collection", label: "Collection", icon: CollectionIcon },
@@ -66,16 +65,6 @@ export function NavBar({
           <SpecialtyCollectionsMenu creators={creatorNavItems} isActive={specialtyIsActive} />
           {isAuthenticated && <AddMenu />}
           <ArchiveSpotlightTrigger />
-          {isAuthenticated && (
-            <form action={logout}>
-              <button
-                type="submit"
-                className="whitespace-nowrap rounded-md px-2 py-1.5 uppercase tracking-wide text-felt-sub transition-colors hover:bg-felt-surface hover:text-felt-ink sm:px-3"
-              >
-                Log out
-              </button>
-            </form>
-          )}
         </nav>
       </div>
     </header>
