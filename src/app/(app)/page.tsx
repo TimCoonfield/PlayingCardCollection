@@ -11,6 +11,7 @@ import {
   CameraIcon,
   SearchIcon,
   WhaleIcon,
+  IsometricDieIcon,
 } from "@/components/icons";
 import {
   getCoreCatalogMetadata,
@@ -107,12 +108,22 @@ export default async function HomePage() {
               keeps growing.
             </p>
 
-            <Link
-              href="/collection"
-              className="archive-hero-cta mt-8 inline-flex items-center gap-4 bg-brass px-7 py-3.5 text-xs font-bold uppercase tracking-[0.16em] text-felt-header transition hover:bg-brass-deep sm:text-sm"
-            >
-              Browse the archives <span aria-hidden="true">→</span>
-            </Link>
+            <div className="mt-8 flex w-full max-w-[22rem] flex-col gap-3 sm:w-auto sm:max-w-none sm:flex-row">
+              <Link
+                href="/collection"
+                className="archive-hero-cta inline-flex min-h-12 items-center justify-center gap-4 bg-brass px-7 py-3.5 text-xs font-bold uppercase tracking-[0.16em] text-felt-header transition hover:bg-brass-deep sm:text-sm"
+              >
+                Browse the archives <span aria-hidden="true">→</span>
+              </Link>
+              <Link
+                href="/surprise"
+                prefetch={false}
+                className="archive-hero-surprise inline-flex min-h-12 items-center justify-center gap-3 border border-brass/70 bg-felt-header/65 px-7 py-3.5 text-xs font-bold uppercase tracking-[0.16em] text-brass transition hover:border-brass hover:bg-brass/10 hover:text-felt-ink sm:text-sm"
+              >
+                <IsometricDieIcon className="h-5 w-5" />
+                Surprise me <span aria-hidden="true">→</span>
+              </Link>
+            </div>
           </div>
         </div>
 

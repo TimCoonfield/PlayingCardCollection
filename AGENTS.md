@@ -163,6 +163,7 @@ src/
       logout-action.ts
       collection/page.tsx         # the unified deck+coin search/browse page (merged in JS, see §6)
       stats/page.tsx               # aggregate stats dashboard
+      surprise/route.ts            # uncached homepage jump to a uniformly random Deck
       series/[slug]/page.tsx        # first-class Series pages (see §6)
       decks/                       # deck CRUD: new/, [id]/, [id]/edit/, missing-years/, actions.ts
       coins/                       # coin CRUD: new/, [id]/, [id]/edit/, actions.ts, page.tsx (redirects to /collection)
@@ -473,6 +474,9 @@ delete form submits — purely a UI courtesy, not enforced server-side.
     preferring favorites/white-whales when available and falling back to the full set.
   - **Pagination**: `Pagination` (`src/components/pagination.tsx`) pages the merged/sorted result
     set for `/collection`.
+- **Homepage Surprise Me**: the secondary hero action links to uncached `GET /surprise`, which
+  chooses uniformly from every Deck record and redirects to its detail page. The link disables
+  Next prefetching so a speculative navigation cannot choose the Deck before the visitor clicks.
 - **Archive Spotlight**: a global, keyboard-driven (`/` key) search palette
   (`src/components/archive-spotlight.tsx`, triggered from the nav bar) backed by
   `GET /api/archive-search` (`src/app/api/archive-search/route.ts`). Searches deck names, creators

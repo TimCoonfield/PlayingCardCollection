@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { IsometricDieIcon } from "./icons";
 
 export function SurpriseMeButton({
   preferredDeckIds,
@@ -39,7 +40,7 @@ export function SurpriseMeButton({
       title={hasItems ? "Open a random matching item" : "No items match these filters"}
       className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-brass/60 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-brass transition-colors hover:bg-brass/10 disabled:cursor-not-allowed disabled:border-felt-line disabled:text-felt-sub/50 disabled:hover:bg-transparent"
     >
-      <span aria-hidden="true">✦</span>
+      <IsometricDieIcon className="h-4 w-4" />
       Surprise Me
     </button>
   );

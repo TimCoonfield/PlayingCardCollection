@@ -139,6 +139,29 @@ export function CardsIcon({ className }: { className?: string }) {
   );
 }
 
+export function IsometricDieIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="m12 3 8 4.5-8 4.5-8-4.5L12 3Z" />
+      <path d="m4 7.5 8 4.5v9l-8-4.5v-9ZM20 7.5 12 12v9l8-4.5v-9Z" />
+      <circle cx="9.2" cy="7.1" r=".7" fill="currentColor" stroke="none" />
+      <circle cx="14.8" cy="7.9" r=".7" fill="currentColor" stroke="none" />
+      <circle cx="7.7" cy="12.3" r=".7" fill="currentColor" stroke="none" />
+      <circle cx="8.4" cy="16.1" r=".7" fill="currentColor" stroke="none" />
+      <circle cx="16.4" cy="13.6" r=".7" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export function PaletteIcon({ className }: { className?: string }) {
   return (
     <svg
