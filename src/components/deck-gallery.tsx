@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useGallerySwipe } from "./use-gallery-swipe";
 import Image from "next/image";
 import { DeckPlaceholder, AccentBar } from "./deck-placeholder";
 
@@ -14,6 +15,10 @@ export function DeckGallery({
   deckName: string;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const swipeHandlers = useGallerySwipe(
+    (direction) => setActiveIndex((index) => (index + direction + images.length) % images.length),
+    images.length > 1,
+  );
 
   if (images.length === 0) {
     return (
@@ -28,7 +33,10 @@ export function DeckGallery({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative aspect-[3/4] overflow-hidden rounded-lg border border-felt-line bg-felt-surface">
+      <div
+        {...swipeHandlers}
+        className={`relative aspect-[3/4] overflow-hidden rounded-lg border border-felt-line bg-felt-surface ${hasMultiple ? "[touch-action:pan-y_pinch-zoom] md:touch-auto" : ""}`}
+      >
         <Image
           key={active.url}
           src={active.url}
