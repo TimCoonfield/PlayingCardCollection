@@ -3,6 +3,7 @@ import { getTaggedLandingCatalog } from "@/lib/catalog-browse";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/mini" },
   title: "Mini Decks",
   description: "Miniature-format playing card decks in the Card Guy Archive collection.",
 };

@@ -18,6 +18,7 @@ export const getSeriesPageData = cache((slug: string) =>
           decks: {
             select: {
               id: true,
+              slug: true,
               name: true,
               designers: {
                 orderBy: { sortOrder: "asc" },
@@ -47,7 +48,7 @@ export const getSeriesPageData = cache((slug: string) =>
         })),
       };
     },
-    ["series-page-v3", slug],
+    ["series-page-v4", slug],
     {
       tags: [SERIES_PAGES_CACHE_TAG, seriesPageCacheTag(slug)],
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
@@ -62,13 +63,13 @@ export const getSeriesDeckNavigation = cache((slug: string) =>
         where: { slug },
         select: {
           decks: {
-            select: { id: true, name: true, seriesOrder: true, releaseYear: true },
+            select: { id: true, slug: true, name: true, seriesOrder: true, releaseYear: true },
           },
         },
       });
       return series?.decks ?? [];
     },
-    ["series-deck-navigation-v1", slug],
+    ["series-deck-navigation-v2", slug],
     {
       tags: [SERIES_PAGES_CACHE_TAG, seriesPageCacheTag(slug)],
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,

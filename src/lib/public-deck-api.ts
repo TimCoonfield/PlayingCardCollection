@@ -153,6 +153,7 @@ export function getPublicDeckDetail(id: string) {
         where: { id },
         select: {
           id: true,
+          slug: true,
           name: true,
           designers: {
             orderBy: { sortOrder: "asc" },
@@ -206,7 +207,7 @@ export function getPublicDeckDetail(id: string) {
         tags: flattenDeckTags(tags, computeEra(rest.releaseYear, manualEra)),
       };
     },
-    ["public-deck-detail-v5", id],
+    ["public-deck-detail-v6", id],
     {
       tags: [PUBLIC_DECK_DETAILS_CACHE_TAG, publicDeckDetailCacheTag(id)],
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,

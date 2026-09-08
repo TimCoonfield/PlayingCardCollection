@@ -1,3 +1,4 @@
+import { deckPath } from "@/lib/deck-path";
 import {
   PUBLIC_DECK_SEARCH_SCOPES,
   PUBLIC_DECK_SORTS,
@@ -54,7 +55,7 @@ export async function GET(request: Request) {
         hasPhoto: deck.images.length > 0,
         imageUrl: deck.images[0]?.url ?? null,
         detailUrl: new URL(`/api/catalog/decks/${deck.id}`, url.origin).toString(),
-        pageUrl: new URL(`/decks/${deck.id}`, url.origin).toString(),
+        pageUrl: new URL(deckPath(deck), url.origin).toString(),
       })),
       pagination: {
         total: result.total,

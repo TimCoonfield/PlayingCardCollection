@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { DeckCard } from "@/components/deck-card";
@@ -19,6 +20,8 @@ import {
   getHomePageMetadata,
 } from "@/lib/catalog-metadata";
 import { getRecentDecks } from "@/lib/catalog-browse";
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export default async function HomePage() {
   const [metadata, homeMetadata, creators, recentDecks] = await Promise.all([

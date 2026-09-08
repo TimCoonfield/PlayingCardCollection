@@ -1,3 +1,4 @@
+import { deckPath } from "@/lib/deck-path";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/auth";
@@ -29,7 +30,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const creator = await getCreatorPageData(slug);
-  if (!creator) return { title: "Creator Not Found" };
+  if (!creator) notFound();
   const title = creator.displayName ?? creator.name;
   const description = creator.description
     ? toPlainDescription(creator.description)
@@ -80,7 +81,7 @@ export default async function CreatorPage({
         ...decks.slice(0, 40).map((deck, index) => ({
           "@type": "ListItem",
           position: index + 1,
-          url: `${SITE_URL}/decks/${deck.id}`,
+          url: `${SITE_URL}${deckPath(deck)}`,
           name: deck.name,
         })),
         ...coins.slice(0, 10).map((coin, index) => ({

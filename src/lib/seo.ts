@@ -1,3 +1,4 @@
+import { deckPath } from "./deck-path";
 import type { Metadata } from "next";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 
@@ -85,11 +86,11 @@ export function breadcrumbJsonLd(
 }
 
 export function creativeWorkListItem(
-  item: { id: string; name: string },
+  item: { id: string; name: string; slug?: string | null },
   index: number,
   kind: "deck" | "coin" = "deck"
 ) {
-  const path = kind === "deck" ? `/decks/${item.id}` : `/coins/${item.id}`;
+  const path = kind === "deck" ? deckPath({ ...item, slug: item.slug ?? null }) : `/coins/${item.id}`;
   return {
     "@type": "ListItem",
     position: index + 1,

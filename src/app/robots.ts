@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/site";
 import type { MetadataRoute } from "next";
 
 const AI_TRAINING_CRAWLERS = [
@@ -13,6 +14,7 @@ const AI_TRAINING_CRAWLERS = [
 
 export default function robots(): MetadataRoute.Robots {
   return {
+    sitemap: `${SITE_URL}/sitemap.xml`,
     rules: [
       { userAgent: "*", allow: "/" },
       { userAgent: AI_TRAINING_CRAWLERS, disallow: "/" },

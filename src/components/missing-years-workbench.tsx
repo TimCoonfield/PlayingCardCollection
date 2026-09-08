@@ -1,5 +1,7 @@
 "use client";
 
+import { deckPath } from "@/lib/deck-path";
+
 import Link from "next/link";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -11,6 +13,7 @@ import { CollectionFilterPanel } from "@/components/collection-filter-panel";
 
 interface MissingYearDeck {
   id: string;
+  slug: string | null;
   name: string;
   series: string | null;
   producer: string | null;
@@ -108,7 +111,7 @@ export function MissingYearsWorkbench({ initialDecks }: { initialDecks: MissingY
               <tr key={deck.id} className="transition-colors hover:bg-felt-surface-2/50">
                 <td className="px-4 py-3">
                   <Link
-                    href={`/decks/${deck.id}`}
+                    href={deckPath(deck)}
                     prefetch={false}
                     className="font-display font-semibold text-felt-ink hover:text-brass"
                   >

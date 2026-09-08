@@ -1,3 +1,4 @@
+import { deckPath } from "@/lib/deck-path";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -9,11 +10,11 @@ export async function GET(request: Request) {
     const deck = await prisma.deck.findFirst({
       orderBy: { id: "asc" },
       skip: Math.floor(Math.random() * deckCount),
-      select: { id: true },
+      select: { id: true, slug: true },
     });
 
     if (!deck) return redirectToCollection(request);
-    return noStoreRedirect(new URL(`/decks/${deck.id}`, request.url));
+    return noStoreRedirect(new URL(deckPath(deck), request.url));
   } catch {
     return redirectToCollection(request);
   }

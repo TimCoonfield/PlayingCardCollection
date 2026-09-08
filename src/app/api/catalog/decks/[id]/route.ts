@@ -1,3 +1,4 @@
+import { deckPath } from "@/lib/deck-path";
 import { getPublicDeckDetail } from "@/lib/public-deck-api";
 import { getSeriesDeckNavigation } from "@/lib/series-data";
 import { hasSeriesPage } from "@/lib/series-visibility";
@@ -40,7 +41,7 @@ export async function GET(
       data: {
         id: deck.id,
         name: deck.name,
-        pageUrl: new URL(`/decks/${deck.id}`, origin).toString(),
+        pageUrl: new URL(deckPath(deck), origin).toString(),
         designers: deck.designers,
         designer: deck.designer,
         producer: deck.producer,

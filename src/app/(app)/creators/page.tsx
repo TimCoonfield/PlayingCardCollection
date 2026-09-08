@@ -5,6 +5,7 @@ import { SITE_URL } from "@/lib/site";
 import { serializeJsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/creators" },
   title: "Creators",
   description:
     "The people, studios, designers, and producers represented in the Card Guy Archive.",

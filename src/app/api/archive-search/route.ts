@@ -1,3 +1,4 @@
+import { deckPath } from "@/lib/deck-path";
 import { getBrowseDeckCards } from "@/lib/catalog-browse";
 import { getArchiveSearchSeries, getCreatorDirectory } from "@/lib/catalog-metadata";
 import {
@@ -82,7 +83,7 @@ function findDecks(decks: SearchDeck[], query: string, scope: ArchiveSearchScope
     .map((deck) => {
       const name = deck.name.toLocaleLowerCase();
       const rank = name === normalized ? 0 : name.startsWith(normalized) ? 1 : name.includes(normalized) ? 2 : 3;
-      return { ...deck, rank, href: `/decks/${deck.id}`, meta: deck.designers.join(" / ") || "Deck" };
+      return { ...deck, rank, href: deckPath(deck), meta: deck.designers.join(" / ") || "Deck" };
     })
     .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name))
     .slice(0, 2)

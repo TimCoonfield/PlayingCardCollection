@@ -1,8 +1,9 @@
+import { deckPath } from "@/lib/deck-path";
 import type { Metadata } from "next";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { notFound } from "next/navigation";
-import { getDeckPageData } from "@/lib/deck-data";
+import { getDeckRouteData } from "@/lib/deck-route";
 import { DeckGallery } from "@/components/deck-gallery";
 import { StatTile } from "@/components/stat-tile";
 import { CollectionProfile } from "@/components/collection-profile";
@@ -32,8 +33,8 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const deck = await getDeckPageData(id);
-  if (!deck) return { title: "Deck Not Found" };
+  const deck = await getDeckRouteData(id);
+  if (!deck) notFound();
 
   const designerNames = deck.designers.map(({ designer }) => designer.name);
   const credit = [...designerNames, deck.producer].filter(Boolean).join(" / ");
@@ -46,7 +47,7 @@ export async function generateMetadata({
   return buildPageMetadata({
     title: deck.name,
     description,
-    path: `/decks/${deck.id}`,
+    path: deckPath(deck),
     image,
     imageAlt: `${deck.name} playing card deck`,
     keywords: ["playing cards", "playing card deck", ...deck.tags],
@@ -60,7 +61,7 @@ export default async function DeckDetailPage({
 }) {
   const { id } = await params;
   const [deck, session] = await Promise.all([
-    getDeckPageData(id),
+    getDeckRouteData(id),
     getSession(),
   ]);
 
@@ -82,7 +83,7 @@ export default async function DeckDetailPage({
   ].filter((reason): reason is CollectionReasonValue => reason !== null);
   const designerNames = deck.designers.map(({ designer }) => designer.name);
 
-  const deckUrl = `${SITE_URL}/decks/${deck.id}`;
+  const deckUrl = `${SITE_URL}${deckPath(deck)}`;
   const description = deck.hook ?? deck.notes ?? undefined;
   const additionalProperty = [
     deck.qty > 1
@@ -170,9 +171,9 @@ export default async function DeckDetailPage({
           ...(deck.series && seriesHasPage
             ? [{ name: deck.series.name, path: `/series/${deck.series.slug}` }]
             : []),
-          { name: deck.name, path: `/decks/${deck.id}` },
+          { name: deck.name, path: deckPath(deck) },
         ],
-        `/decks/${deck.id}`
+        deckPath(deck)
       ),
     ],
   };
@@ -196,7 +197,7 @@ export default async function DeckDetailPage({
           <FavoriteButton deckId={deck.id} initialFavorite={deck.favorite} />
           <WhiteWhaleButton deckId={deck.id} initialWhiteWhale={deck.whiteWhale} />
           <Link
-            href={`/decks/${deck.id}/edit`}
+            href={`${deckPath(deck)}/edit`}
             aria-label="Edit deck"
             title="Edit"
             className="flex h-9 w-9 items-center justify-center rounded-full border border-brass/50 text-brass transition-colors hover:bg-brass/10"

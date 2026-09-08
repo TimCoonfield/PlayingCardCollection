@@ -1,3 +1,4 @@
+import { deckPath } from "@/lib/deck-path";
 import Image from "next/image";
 import Link from "next/link";
 import { DeckPlaceholder, AccentBar } from "./deck-placeholder";
@@ -5,6 +6,7 @@ import { HeartIcon, WhaleIcon } from "./icons";
 
 export interface DeckCardData {
   id: string;
+  slug: string | null;
   name: string;
   series: string | null;
   designers: string[];
@@ -32,7 +34,7 @@ export function DeckCard({
 
   return (
     <Link
-      href={`/decks/${deck.id}`}
+      href={deckPath(deck)}
       prefetch={false}
       className={`group flex flex-col overflow-hidden rounded-lg border border-felt-line bg-felt-surface transition-colors hover:border-brass ${
         uniformHeight ? "h-full" : ""

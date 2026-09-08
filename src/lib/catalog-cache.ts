@@ -1,4 +1,4 @@
-import { updateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 
 export const CATALOG_CACHE_REVALIDATE_SECONDS = 86_400;
 export const DECK_BROWSE_CACHE_PAGE_SIZE = 400;
@@ -69,10 +69,12 @@ export function invalidateDeckBrowsePage(page: number) {
 }
 
 export function invalidateCoinBrowseCache() {
+  revalidatePath("/sitemap.xml");
   updateTag(COIN_BROWSE_CACHE_TAG);
 }
 
 export function invalidateAllCatalogMetadataCaches() {
+  revalidatePath("/sitemap.xml");
   invalidateCoreCatalogMetadataCache();
   invalidateHomeCatalogMetadataCache();
   invalidateStatsCatalogMetadataCache();
@@ -103,6 +105,7 @@ export function invalidateCreatorCatalogMetadataCache() {
 }
 
 export function invalidateCreatorProfileCache(slug: string) {
+  revalidatePath("/sitemap.xml");
   updateTag(creatorProfileCacheTag(slug));
 }
 
@@ -123,6 +126,7 @@ export function invalidateSeriesSpotlightCache() {
 }
 
 export function invalidatePublicDeckDetail(deckId: string) {
+  revalidatePath("/sitemap.xml");
   updateTag(publicDeckDetailCacheTag(deckId));
 }
 
@@ -131,10 +135,12 @@ export function invalidateAllPublicDeckDetails() {
 }
 
 export function invalidateSeriesPageCache(slug: string) {
+  revalidatePath("/sitemap.xml");
   updateTag(seriesPageCacheTag(slug));
 }
 
 export function invalidateCoinDetailCache(coinId: string) {
+  revalidatePath("/sitemap.xml");
   updateTag(coinDetailCacheTag(coinId));
 }
 

@@ -22,6 +22,7 @@ function getBrowseDeckPage(page: number) {
       const rows = await prisma.deck.findMany({
         select: {
           id: true,
+          slug: true,
           name: true,
           seriesRaw: true,
           seriesLegacy: true,
@@ -64,7 +65,7 @@ function getBrowseDeckPage(page: number) {
         tags: flattenDeckTags(tags, computeEra(releaseYear, manualEra)),
       }));
     },
-    ["browse-deck-page-v8", String(page)],
+    ["browse-deck-page-v9", String(page)],
     {
       tags: [DECK_BROWSE_CACHE_TAG, deckBrowsePageCacheTag(page)],
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,
@@ -122,6 +123,7 @@ export const getRecentDecks = unstable_cache(
       take: 10,
       select: {
         id: true,
+        slug: true,
         name: true,
         series: { select: { name: true } },
         designers: {
@@ -144,7 +146,7 @@ export const getRecentDecks = unstable_cache(
       designer: designers.map(({ designer }) => designer.name).join(" / ") || null,
       tags: flattenDeckTags(tags, computeEra(releaseYear, manualEra)),
     }))),
-  ["recent-decks-v4"],
+  ["recent-decks-v5"],
   { tags: [RECENT_DECKS_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 
@@ -155,6 +157,7 @@ const getSeriesSpotlightRows = unstable_cache(
       orderBy: [{ name: "asc" }, { id: "asc" }],
       select: {
         id: true,
+        slug: true,
         name: true,
         seriesId: true,
         tags: { select: { tag: { select: { name: true } } } },
@@ -169,7 +172,7 @@ const getSeriesSpotlightRows = unstable_cache(
         tags: flattenDeckTags(tags, computeEra(releaseYear, manualEra)),
       }))
     ),
-  ["series-spotlight-rows-v3"],
+  ["series-spotlight-rows-v4"],
   { tags: [SERIES_SPOTLIGHT_CACHE_TAG], revalidate: CATALOG_CACHE_REVALIDATE_SECONDS }
 );
 

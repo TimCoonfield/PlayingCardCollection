@@ -1,9 +1,11 @@
+import { deckPath } from "@/lib/deck-path";
 import Image from "next/image";
 import Link from "next/link";
 import { DeckPlaceholder } from "./deck-placeholder";
 
 export interface DeckSpotlightDatum {
   id: string;
+  slug: string | null;
   name: string;
   designers: string[];
   tags: string[];
@@ -16,7 +18,7 @@ export function DeckSpotlightCard({ deck }: { deck: DeckSpotlightDatum }) {
 
   return (
     <Link
-      href={`/decks/${deck.id}`}
+      href={deckPath(deck)}
       className="group relative flex aspect-[6/5] w-full flex-col overflow-hidden rounded-lg border border-brass/40 bg-felt-bg shadow-lg shadow-black/30 transition-transform duration-300 hover:-translate-y-1"
     >
       <div className="absolute inset-0 grid grid-cols-[1.5fr_1fr] gap-1 p-1">

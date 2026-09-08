@@ -1,5 +1,5 @@
 import { createHash, timingSafeEqual } from "node:crypto";
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { ALL_CATALOG_CACHE_TAGS } from "@/lib/catalog-cache";
 
 const NO_STORE_HEADERS = { "Cache-Control": "no-store" };
@@ -31,6 +31,7 @@ export async function POST(request: Request) {
 
   const dryRun = new URL(request.url).searchParams.get("dryRun") === "1";
   if (!dryRun) {
+    revalidatePath("/sitemap.xml");
     for (const tag of ALL_CATALOG_CACHE_TAGS) {
       revalidateTag(tag, { expire: 0 });
     }

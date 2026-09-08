@@ -1,3 +1,4 @@
+import { resolveDeckAddress } from "@/lib/deck-route";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -15,7 +16,10 @@ export default async function EditDeckPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
+  const { id: address } = await params;
+  const resolved = await resolveDeckAddress(address);
+  if (!resolved) notFound();
+  const { id } = resolved;
 
   const [deck, creators, seriesOptions, availableTags] = await Promise.all([
     prisma.deck.findUnique({

@@ -24,7 +24,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const coin = await getCoinPageData(id);
-  if (!coin) return { title: "Coin Not Found" };
+  if (!coin) notFound();
 
   const credit = [coin.designer, coin.producer].filter(Boolean).join(" / ");
   const description = coin.notes ?? [coin.name, credit, coin.releaseYear].filter(Boolean).join(" — ");

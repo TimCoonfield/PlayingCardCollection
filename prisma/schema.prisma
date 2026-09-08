@@ -62,6 +62,8 @@ model Creator {
 }
 
 model Deck {
+  slug                      String?           @unique @db.VarChar(240)
+  slugHistory               DeckSlugHistory[]
   id                        String            @id @default(cuid())
   name                      String
   seriesLegacy              String?           @map("series")
@@ -195,4 +197,14 @@ model Coin {
   @@index([producer])
   @@index([producerCreatorId])
   @@index([series])
+}
+
+// Includes current and former addresses, so no other Deck can claim a historical slug.
+model DeckSlugHistory {
+  slug      String   @id @db.VarChar(240)
+  deckId    String
+  deck      Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([deckId])
 }

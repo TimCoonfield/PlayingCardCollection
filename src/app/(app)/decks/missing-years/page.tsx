@@ -18,6 +18,7 @@ export default async function MissingYearsPage() {
     orderBy: [{ name: "asc" }, { id: "asc" }],
     select: {
       id: true,
+      slug: true,
       name: true,
       series: { select: { name: true } },
       producer: true,

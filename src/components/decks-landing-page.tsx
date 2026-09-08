@@ -1,3 +1,4 @@
+import { deckPath } from "@/lib/deck-path";
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { getSession } from "@/lib/auth";
@@ -73,7 +74,7 @@ export async function DecksLandingPage({
       itemListElement: decks.slice(0, 50).map((deck, index) => ({
         "@type": "ListItem",
         position: index + 1,
-        url: `${SITE_URL}/decks/${deck.id}`,
+        url: `${SITE_URL}${deckPath(deck)}`,
         name: deck.name,
       })),
     },

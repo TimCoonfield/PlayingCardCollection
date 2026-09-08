@@ -55,6 +55,7 @@ function bucketReleaseYear(year: number): { label: string; sortKey: number; href
 const ERA_COLORS = ["#b58a35", "#8266b3", "#b1473f"];
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/stats" },
   title: "Stats",
   description:
     "Aggregate statistics for the Card Guy Archive collection — totals, top designers, era breakdown, release-year history, and biggest series.",

@@ -1,11 +1,14 @@
 "use client";
 
+import { deckPath } from "@/lib/deck-path";
+
 import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 interface SeriesDeckLink {
   id: string;
+  slug: string | null;
   name: string;
 }
 
@@ -50,10 +53,10 @@ export function SeriesDeckNavigation({
 
       if (goPrevious) {
         event.preventDefault();
-        router.push(`/decks/${previousDeck.id}`);
+        router.push(deckPath(previousDeck));
       } else if (goNext) {
         event.preventDefault();
-        router.push(`/decks/${nextDeck.id}`);
+        router.push(deckPath(nextDeck));
       }
     }
 
@@ -69,7 +72,7 @@ export function SeriesDeckNavigation({
       <div className="mx-auto grid min-h-12 max-w-6xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-stretch px-2 sm:px-6">
         {previousDeck ? (
           <Link
-            href={`/decks/${previousDeck.id}`}
+            href={deckPath(previousDeck)}
             aria-keyshortcuts="Shift+ArrowLeft"
             aria-label={`Previous deck in ${series.name}: ${previousDeck.name}`}
             title="Previous deck (Shift + Left Arrow or [)"
@@ -106,7 +109,7 @@ export function SeriesDeckNavigation({
 
         {nextDeck ? (
           <Link
-            href={`/decks/${nextDeck.id}`}
+            href={deckPath(nextDeck)}
             aria-keyshortcuts="Shift+ArrowRight"
             aria-label={`Next deck in ${series.name}: ${nextDeck.name}`}
             title="Next deck (Shift + Right Arrow or ])"

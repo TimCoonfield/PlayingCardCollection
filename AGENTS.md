@@ -824,3 +824,20 @@ Before declaring a task complete:
 - [ ] Existing comments explaining non-obvious behavior were preserved or updated, not deleted.
 - [ ] Report exactly which validation commands were run and what they showed — don't claim
       verification that didn't happen.
+
+## SEO and stored Deck URL additions
+
+- Public canonical origin is fixed in `src/lib/site.ts` to `https://www.cardguyarchive.com`.
+  Root metadata does not supply an inherited homepage canonical; indexable pages supply their own.
+- `/collection` pagination self-canonicalizes; search/filter/sort variants use `noindex, follow`.
+  `src/lib/collection-seo.ts` owns this policy. Invalid or out-of-range pages return 404.
+- Deck public links use `deckPath({ id, slug })`. The `[id]` route parameter accepts IDs,
+  current slugs, and historical slugs through `src/lib/deck-route.ts`; old addresses redirect
+  with 308. Mutation IDs and the public API's ID-based resource contract remain unchanged.
+- `Deck.slug` is a stored unique nullable rollout column. Creates assign it transactionally.
+  The database trigger reserves current and former slugs in `DeckSlugHistory`; never regenerate
+  slugs from title edits. Backfill/import procedure: `docs/seo-routing-rollout.md`.
+- `app/sitemap.ts` has one-hour route revalidation, independent of page/session caching.
+  Catalog mutations and maintenance invalidation refresh it. Keep its Series visibility rule
+  synchronized with `hasSeriesPage`, and omit noindexed/redirecting URLs.
+- Root and app-group not-found boundaries share the branded `ArchiveNotFound` component.

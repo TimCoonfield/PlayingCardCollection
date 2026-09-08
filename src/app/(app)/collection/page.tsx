@@ -1,3 +1,5 @@
+import { collectionSeo } from "@/lib/collection-seo";
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -51,14 +53,18 @@ export async function generateMetadata({
   const type: "all" | "deck" | "coin" = typeParam === "deck" || typeParam === "coin" ? typeParam : "all";
   const typeLabel = type === "deck" ? "Decks" : type === "coin" ? "Coins" : "Collection";
 
+  const seo = collectionSeo(params);
+
   if (q) {
     return {
+      ...seo,
       title: `“${q}” — ${typeLabel}`,
       description: `Search results for "${q}" across the Card Guy Archive collection.`,
     };
   }
 
   return {
+    ...seo,
     title: typeLabel,
     description:
       type === "deck"
@@ -93,7 +99,9 @@ export default async function CollectionPage({
     rawReasonField === "primary" || rawReasonField === "secondary" ? rawReasonField : "any";
   const requestedMinYear = toOptionalNumberParam(params.minYear);
   const requestedMaxYear = toOptionalNumberParam(params.maxYear);
-  const page = Math.max(1, Number(toParam(params.page)) || 1);
+  const rawPage = toParam(params.page);
+  const page = rawPage ? Number(rawPage) : 1;
+  if (!Number.isSafeInteger(page) || page < 1) notFound();
   const typeParam = toParam(params.type);
   const type: "all" | "deck" | "coin" = typeParam === "deck" || typeParam === "coin" ? typeParam : "all";
   const missingPhotoRequested = toParam(params.missingPhoto) === "1";
@@ -167,6 +175,7 @@ export default async function CollectionPage({
 
   const total = mergedIndex.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (page > totalPages) notFound();
   const pageIndexItems = mergedIndex.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const pageDeckIds = pageIndexItems
     .filter((item) => item.kind === "deck")

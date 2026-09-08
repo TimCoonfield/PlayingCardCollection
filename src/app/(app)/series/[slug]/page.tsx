@@ -1,3 +1,4 @@
+import { deckPath } from "@/lib/deck-path";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/auth";
@@ -29,14 +30,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const series = await getSeriesPageData(slug);
-  if (!series || !hasSeriesPage(series.decks.length)) return { title: "Series Not Found" };
+  if (!series || !hasSeriesPage(series.decks.length)) notFound();
 
   const description =
     series.subtitle ??
     (series.description ? toPlainDescription(series.description) : null) ??
     `${series.decks.length} ${series.decks.length === 1 ? "deck" : "decks"} in the Card Guy Archive's ${series.name} series.`;
 
-  return { title: series.name, description };
+  return { title: series.name, description, alternates: { canonical: `/series/${series.slug}` } };
 }
 
 export default async function SeriesPage({
@@ -81,7 +82,7 @@ export default async function SeriesPage({
       itemListElement: decks.slice(0, 50).map((deck, index) => ({
         "@type": "ListItem",
         position: index + 1,
-        url: `${SITE_URL}/decks/${deck.id}`,
+        url: `${SITE_URL}${deckPath(deck)}`,
         name: deck.name,
       })),
     },

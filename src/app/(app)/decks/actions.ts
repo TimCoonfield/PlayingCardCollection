@@ -1,5 +1,8 @@
 "use server";
 
+import { assignDeckSlug } from "@/lib/deck-slug-write";
+import { deckPath } from "@/lib/deck-path";
+
 import { redirect } from "next/navigation";
 import { refresh } from "next/cache";
 import { z, type ZodError } from "zod";
@@ -204,7 +207,7 @@ export async function createDeck(
     return { error: "Please fix the errors below.", fieldErrors: flatten(parsed.error) };
   }
 
-  let deck: { id: string; seriesSlug: string | null };
+  let deck: { id: string; slug: string | null; seriesSlug: string | null };
   try {
     deck = await prisma.$transaction(async (tx) => {
       const series = await resolveSeries(tx, parsed.data);
@@ -228,9 +231,10 @@ export async function createDeck(
             create: parsed.data.tagIds.map((tagId) => ({ tagId })),
           },
         },
-        select: { id: true },
+        select: { id: true, name: true, releaseYear: true, producer: true },
       });
-      return { id: created.id, seriesSlug: series?.slug ?? null };
+      const addressed = await assignDeckSlug(tx, created);
+      return { ...addressed, seriesSlug: series?.slug ?? null };
     });
   } catch (error) {
     if (error instanceof SeriesSelectionError) {
@@ -248,7 +252,7 @@ export async function createDeck(
   invalidateSeriesSpotlightCache();
   if (deck.seriesSlug) invalidateSeriesPageCache(deck.seriesSlug);
   invalidatePublicDeckDetail(deck.id);
-  redirect(`/decks/${deck.id}`);
+  redirect(deckPath(deck));
 }
 
 export async function updateDeck(
@@ -268,6 +272,7 @@ export async function updateDeck(
   const existingDeck = await prisma.deck.findUnique({
     where: { id: deckId },
     select: {
+      slug: true,
       name: true,
       seriesId: true,
       seriesOrder: true,
@@ -440,7 +445,7 @@ export async function updateDeck(
     );
     for (const slug of affectedSeriesSlugs) invalidateSeriesPageCache(slug);
   }
-  redirect(`/decks/${deckId}`);
+  redirect(deckPath({ id: deckId, slug: existingDeck.slug }));
 }
 
 export async function updateDeckReleaseYear(

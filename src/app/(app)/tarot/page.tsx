@@ -3,6 +3,7 @@ import { getTaggedLandingCatalog } from "@/lib/catalog-browse";
 import { DecksLandingPage } from "@/components/decks-landing-page";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/tarot" },
   title: "Tarot Decks",
   description: "Tarot decks in the Card Guy Archive collection.",
 };
