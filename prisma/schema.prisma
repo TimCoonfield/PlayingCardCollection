@@ -27,6 +27,7 @@ enum CollectionReason {
   ACQUISITION
   COMPLETION
   VOLUME
+  NOSTALGIA
   PERSONAL
 }
 

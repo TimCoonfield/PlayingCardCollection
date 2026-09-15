@@ -7,6 +7,7 @@ export const COLLECTION_REASON_VALUES = [
   "ACQUISITION",
   "COMPLETION",
   "VOLUME",
+  "NOSTALGIA",
   "PERSONAL",
 ] as const;
 
@@ -56,10 +57,15 @@ export const COLLECTION_REASON_DETAILS: Record<
     description:
       "The Deck reflects a period of broad, less discriminating collecting within a category, creator, campaign ecosystem, or similar area—not merely that many copies exist.",
   },
+  NOSTALGIA: {
+    label: "Nostalgia",
+    description:
+      "The subject, imagery, place, brand, or cultural touchstone connects to personal history—especially childhood memories or an earlier chapter of life.",
+  },
   PERSONAL: {
     label: "Personal",
     description:
-      "A gift, friendship, creator relationship, milestone, nostalgia, formative collecting experience, or another distinctly personal reason matters.",
+      "A gift, friendship, creator relationship, milestone, formative collecting experience, or another direct personal connection matters.",
   },
 };
 

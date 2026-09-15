@@ -266,7 +266,9 @@ The primary entity. Key fields beyond the obvious (`name`, `designers`, `produce
 - `collectionReasonPrimary` / `collectionReasonSecondary` — nullable `CollectionReason` enum
   values answering why the Deck belongs in the collection. The two values must differ when both
   are present and are filterable independently or together on `/collection`; they are deliberately
-  separate from tags.
+  separate from tags. `NOSTALGIA` covers subjects and cultural touchstones connected to the
+  collector's history (especially childhood), while `PERSONAL` is reserved for direct connections
+  such as gifts, relationships, milestones, and formative collecting experiences.
 - Editorial depth is split across `hook` (nullable `VARCHAR(240)`, one-sentence public lead), the
   legacy `notes` text field (Markdown-capable when rendered and preserved as concise Deck/copy
   commentary), and `essay` (nullable Markdown long-form context). `notesReviewedAt` is an explicit
