@@ -65,6 +65,7 @@ export default async function EditDeckPage({
           editionNumbers: deck.editions.map((e) => e.deckNumber),
           productionRun: deck.productionRun,
           releaseYear: deck.releaseYear,
+          releaseYearEstimated: deck.releaseYearEstimated,
           collectionReasonPrimary: deck.collectionReasonPrimary ?? undefined,
           collectionReasonSecondary: deck.collectionReasonSecondary ?? undefined,
           hook: deck.hook ?? undefined,

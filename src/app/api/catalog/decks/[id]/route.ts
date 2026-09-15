@@ -60,6 +60,7 @@ export async function GET(
             }
           : null,
         releaseYear: deck.releaseYear,
+        releaseYearEstimated: deck.releaseYearEstimated,
         tags: deck.tags,
         ownership: {
           status: deck.ownershipStatus,

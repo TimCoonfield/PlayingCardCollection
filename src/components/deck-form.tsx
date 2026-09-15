@@ -36,6 +36,7 @@ export interface DeckFormDefaultValues {
   editionNumbers?: number[];
   productionRun?: number | null;
   releaseYear?: number | null;
+  releaseYearEstimated?: boolean;
   collectionReasonPrimary?: CollectionReasonValue;
   collectionReasonSecondary?: CollectionReasonValue;
   hook?: string;
@@ -72,6 +73,9 @@ export function DeckForm({
   const [tagIds, setTagIds] = useState<string[]>(defaultValues.tagIds ?? []);
   const [manualEra, setManualEra] = useState<EraValue | "">(defaultValues.manualEra ?? "");
   const [hasReleaseYear, setHasReleaseYear] = useState(Boolean(defaultValues.releaseYear));
+  const [releaseYearEstimated, setReleaseYearEstimated] = useState(
+    defaultValues.releaseYearEstimated ?? false
+  );
   const [imageUrls, setImageUrls] = useState<string[]>(initialImages.map((i) => i.url));
   const [editionNumbers, setEditionNumbers] = useState<string[]>(
     (defaultValues.editionNumbers ?? []).map(String)
@@ -124,6 +128,7 @@ export function DeckForm({
       if (releaseYearRef.current && result.releaseYear) {
         releaseYearRef.current.value = String(result.releaseYear);
         setHasReleaseYear(true);
+        setReleaseYearEstimated(false);
       }
       if (notesRef.current && result.notes) notesRef.current.value = result.notes;
       if (result.tags?.length) {
@@ -249,17 +254,35 @@ export function DeckForm({
         <Field label="Catalog number">
           <input name="catalogNumber" defaultValue={defaultValues.catalogNumber} className={inputClass} />
         </Field>
-        <Field label="Release year" error={state?.fieldErrors?.releaseYear}>
-          <input
-            ref={releaseYearRef}
-            name="releaseYear"
-            type="number"
-            min={1}
-            defaultValue={defaultValues.releaseYear ?? ""}
-            onChange={(e) => setHasReleaseYear(e.target.value.trim().length > 0)}
-            className={inputClass}
-          />
-        </Field>
+        <div className="flex flex-col gap-2">
+          <Field label="Release year" error={state?.fieldErrors?.releaseYear}>
+            <input
+              ref={releaseYearRef}
+              name="releaseYear"
+              type="number"
+              min={1}
+              defaultValue={defaultValues.releaseYear ?? ""}
+              onChange={(event) => {
+                const hasYear = event.target.value.trim().length > 0;
+                setHasReleaseYear(hasYear);
+                if (!hasYear) setReleaseYearEstimated(false);
+              }}
+              className={inputClass}
+            />
+          </Field>
+          {hasReleaseYear && (
+            <label className="flex items-center gap-2 text-sm text-felt-sub">
+              <input
+                type="checkbox"
+                name="releaseYearEstimated"
+                checked={releaseYearEstimated}
+                onChange={(event) => setReleaseYearEstimated(event.target.checked)}
+                className="accent-brass"
+              />
+              Release year is estimated
+            </label>
+          )}
+        </div>
         <Field label="Series order" error={state?.fieldErrors?.seriesOrder}>
           <input
             name="seriesOrder"

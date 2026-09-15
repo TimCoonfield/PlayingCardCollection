@@ -33,7 +33,7 @@ const getCachedDeckPageData = (id: string) =>
           tags: { select: { tag: { select: { name: true } } } },
         },
       }),
-    ["deck-page-v4", id],
+    ["deck-page-v5", id],
     {
       tags: [PUBLIC_DECK_DETAILS_CACHE_TAG, publicDeckDetailCacheTag(id)],
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,

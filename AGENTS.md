@@ -259,6 +259,10 @@ The primary entity. Key fields beyond the obvious (`name`, `designers`, `produce
 - `qty: Int` — how many physical copies of this deck are owned (default 1).
 - `productionRun: Int?` — the total size of a limited print run (the "700" in "391/700"), a
   property of the **deck**, not of any one copy.
+- `releaseYearEstimated: Boolean` qualifies a saved `releaseYear` as approximate for display on
+  the Deck detail page. The numeric year remains authoritative for filtering, sorting, era
+  calculation, stats, and other catalog behavior; an absent release year always saves this flag
+  as false.
 - `collectionReasonPrimary` / `collectionReasonSecondary` — nullable `CollectionReason` enum
   values answering why the Deck belongs in the collection. The two values must differ when both
   are present and are filterable independently or together on `/collection`; they are deliberately

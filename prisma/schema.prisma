@@ -92,6 +92,7 @@ model Deck {
   qty                       Int               @default(1)
   productionRun             Int?
   releaseYear               Int?
+  releaseYearEstimated      Boolean           @default(false)
   collectionReasonPrimary   CollectionReason?
   collectionReasonSecondary CollectionReason?
   hook                      String?           @db.VarChar(240)

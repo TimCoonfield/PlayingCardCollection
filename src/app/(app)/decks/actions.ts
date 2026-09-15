@@ -104,6 +104,9 @@ function toDeckData(
     qty: values.qty,
     productionRun: values.productionRun ?? null,
     releaseYear: values.releaseYear ?? null,
+    // An absent year cannot meaningfully be estimated. Keeping that invariant here also protects
+    // direct Server Action submissions that bypass the form's conditional checkbox.
+    releaseYearEstimated: values.releaseYear ? values.releaseYearEstimated : false,
     notes: values.notes ?? null,
     catalogNumber: values.catalogNumber ?? null,
     // No longer written to — the normalized tags relation and manualEra below are now the sole
@@ -471,7 +474,7 @@ export async function updateDeckReleaseYear(
 
   const result = await prisma.deck.updateMany({
     where: { id: deckId },
-    data: { releaseYear: parsed.data },
+    data: { releaseYear: parsed.data, releaseYearEstimated: false },
   });
   if (result.count === 0) {
     return { status: "error", message: "This deck no longer exists." };

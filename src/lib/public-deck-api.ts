@@ -164,6 +164,7 @@ export function getPublicDeckDetail(id: string) {
           qty: true,
           productionRun: true,
           releaseYear: true,
+          releaseYearEstimated: true,
           seriesOrder: true,
           variantNote: true,
           tags: { select: { tag: { select: { name: true } } } },
@@ -207,7 +208,7 @@ export function getPublicDeckDetail(id: string) {
         tags: flattenDeckTags(tags, computeEra(rest.releaseYear, manualEra)),
       };
     },
-    ["public-deck-detail-v6", id],
+    ["public-deck-detail-v7", id],
     {
       tags: [PUBLIC_DECK_DETAILS_CACHE_TAG, publicDeckDetailCacheTag(id)],
       revalidate: CATALOG_CACHE_REVALIDATE_SECONDS,

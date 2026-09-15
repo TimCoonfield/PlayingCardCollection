@@ -278,7 +278,7 @@ export default async function DeckDetailPage({
               {deck.releaseYear !== null && (
                 <CreditRow
                   label="Release year"
-                  value={String(deck.releaseYear)}
+                  value={`${deck.releaseYear}${deck.releaseYearEstimated ? " (estimated)" : ""}`}
                   href={`/collection?minYear=${deck.releaseYear}&maxYear=${deck.releaseYear}`}
                 />
               )}
